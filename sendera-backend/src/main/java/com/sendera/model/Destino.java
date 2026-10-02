@@ -1,0 +1,36 @@
+package com.sendera.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Entity
+@Table(name = "destinos")
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@Builder
+public class Destino {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String nombre;
+
+    @Column(columnDefinition = "TEXT")
+    private String descripcion;
+
+    @Column(nullable = false)
+    private String ubicacion;
+
+    @Column(name = "precio_base", nullable = false)
+    private BigDecimal precioBase;
+
+    @ElementCollection
+    @CollectionTable(name = "destino_fotos", joinColumns = @JoinColumn(name = "destino_id"))
+    @Column(name = "foto_url")
+    private List<String> fotosUrl;
+}
