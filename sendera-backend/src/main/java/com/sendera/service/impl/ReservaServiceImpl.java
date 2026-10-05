@@ -2,16 +2,15 @@ package com.sendera.service.impl;
 
 import com.sendera.dto.CrearReservaDto;
 import com.sendera.dto.ReservaDto;
-import com.sendera.model.Destino;
+import com.sendera.model.EstadoReserva;
+import com.sendera.model.Itinerario;
 import com.sendera.model.Reserva;
-import com.sendera.repository.DestinoRepository;
 import com.sendera.repository.ReservaRepository;
 import com.sendera.service.ReservaService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -20,7 +19,6 @@ import java.util.stream.Collectors;
 public class ReservaServiceImpl implements ReservaService {
 
     private final ReservaRepository reservaRepository;
-    private final DestinoRepository destinoRepository;
 
     @Override
     public List<ReservaDto> listarTodas() {
@@ -38,25 +36,15 @@ public class ReservaServiceImpl implements ReservaService {
 
     @Override
     public ReservaDto crear(CrearReservaDto dto) {
-        Destino destino = destinoRepository.findById(dto.getDestinoId())
-                .orElseThrow(() -> new RuntimeException("Destino no encontrado con id: " + dto.getDestinoId()));
-
-        long dias = ChronoUnit.DAYS.between(dto.getFechaInicio(), dto.getFechaFin());
-        if (dias <= 0) {
-            throw new RuntimeException("La fecha de fin debe ser posterior a la fecha de inicio");
-        }
-
-        BigDecimal precioTotal = destino.getPrecioBase()
-                .multiply(BigDecimal.valueOf(dias))
-                .multiply(BigDecimal.valueOf(dto.getCantidadPersonas()));
+        // Creamos una referencia al Itinerario para satisfacer la llave foránea
+        Itinerario itinerario = new Itinerario();
+        itinerario.setId(dto.getItinerarioId());
 
         Reserva reserva = Reserva.builder()
-                .destino(destino)
-                .fechaInicio(dto.getFechaInicio())
-                .fechaFin(dto.getFechaFin())
-                .cantidadPersonas(dto.getCantidadPersonas())
-                .precioTotal(precioTotal)
-                .estado("CONFIRMADA")
+                .itinerario(itinerario)
+                .fechaReserva(dto.getFechaReserva())
+                .montoTotal(dto.getMontoTotal() != null ? dto.getMontoTotal() : BigDecimal.ZERO)
+                .estadoPago(EstadoReserva.PENDIENTE)
                 .build();
 
         Reserva reservaGuardada = reservaRepository.save(reserva);
@@ -68,7 +56,7 @@ public class ReservaServiceImpl implements ReservaService {
         Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Reserva no encontrada con id: " + id));
 
-        reserva.setEstado("CANCELADA");
+        reserva.setEstadoPago(EstadoReserva.CANCELADA);
         Reserva reservaActualizada = reservaRepository.save(reserva);
         return convertirADto(reservaActualizada);
     }
@@ -76,13 +64,10 @@ public class ReservaServiceImpl implements ReservaService {
     private ReservaDto convertirADto(Reserva reserva) {
         return ReservaDto.builder()
                 .id(reserva.getId())
-                .destinoId(reserva.getDestino().getId())
-                .nombreDestino(reserva.getDestino().getNombre())
-                .fechaInicio(reserva.getFechaInicio())
-                .fechaFin(reserva.getFechaFin())
-                .cantidadPersonas(reserva.getCantidadPersonas())
-                .precioTotal(reserva.getPrecioTotal())
-                .estado(reserva.getEstado())
+                .itinerarioId(reserva.getItinerario() != null ? reserva.getItinerario().getId() : null)
+                .fechaReserva(reserva.getFechaReserva())
+                .montoTotal(reserva.getMontoTotal())
+                .estadoPago(reserva.getEstadoPago() != null ? reserva.getEstadoPago().name() : null)
                 .build();
     }
 }
