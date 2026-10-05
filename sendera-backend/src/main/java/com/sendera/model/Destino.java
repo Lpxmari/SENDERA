@@ -20,17 +20,17 @@ public class Destino {
     @Column(nullable = false)
     private String nombre;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String descripcion;
 
     @Column(nullable = false)
     private String ubicacion;
 
-    @Column(name = "precio_base", nullable = false)
+    @Column(name = "precio_base", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioBase;
 
     @ElementCollection
-    @CollectionTable(name = "destino_fotos", joinColumns = @JoinColumn(name = "destino_id"))
-    @Column(name = "foto_url")
+    @CollectionTable(name = "destino_fotos", joinColumns = @JoinColumn(name = "destino_id", nullable = false))
+    @Column(name = "foto_url", nullable = false)
     private List<String> fotosUrl;
 }
