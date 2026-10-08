@@ -149,7 +149,7 @@ const DetalleDestino = () => {
     return (
         <div className="detalle">
             <nav className="detalle__migas" aria-label="Ruta de navegación">
-                <Link to="/">Resultados</Link>
+                <Link to="/resultados">Resultados</Link>
                 <span aria-hidden="true"> / </span>
                 {destino.ubicacion && (
                     <>

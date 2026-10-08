@@ -16,7 +16,7 @@ const Encabezado = () => {
         if (llegada) params.set('llegada', llegada);
         if (salida) params.set('salida', salida);
         params.set('viajeros', viajeros);
-        navigate({ pathname: '/', search: params.toString() });
+        navigate({ pathname: '/resultados', search: params.toString() });
     };
 
     return (
