@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/SENDERA.iml" filepath="$PROJECT_DIR$/.idea/SENDERA.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/sendera-backend.main.iml" filepath="$PROJECT_DIR$/.idea/modules/sendera-backend.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/sendera-backend.test.iml" filepath="$PROJECT_DIR$/.idea/modules/sendera-backend.test.iml" />
     </modules>
   </component>
 </project>
