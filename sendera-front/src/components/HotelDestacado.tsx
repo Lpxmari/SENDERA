@@ -15,7 +15,7 @@ const HotelDestacado = ({ destino }: Props) => {
             <div className="destacado__contenido">
                 <div className="destacado__imagen">
                     {imagenPortada ? (
-                        <img src={imagenPortada} alt={'Foto de ${destino.nombre}'} />
+                        <img src={imagenPortada} alt={`Foto de ${destino.nombre}`} />
                     ) : (
                         <span className="sin-imagen">Sin imagen</span>
                     )}
@@ -27,7 +27,7 @@ const HotelDestacado = ({ destino }: Props) => {
                         <li>{destino.ubicacion}</li>
                         <li>Desde {formatearPrecio(destino.precioBase)}</li>
                     </ul>
-                    <Link to={'/destinos/${destino.id}'} className="boton boton--naranja">
+                    <Link to={`/destinos/${destino.id}`} className="boton boton--naranja">
                         Ver detalles
                     </Link>
                 </div>

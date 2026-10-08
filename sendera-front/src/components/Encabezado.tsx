@@ -26,7 +26,7 @@ const Encabezado = () => {
             </Link>
 
             <form className="buscador" role="search" onSubmit={handleSubmit}>
-                <label className="buscador_campo buscador_campo--destino">
+                <label className="buscador__campo buscador__campo--destino">
                     <span>Destino</span>
                     <input
                         type="text"
