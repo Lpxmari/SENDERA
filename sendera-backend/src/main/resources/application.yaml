@@ -22,3 +22,24 @@ spring:
   jackson:
     serialization:
       write-dates-as-timestamps: false
+  # El envio real de correos se activa definiendo SPRING_MAIL_HOST (ver .env.example).
+  # Sin host, el enlace de recuperacion se imprime en consola (solo desarrollo).
+  mail:
+    port: ${SPRING_MAIL_PORT:587}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  jwt:
+    # Minimo 32 caracteres. En produccion define JWT_SECRET en el entorno.
+    secret: ${JWT_SECRET:sendera-clave-solo-para-desarrollo-cambiar-en-produccion}
+    expiracion-horas: ${JWT_EXPIRACION_HORAS:24}
+  recuperacion:
+    expiracion-minutos: ${RECUPERACION_EXPIRACION_MINUTOS:30}
+  mail:
+    remitente: ${MAIL_REMITENTE:no-reply@sendera.com}

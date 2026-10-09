@@ -7,6 +7,9 @@ servers:
   - url: http://localhost:8080/api/v1
     description: Servidor de Desarrollo Local
 
+security:
+  - bearerAuth: []
+
 paths:
 
   /destinos:
@@ -143,7 +146,126 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorInterno'
 
+  /auth/registro:
+    post:
+      summary: Registrar un nuevo usuario
+      operationId: registrarUsuario
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroDto'
+      responses:
+        '201':
+          description: Usuario creado. Devuelve el token de sesión.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRespuesta'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/login:
+    post:
+      summary: Iniciar sesión
+      operationId: iniciarSesion
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: Sesión iniciada. Devuelve el token JWT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRespuesta'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/recuperar-contrasena:
+    post:
+      summary: Solicitar el correo de recuperación de contraseña
+      description: Responde 204 exista o no el correo, para no revelar qué cuentas están registradas.
+      operationId: recuperarContrasena
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperarContrasenaDto'
+      responses:
+        '204':
+          description: Solicitud procesada.
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/cambiar-contrasena:
+    post:
+      summary: Cambiar la contraseña con el token recibido por correo
+      operationId: cambiarContrasena
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaDto'
+      responses:
+        '204':
+          description: Contraseña actualizada.
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/me:
+    get:
+      summary: Obtener el usuario de la sesión actual
+      operationId: perfilUsuario
+      tags:
+        - Autenticación
+      responses:
+        '200':
+          description: Datos del usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+
 components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
 
   schemas:
 
@@ -257,6 +379,88 @@ components:
           format: double
           example: 250000.00
 
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        nombre:
+          type: string
+          example: "María"
+        apellidos:
+          type: string
+          example: "Gutiérrez"
+        correo:
+          type: string
+          format: email
+          example: "maria@correo.com"
+
+    AuthRespuesta:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT que se envía como encabezado Authorization con el esquema Bearer.
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+
+    RegistroDto:
+      type: object
+      required: [nombre, apellidos, correo, contrasena]
+      properties:
+        nombre:
+          type: string
+          maxLength: 100
+          example: "María"
+        apellidos:
+          type: string
+          maxLength: 120
+          example: "Gutiérrez"
+        correo:
+          type: string
+          format: email
+          example: "maria@correo.com"
+        contrasena:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 64
+          description: Debe incluir letras y números.
+
+    LoginDto:
+      type: object
+      required: [correo, contrasena]
+      properties:
+        correo:
+          type: string
+          format: email
+        contrasena:
+          type: string
+          format: password
+
+    RecuperarContrasenaDto:
+      type: object
+      required: [correo]
+      properties:
+        correo:
+          type: string
+          format: email
+
+    CambiarContrasenaDto:
+      type: object
+      required: [token, nuevaContrasena]
+      properties:
+        token:
+          type: string
+          description: Token recibido en el enlace del correo.
+        nuevaContrasena:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 64
+
     ApiError:
       type: object
       required:
@@ -301,6 +505,20 @@ components:
 
     ErrorInterno:
       description: Error interno del servidor (500 Internal Server Error)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    NoAutorizado:
+      description: Credenciales incorrectas o sesión inválida/expirada (401 Unauthorized)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    Conflicto:
+      description: El recurso ya existe, por ejemplo un correo ya registrado (409 Conflict)
       content:
         application/json:
           schema:
