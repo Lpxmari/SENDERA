@@ -1,9 +1,11 @@
 import { FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logoSendera from '../assets/logo-sendera.png';
+import { useAuth } from '../context/AuthContext';
 
 const Encabezado = () => {
     const navigate = useNavigate();
+    const { usuario, autenticado, logout } = useAuth();
     const [destino, setDestino] = useState<string>('');
     const [llegada, setLlegada] = useState<string>('');
     const [salida, setSalida] = useState<string>('');
@@ -64,7 +66,23 @@ const Encabezado = () => {
             <nav className="encabezado__nav" aria-label="Principal">
                 <a href="#destinos-populares">Destinos</a>
                 <Link to="/">Inicio</Link>
-                <button type="button" className="boton boton--verde">Iniciar Sesión</button>
+                {autenticado ? (
+                    <>
+                        <span className="encabezado__usuario">Hola, {usuario?.nombre}</span>
+                        <button
+                            type="button"
+                            className="boton boton--verde"
+                            onClick={() => {
+                                logout();
+                                navigate('/');
+                            }}
+                        >
+                            Cerrar sesión
+                        </button>
+                    </>
+                ) : (
+                    <Link to="/login" className="boton boton--verde">Iniciar Sesión</Link>
+                )}
             </nav>
         </header>
     );
