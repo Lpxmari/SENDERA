@@ -27,36 +27,40 @@ public class DestinoController {
             @RequestParam(required = false) BigDecimal precioMin,
             @RequestParam(required = false) BigDecimal precioMax,
             @RequestParam(required = false) Integer duracionMin,
-            @RequestParam(required = false) Integer duracionMax) {
+            @RequestParam(required = false) Integer duracionMax,
+            @RequestParam(required = false) String dificultad,
+            @RequestParam(required = false) Boolean accesibilidad) {
         FiltroDestinoDto filtro = FiltroDestinoDto.builder()
                 .q(q)
                 .precioMin(precioMin)
                 .precioMax(precioMax)
                 .duracionMin(duracionMin)
                 .duracionMax(duracionMax)
+                .dificultad(dificultad)
+                .accesibilidad(accesibilidad)
                 .build();
-        return ResponseEntity.ok(destinoService.buscar(filtro));
+        return ResponseEntity.ok(destinoService.listarDestinos(filtro));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<DestinoDto> obtenerDestinoPorId(@PathVariable Long id) {
-        return ResponseEntity.ok(destinoService.obtenerPorId(id));
+        return ResponseEntity.ok(destinoService.obtenerDestinoPorId(id));
     }
 
     @PostMapping
     public ResponseEntity<DestinoDto> crearDestino(@Valid @RequestBody CrearDestinoDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(destinoService.crear(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(destinoService.crearDestino(dto));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<DestinoDto> actualizarDestino(@PathVariable Long id,
                                                         @Valid @RequestBody CrearDestinoDto dto) {
-        return ResponseEntity.ok(destinoService.actualizar(id, dto));
+        return ResponseEntity.ok(destinoService.actualizarDestino(id, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarDestino(@PathVariable Long id) {
-        destinoService.eliminar(id);
+        destinoService.eliminarDestino(id);
         return ResponseEntity.noContent().build();
     }
 }

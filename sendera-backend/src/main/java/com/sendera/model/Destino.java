@@ -26,6 +26,12 @@ public class Destino {
     @Column(nullable = false)
     private String ubicacion;
 
+    @Column(nullable = false)
+    private String dificultad;
+
+    @Column(nullable = false)
+    private Boolean accesibilidad;
+
     @Column(name = "precio_base", nullable = false, precision = 12, scale = 2)
     private BigDecimal precioBase;
 

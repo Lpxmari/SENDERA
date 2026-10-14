@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 
 @Data
@@ -12,10 +11,13 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 @Builder
 public class FiltroDestinoDto {
-
     private String q;
+    private String nombre;
+    private String ubicacion;
     private BigDecimal precioMin;
     private BigDecimal precioMax;
+    private String dificultad;
+    private Boolean accesibilidad;
     private Integer duracionMin;
     private Integer duracionMax;
 }

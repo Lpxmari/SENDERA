@@ -37,6 +37,15 @@ public final class DestinoSpecifications {
             if (filtro.getPrecioMax() != null) {
                 condiciones.add(cb.lessThanOrEqualTo(root.<BigDecimal>get("precioBase"), filtro.getPrecioMax()));
             }
+
+            // --- AÑADIDO PARA EL PROCESO 2 ---
+            if (filtro.getDificultad() != null && !filtro.getDificultad().isBlank()) {
+                condiciones.add(cb.equal(root.<String>get("dificultad"), filtro.getDificultad()));
+            }
+            if (filtro.getAccesibilidad() != null) {
+                condiciones.add(cb.equal(root.<Boolean>get("accesibilidad"), filtro.getAccesibilidad()));
+            }
+
             return cb.and(condiciones.toArray(new Predicate[0]));
         };
     }

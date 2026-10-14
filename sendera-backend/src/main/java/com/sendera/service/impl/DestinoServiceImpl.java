@@ -32,13 +32,7 @@ public class DestinoServiceImpl implements DestinoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DestinoDto> listarTodos() {
-        return buscar(new FiltroDestinoDto());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<DestinoDto> buscar(FiltroDestinoDto filtro) {
+    public List<DestinoDto> listarDestinos(FiltroDestinoDto filtro) {
         FiltroDestinoDto f = filtro != null ? filtro : new FiltroDestinoDto();
         validarFiltro(f);
 
@@ -53,13 +47,13 @@ public class DestinoServiceImpl implements DestinoService {
 
     @Override
     @Transactional(readOnly = true)
-    public DestinoDto obtenerPorId(Long id) {
+    public DestinoDto obtenerDestinoPorId(Long id) {
         return convertirADto(buscarEntidad(id));
     }
 
     @Override
     @Transactional
-    public DestinoDto crear(CrearDestinoDto dto) {
+    public DestinoDto crearDestino(CrearDestinoDto dto) {
         Destino destino = new Destino();
         aplicarDatos(destino, dto);
         return convertirADto(destinoRepository.save(destino));
@@ -67,7 +61,7 @@ public class DestinoServiceImpl implements DestinoService {
 
     @Override
     @Transactional
-    public DestinoDto actualizar(Long id, CrearDestinoDto dto) {
+    public DestinoDto actualizarDestino(Long id, CrearDestinoDto dto) {
         Destino destino = buscarEntidad(id);
         aplicarDatos(destino, dto);
         return convertirADto(destinoRepository.save(destino));
@@ -75,9 +69,8 @@ public class DestinoServiceImpl implements DestinoService {
 
     @Override
     @Transactional
-    public void eliminar(Long id) {
+    public void eliminarDestino(Long id) {
         Destino destino = buscarEntidad(id);
-        // La BD usa ON DELETE RESTRICT: se avisa con un 409 claro en vez de dejar que falle la FK.
         if (itinerarioRepository.existsByDestinoId(id)) {
             throw new DestinoConItinerariosException();
         }
@@ -105,10 +98,6 @@ public class DestinoServiceImpl implements DestinoService {
         }
     }
 
-    /**
-     * La duración vive en los itinerarios (fecha inicio/fin), no en el destino. Un destino cumple si
-     * al menos uno de sus itinerarios cae en el rango; sin itinerarios no cumple.
-     */
     private List<Destino> filtrarPorDuracion(List<Destino> destinos, FiltroDestinoDto f) {
         if (destinos.isEmpty()) {
             return destinos;
@@ -144,10 +133,12 @@ public class DestinoServiceImpl implements DestinoService {
         destino.setDescripcion(dto.getDescripcion().trim());
         destino.setUbicacion(dto.getUbicacion().trim());
         destino.setPrecioBase(dto.getPrecioBase());
+        // --- AÑADIDO PROCESO 2 ---
+        destino.setDificultad(dto.getDificultad() != null ? dto.getDificultad().trim() : null);
+        destino.setAccesibilidad(dto.getAccesibilidad());
         destino.setFotosUrl(normalizarFotos(dto.getFotosUrl()));
     }
 
-    /** Sin vacíos ni repetidas: la tabla destino_fotos tiene UNIQUE (destino_id, foto_url). */
     private List<String> normalizarFotos(List<String> fotos) {
         if (fotos == null) {
             return new ArrayList<>();
@@ -167,6 +158,9 @@ public class DestinoServiceImpl implements DestinoService {
         dto.setDescripcion(destino.getDescripcion());
         dto.setUbicacion(destino.getUbicacion());
         dto.setPrecioBase(destino.getPrecioBase());
+        // --- AÑADIDO PROCESO 2 ---
+        dto.setDificultad(destino.getDificultad());
+        dto.setAccesibilidad(destino.getAccesibilidad());
         dto.setFotosUrl(destino.getFotosUrl() != null ? new ArrayList<>(destino.getFotosUrl()) : new ArrayList<>());
         return dto;
     }

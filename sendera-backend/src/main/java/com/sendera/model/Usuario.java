@@ -31,10 +31,16 @@ public class Usuario {
     @Column(name = "fecha_registro", nullable = false, updatable = false)
     private LocalDateTime fechaRegistro;
 
+    @Column(nullable = false, length = 20)
+    private String rol;
+
     @PrePersist
     void antesDePersistir() {
         if (fechaRegistro == null) {
             fechaRegistro = LocalDateTime.now();
+        }
+        if (rol == null || rol.isBlank()) {
+            rol = "ROLE_CLIENTE";
         }
     }
 }

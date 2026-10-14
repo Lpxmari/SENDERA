@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { fetchDestinos } from '../services/destinoService';
-import { Destino } from '../types/destino';
+import { Destino, DificultadEnum } from '../types/destino';
 import { formatearPrecio } from '../utils/formatearPrecio';
 import {
     Orden,
@@ -22,6 +22,26 @@ const IconoCorazon = ({ lleno }: { lleno: boolean }) => (
     </svg>
 );
 
+const IconoDificultad = () => (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+        <line x1="4" y1="22" x2="4" y2="15" />
+    </svg>
+);
+
+const IconoAccesibilidad = () => (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <circle cx="12" cy="4" r="2" />
+        <path d="M12 6v6m0 0l-3 6m3-6l3 6M6 10h12" />
+    </svg>
+);
+
+const opcionesDificultad: { id: DificultadEnum; etiqueta: string }[] = [
+    { id: 'BAJA', etiqueta: 'Baja' },
+    { id: 'MODERADA', etiqueta: 'Moderada' },
+    { id: 'ALTA', etiqueta: 'Alta' },
+];
+
 const ResultadosBusqueda = () => {
     const [searchParams] = useSearchParams();
     const terminoOriginal = (searchParams.get('destino') ?? '').trim();
@@ -34,9 +54,15 @@ const ResultadosBusqueda = () => {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
+    // Estados de filtros existentes
     const [presupuesto, setPresupuesto] = useState<string[]>([]);
     const [servicios, setServicios] = useState<string[]>([]);
     const [estrellas, setEstrellas] = useState<number[]>([]);
+    
+    // --- NUEVOS ESTADOS PROCESO 2 ---
+    const [dificultades, setDificultades] = useState<DificultadEnum[]>([]);
+    const [soloAccesibles, setSoloAccesibles] = useState<boolean>(false);
+
     const [orden, setOrden] = useState<Orden>('recomendados');
     const [guardados, setGuardados] = useState<number[]>([]);
     const [filtrosAbiertos, setFiltrosAbiertos] = useState<boolean>(false);
@@ -54,12 +80,14 @@ const ResultadosBusqueda = () => {
         cargarDestinos();
     }, []);
 
-    const hayFiltros = presupuesto.length + servicios.length + estrellas.length > 0;
+    const hayFiltros = presupuesto.length + servicios.length + estrellas.length + dificultades.length > 0 || soloAccesibles;
 
     const limpiar = () => {
         setPresupuesto([]);
         setServicios([]);
         setEstrellas([]);
+        setDificultades([]);
+        setSoloAccesibles(false);
     };
 
     const resultados = useMemo(() => {
@@ -72,13 +100,18 @@ const ResultadosBusqueda = () => {
             if (rangosActivos.length > 0 && !rangosActivos.some((r) => destino.precioBase >= r.min && destino.precioBase <= r.max)) return false;
             if (!servicios.every((servicio) => datos.servicios.includes(servicio))) return false;
             if (estrellas.length > 0 && !estrellas.includes(datos.estrellas)) return false;
+
+            // --- FILTRADO PROCESO 2 ---
+            if (dificultades.length > 0 && !dificultades.includes(destino.dificultad)) return false;
+            if (soloAccesibles && !destino.accesibilidad) return false;
+
             return true;
         });
 
         if (orden === 'precio-asc') return [...filtrados].sort((a, b) => a.precioBase - b.precioBase);
         if (orden === 'precio-desc') return [...filtrados].sort((a, b) => b.precioBase - a.precioBase);
         return filtrados;
-    }, [destinos, busqueda, presupuesto, servicios, estrellas, orden]);
+    }, [destinos, busqueda, presupuesto, servicios, estrellas, dificultades, soloAccesibles, orden]);
 
     const titulo = `${terminoOriginal || 'Todos los destinos'}: ${resultados.length} ${resultados.length === 1 ? 'alojamiento' : 'alojamientos'}`;
 
@@ -102,6 +135,34 @@ const ResultadosBusqueda = () => {
                 </button>
 
                 <div className={`filtros__cuerpo ${filtrosAbiertos ? 'filtros__cuerpo--abierto' : ''}`}>
+                    {/* --- NUEVO FILTRO: DIFICULTAD --- */}
+                    <fieldset className="filtros__grupo">
+                        <legend>Dificultad del sendero</legend>
+                        {opcionesDificultad.map((dif) => (
+                            <label key={dif.id}>
+                                <input
+                                    type="checkbox"
+                                    checked={dificultades.includes(dif.id)}
+                                    onChange={() => setDificultades((lista) => alternar(lista, dif.id))}
+                                />
+                                {dif.etiqueta}
+                            </label>
+                        ))}
+                    </fieldset>
+
+                    {/* --- NUEVO FILTRO: ACCESIBILIDAD --- */}
+                    <fieldset className="filtros__grupo">
+                        <legend>Accesibilidad</legend>
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={soloAccesibles}
+                                onChange={(e) => setSoloAccesibles(e.target.checked)}
+                            />
+                            Solo accesibles
+                        </label>
+                    </fieldset>
+
                     <fieldset className="filtros__grupo">
                         <legend>Tu presupuesto</legend>
                         {rangosPresupuesto.map((rango) => (
@@ -213,6 +274,23 @@ const ResultadosBusqueda = () => {
                                     </h3>
                                     <p className="resultado-card__zona">{destino.ubicacion}</p>
                                     <p className="resultado-card__descripcion">{destino.descripcion}</p>
+
+                                    {/* --- ETIQUETAS BADGES MOSTRADAS EN LA TARJETA --- */}
+                                    <div className="resultado-card__atributos" style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                                        {destino.dificultad && (
+                                            <span className={`badge badge--dificultad-${destino.dificultad.toLowerCase()}`}>
+                                                <IconoDificultad />
+                                                {destino.dificultad}
+                                            </span>
+                                        )}
+                                        {destino.accesibilidad && (
+                                            <span className="badge badge--accesible">
+                                                <IconoAccesibilidad />
+                                                Accesible
+                                            </span>
+                                        )}
+                                    </div>
+
                                     <span className={`insignia ${datos.insignia === 'Oferta de temporada' ? 'insignia--oferta' : ''}`}>
                                         {datos.insignia}
                                     </span>

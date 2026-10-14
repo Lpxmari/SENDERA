@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,6 +37,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 @Configuration
+@EnableWebSecurity
 public class SecurityConfig {
 
     /** Rutas de autenticación que no requieren sesión. */
@@ -93,6 +95,21 @@ public class SecurityConfig {
     @Bean
     public JwtDecoder jwtDecoder(SecretKey jwtSecretKey) {
         return NimbusJwtDecoder.withSecretKey(jwtSecretKey).macAlgorithm(MacAlgorithm.HS256).build();
+    }
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/destinos/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/destinos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/destinos/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/destinos/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                );
+        return http.build();
     }
 
     private static RequestMatcher rutasPublicas() {

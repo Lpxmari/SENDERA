@@ -4,16 +4,26 @@ CREATE DATABASE IF NOT EXISTS sendera
 
 USE sendera;
 
+CREATE TABLE IF NOT EXISTS usuarios (
+                                        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                        nombre VARCHAR(150) NOT NULL,
+                                        correo VARCHAR(150) NOT NULL UNIQUE,
+                                        contrasena VARCHAR(255) NOT NULL,
+                                        rol VARCHAR(20) NOT NULL DEFAULT 'ROLE_CLIENTE'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS destinos (
                                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
                                         nombre VARCHAR(255) NOT NULL,
-    descripcion TEXT NOT NULL,
-    ubicacion VARCHAR(255) NOT NULL,
-    precio_base DECIMAL(12, 2) NOT NULL,
-    CONSTRAINT chk_destinos_precio_base CHECK (precio_base >= 0),
-    INDEX idx_destinos_nombre (nombre),
-    INDEX idx_destinos_ubicacion (ubicacion)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+                                        descripcion TEXT NOT NULL,
+                                        ubicacion VARCHAR(255) NOT NULL,
+                                        precio_base DECIMAL(12, 2) NOT NULL,
+                                        dificultad VARCHAR(20) NOT NULL DEFAULT 'MODERADA',
+                                        accesibilidad TINYINT(1) NOT NULL DEFAULT 0,
+                                        CONSTRAINT chk_destinos_precio_base CHECK (precio_base >= 0),
+                                        INDEX idx_destinos_nombre (nombre),
+                                        INDEX idx_destinos_ubicacion (ubicacion)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS destino_fotos (
                                              id BIGINT AUTO_INCREMENT PRIMARY KEY,
