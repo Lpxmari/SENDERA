@@ -1,0 +1,39 @@
+openapi: 3.0.3
+info:
+  title: SENDERA API
+  version: 1.0.0
+  description: >
+    Contrato compartido entre frontend y backend de SENDERA.
+    Estado inicial: los endpoints están pendientes de revisión y aprobación
+    por el equipo. No asumir rutas definitivas hasta completar este documento.
+servers:
+  - url: /api/v1
+    description: Base de la API versionada
+paths: {}
+components:
+  schemas:
+    ApiError:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Fecha y hora en que se generó el error.
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: Bad Request
+        message:
+          type: string
+          description: Mensaje seguro y comprensible; no debe incluir detalles internos.
+        path:
+          type: string
+          example: /api/v1/destinos-turisticos
