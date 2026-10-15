@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom';
 import { Destino } from '../types/destino';
+import { serviciosAlojamiento } from '../utils/datosAlojamiento';
 import { formatearPrecio } from '../utils/formatearPrecio';
+import IconoServicio from './IconoServicio';
 
 interface Props {
     destino: Destino;
@@ -23,9 +25,34 @@ const HotelDestacado = ({ destino }: Props) => {
                 <div className="destacado__info">
                     <h4>Acerca de</h4>
                     <p className="destacado__descripcion">{destino.descripcion}</p>
-                    <ul className="destacado__datos">
-                        <li>{destino.ubicacion}</li>
-                        <li>Desde {formatearPrecio(destino.precioBase)}</li>
+                    <ul className="destacado__datos" aria-label="Datos y servicios">
+                        <li>
+                            <IconoServicio id="ubicacion" />
+                            {destino.ubicacion}
+                        </li>
+                        {destino.accesibilidad && (
+                            <li>
+                                <IconoServicio id="accesibilidad" />
+                                Accesibilidad disponible
+                            </li>
+                        )}
+                        {destino.dificultad && (
+                            <li>
+                                <IconoServicio id="dificultad" />
+                                Dificultad {destino.dificultad.toLowerCase()}
+                            </li>
+                        )}
+                        <li>
+                            <IconoServicio id="precio" />
+                            Desde {formatearPrecio(destino.precioBase)}
+                        </li>
+                        {/* Servicios simulados (datosAlojamiento): el backend aún no los expone. */}
+                        {serviciosAlojamiento.map((servicio) => (
+                            <li key={servicio.id}>
+                                <IconoServicio id={servicio.id} />
+                                {servicio.etiqueta}
+                            </li>
+                        ))}
                     </ul>
                     <Link to={`/destinos/${destino.id}`} className="boton boton--naranja">
                         Ver detalles

@@ -244,6 +244,8 @@
   font-size: 14px;
   color: var(--texto-suave);
 }
+.destacado__datos li { display: flex; align-items: center; gap: 10px; }
+.destacado__datos svg { flex-shrink: 0; color: var(--verde); }
 
 /* ===== Rejillas y tarjetas ===== */
 .rejilla { display: grid; gap: 20px; }

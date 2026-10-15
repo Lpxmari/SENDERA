@@ -4,6 +4,7 @@ import { obtenerMensajeError } from '../services/apiClient';
 import { getDestinoPorId } from '../services/destinoService';
 import { Destino } from '../types/destino';
 import { formatearPrecio } from '../utils/formatearPrecio';
+import IconoServicio from '../components/IconoServicio';
 import {
     calificacionAlojamiento,
     categoriaAlojamiento,
@@ -19,52 +20,6 @@ const calcularNoches = (llegada: string, salida: string): number => {
     if (!llegada || !salida) return 0;
     const diferencia = (new Date(salida).getTime() - new Date(llegada).getTime()) / MS_POR_DIA;
     return Number.isFinite(diferencia) && diferencia > 0 ? Math.round(diferencia) : 0;
-};
-
-const IconoServicio = ({ id }: { id: string }) => {
-    const props = {
-        viewBox: '0 0 24 24',
-        width: 18,
-        height: 18,
-        fill: 'none',
-        stroke: 'currentColor',
-        strokeWidth: 1.8,
-        strokeLinecap: 'round' as const,
-        strokeLinejoin: 'round' as const,
-        'aria-hidden': true,
-    };
-    switch (id) {
-        case 'piscina':
-            return (
-                <svg {...props}>
-                    <path d="M3 17c2 0 2-1.5 4.5-1.5S10 17 12 17s2.5-1.5 4.5-1.5S19 17 21 17" />
-                    <path d="M3 21c2 0 2-1.5 4.5-1.5S10 21 12 21s2.5-1.5 4.5-1.5S19 21 21 21" />
-                    <path d="M8 13V6a2 2 0 0 1 4 0M16 13V6a2 2 0 0 0-4 0M8 9h8" />
-                </svg>
-            );
-        case 'desayuno':
-            return (
-                <svg {...props}>
-                    <path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5V9Z" />
-                    <path d="M17 10h1.5a2.5 2.5 0 0 1 0 5H17" />
-                    <path d="M8 3v3M12 3v3" />
-                </svg>
-            );
-        case 'wifi':
-            return (
-                <svg {...props}>
-                    <path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0" />
-                    <circle cx="12" cy="19" r="1" />
-                </svg>
-            );
-        default:
-            return (
-                <svg {...props}>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M9.5 16.5V8h3.2a2.6 2.6 0 0 1 0 5.2H9.5" />
-                </svg>
-            );
-    }
 };
 
 const IconoPerfil = () => (
