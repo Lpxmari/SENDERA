@@ -1,8 +1,8 @@
 ---
 description: Manejo consistente de errores
 paths:
-  - "backend/**/*.java"
-  - "frontend/src/**/*"
+  - "**/src/main/java/**/*.java"
+  - "**/sendera-front/src/**/*"
 ---
 
 - El backend usa un manejador global de excepciones y el formato `ApiError` definido en `docs/07-contrato-api.md` y `docs/openapi.yaml`.

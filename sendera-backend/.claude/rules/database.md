@@ -1,9 +1,9 @@
 ---
 description: Convenciones de base de datos y persistencia
 paths:
-  - "backend/**/*.java"
-  - "backend/src/main/resources/**/*"
-  - "docs/04-modelo-entidad-relacion.md"
+  - "**/src/main/java/**/*.java"
+  - "**/src/main/resources/**/*"
+  - "**/docs/04-modelo-entidad-relacion.md"
 ---
 
 - Tablas en plural, minúsculas y `snake_case`; columnas en `snake_case`.

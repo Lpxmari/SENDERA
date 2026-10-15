@@ -1,8 +1,8 @@
 ---
 description: Reglas de pruebas automatizadas
 paths:
-  - "backend/src/test/**/*"
-  - "frontend/src/**/*"
+  - "**/src/test/**/*"
+  - "**/sendera-front/src/**/*"
 ---
 
 - Añade pruebas para el comportamiento nuevo y para regresiones relevantes.

@@ -1,7 +1,7 @@
 ---
 description: Reglas React y TypeScript para SENDERA
 paths:
-  - "frontend/src/**/*"
+  - "**/sendera-front/src/**/*"
 ---
 
 - Componentes, interfaces, tipos y enums en `PascalCase`.
