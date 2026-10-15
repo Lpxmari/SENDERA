@@ -8,6 +8,7 @@ import ResultadosBusqueda from './pages/ResultadosBusqueda';
 import DetalleDestino from './pages/DetalleDestino';
 import FormularioReserva from './pages/FormularioReserva';
 import ConfirmacionReserva from './pages/ConfirmacionReserva';
+import Perfil from './pages/Perfil';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import RecuperarContrasena from './pages/RecuperarContrasena';
@@ -45,6 +46,7 @@ function App() {
                         {/* Requieren sesión iniciada */}
                         <Route element={<RutaProtegida />}>
                             <Route path="/reservar/:destinoId" element={<FormularioReserva />} />
+                            <Route path="/perfil" element={<Perfil />} />
                             <Route path="/confirmacion" element={<ConfirmacionReserva />} />
                         </Route>
                     </Route>
