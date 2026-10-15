@@ -1,8 +1,8 @@
 ---
 description: Reglas obligatorias de arquitectura para cambios del backend y frontend SENDERA
 paths:
-  - "backend/**/*.java"
-  - "frontend/src/**/*"
+  - "**/src/main/java/**/*.java"
+  - "**/sendera-front/src/**/*"
 ---
 
 - Mantén separación de responsabilidades y funciones pequeñas con una única responsabilidad clara.

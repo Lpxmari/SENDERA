@@ -1,7 +1,7 @@
 ---
 description: Convenciones Java y Spring Boot
 paths:
-  - "backend/**/*.java"
+  - "**/src/main/java/**/*.java"
 ---
 
 - Usa el paquete raíz `com.sendera`.

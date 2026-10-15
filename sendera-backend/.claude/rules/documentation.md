@@ -1,9 +1,9 @@
 ---
 description: Reglas de documentación y trazabilidad
 paths:
-  - "backend/**/*.java"
-  - "frontend/src/**/*"
-  - "docs/**/*.md"
+  - "**/src/main/java/**/*.java"
+  - "**/sendera-front/src/**/*"
+  - "**/docs/**/*.md"
 ---
 
 - Documenta intención, restricciones y reglas no obvias; evita comentarios que repitan literalmente el código.

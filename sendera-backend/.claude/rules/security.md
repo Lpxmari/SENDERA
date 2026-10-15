@@ -1,8 +1,8 @@
 ---
 description: Reglas de seguridad para SENDERA
 paths:
-  - "backend/**/*.java"
-  - "frontend/src/**/*"
+  - "**/src/main/java/**/*.java"
+  - "**/sendera-front/src/**/*"
 ---
 
 - Nunca almacenes contraseñas en texto plano; usa `PasswordEncoder` seguro.
