@@ -68,6 +68,7 @@ const Encabezado = () => {
                 <Link to="/">Inicio</Link>
                 {autenticado ? (
                     <>
+                        <Link to="/perfil">Mi perfil</Link>
                         <span className="encabezado__usuario">Hola, {usuario?.nombre}</span>
                         <button
                             type="button"
