@@ -1,5 +1,6 @@
 package com.sendera.security;
 
+import com.sendera.config.SecurityConfig;
 import com.sendera.model.Usuario;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 
 /** Genera los tokens JWT (HS256) que el frontend envía en el encabezado Authorization. */
 @Service
@@ -27,11 +29,12 @@ public class JwtService {
     public String generar(Usuario usuario) {
         Instant ahora = Instant.now();
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("sendera")
+                .issuer(SecurityConfig.EMISOR_JWT)
                 .subject(usuario.getCorreo())
                 .issuedAt(ahora)
                 .expiresAt(ahora.plus(Duration.ofHours(expiracionHoras)))
                 .claim("uid", usuario.getId())
+                .claim("roles", List.of(usuario.getRol() != null ? usuario.getRol() : "ROLE_CLIENTE"))
                 .build();
         JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
         return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,7 +39,7 @@ public class CrearDestinoDto {
 
     // --- AÑADIDO PARA EL PROCESO 2 ---
     @NotBlank(message = "La dificultad del destino es obligatoria.")
-    @Size(max = 20, message = "La dificultad admite hasta 20 caracteres.")
+    @Pattern(regexp = "BAJA|MODERADA|ALTA", message = "La dificultad debe ser BAJA, MODERADA o ALTA.")
     private String dificultad;
 
     @NotNull(message = "La accesibilidad es obligatoria.")

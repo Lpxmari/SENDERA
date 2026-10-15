@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { obtenerMensajeError } from '../services/apiClient';
 import { fetchDestinos } from '../services/destinoService';
 import { Destino, DificultadEnum } from '../types/destino';
 import { formatearPrecio } from '../utils/formatearPrecio';
@@ -72,7 +73,7 @@ const ResultadosBusqueda = () => {
             try {
                 setDestinos(await fetchDestinos());
             } catch (err) {
-                setError('No pudimos cargar los alojamientos. Verifica que el backend esté corriendo en el puerto 8080.');
+                setError(obtenerMensajeError(err, 'No pudimos cargar los alojamientos. Intenta de nuevo más tarde.'));
             } finally {
                 setLoading(false);
             }

@@ -28,7 +28,7 @@ El orden puede ajustarse en equipo, pero no se deben saltar decisiones que bloqu
 - Configurar Spring Boot, validación, manejo global de errores y OpenAPI.
 - Configurar React + TypeScript, estructura `components/`, `pages/`, `services/`, `types/`, `utils/`.
 - Implementar contratos de error y convenciones compartidas.
-- Configurar base de datos y migraciones aprobadas.
+- Configurar la base de datos con el esquema aprobado (`docs/schema.sql`); sin migraciones.
 
 ## Fase 5 — Seguridad y usuarios
 - Implementar registro, autenticación, recuperación y perfil.
@@ -60,3 +60,17 @@ El orden puede ajustarse en equipo, pero no se deben saltar decisiones que bloqu
 
 ## Regla para cada tarea
 Antes de codificar, Claude Code debe indicar requisitos afectados, archivos previstos, riesgos, dudas y pruebas. Al terminar, debe resumir archivos cambiados, decisiones, comandos ejecutados y resultados reales.
+
+
+## Estado real (octubre 2026)
+| Fase | Estado |
+|---|---|
+| 1 Preparación | Hecha en gran parte (falta `.env.example` definitivo y lint/formato del backend) |
+| 2 Requisitos | Pendiente de aprobación formal |
+| 3 MER | **Aprobado (2026-10-14)**; registrar la aprobación formal en el historial. Implementado en la Fase C (ver `docs/04` §4.6) |
+| 4 Fundamentos | Hecha: validación, manejo global de errores y contrato OpenAPI único en `docs/openapi.yaml` |
+| 5 Seguridad y usuarios | Parcial: registro, login, recuperación y roles en JWT. Faltan perfil, rate limiting y cierre por inactividad |
+| 6 Catálogo | Parcial: destinos con filtros. Faltan actividades y paginación |
+| 7 Itinerarios | Sin iniciar |
+| 8 Reservas | Parcial: crear/cancelar con propietario, monto y cupos validados en servidor. Faltan pagos y notificaciones |
+| 9 Calidad | Parcial: pruebas unitarias, de seguridad y de integración con H2; faltan pruebas contra MySQL y de frontend |

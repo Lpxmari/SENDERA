@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -20,6 +22,7 @@ import org.springframework.web.util.HtmlUtils;
 public class CorreoServiceImpl implements CorreoService {
 
     private final ObjectProvider<JavaMailSender> mailSender;
+    private final Environment entorno;
 
     @Value("${app.mail.remitente}")
     private String remitente;
@@ -33,8 +36,12 @@ public class CorreoServiceImpl implements CorreoService {
     public void enviarRecuperacionContrasena(String correo, String nombre, String enlace) {
         JavaMailSender sender = mailSender.getIfAvailable();
         if (sender == null) {
-            // Solo desarrollo: sin SMTP configurado (SPRING_MAIL_HOST) el enlace se imprime en consola.
-            log.warn("SMTP no configurado. Enlace de recuperación para {}: {}", correo, enlace);
+            // Solo en el perfil "dev" se imprime el enlace; en otros entornos nunca se registra el token.
+            if (entorno.acceptsProfiles(Profiles.of("dev"))) {
+                log.warn("SMTP no configurado. Enlace de recuperación para {}: {}", correo, enlace);
+            } else {
+                log.warn("SMTP no configurado: no se envió el correo de recuperación.");
+            }
             return;
         }
         try {
@@ -46,7 +53,7 @@ public class CorreoServiceImpl implements CorreoService {
             helper.setText(textoPlano(nombre, enlace), htmlCorreo(nombre, enlace));
             sender.send(mensaje);
         } catch (MessagingException | MailException e) {
-            log.error("No se pudo enviar el correo de recuperación a {}", correo, e);
+            log.error("No se pudo enviar el correo de recuperación: {}", e.getClass().getSimpleName());
         }
     }
 

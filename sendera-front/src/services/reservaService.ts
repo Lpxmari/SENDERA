@@ -1,18 +1,8 @@
-import axios, { AxiosError } from 'axios';
-import { Reserva } from '../types/reserva';
-import { ApiError } from '../types/api';
+import { CrearReservaRequest, Reserva } from '../types/reserva';
+import apiClient from './apiClient';
 
-const API_URL = 'http://localhost:8080/api/v1/reservas';
-
-export const crearReserva = async (reservaData: Omit<Reserva, 'id'>): Promise<Reserva> => {
-    try {
-        const response = await axios.post<Reserva>(API_URL, reservaData);
-        return response.data; // retorna estado 201 Created
-    } catch (error) {
-        const err = error as AxiosError<ApiError>;
-        if (err.response) {
-            console.error(`Error ${err.response.data.status}: ${err.response.data.message}`);
-        }
-        throw error;
-    }
+/** El monto y el estado los calcula el backend; aquí solo se envía lo que el contrato permite. */
+export const crearReserva = async (reservaData: CrearReservaRequest): Promise<Reserva> => {
+    const { data } = await apiClient.post<Reserva>('/reservas', reservaData);
+    return data; // 201 Created
 };

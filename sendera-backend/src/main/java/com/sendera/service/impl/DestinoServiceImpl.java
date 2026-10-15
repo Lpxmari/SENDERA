@@ -1,5 +1,6 @@
 package com.sendera.service.impl;
 
+import com.sendera.exception.RecursoNoEncontradoException;
 import com.sendera.dto.CrearDestinoDto;
 import com.sendera.dto.DestinoDto;
 import com.sendera.dto.FiltroDestinoDto;
@@ -19,13 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DestinoServiceImpl implements DestinoService {
+
+    private static final Set<String> DIFICULTADES = Set.of("BAJA", "MODERADA", "ALTA");
 
     private final DestinoRepository destinoRepository;
     private final ItinerarioRepository itinerarioRepository;
@@ -80,6 +85,13 @@ public class DestinoServiceImpl implements DestinoService {
     // ------------------------------------------------------------------ filtros
 
     private void validarFiltro(FiltroDestinoDto f) {
+        if (f.getDificultad() != null && !f.getDificultad().isBlank()) {
+            String dificultad = f.getDificultad().trim().toUpperCase(Locale.ROOT);
+            if (!DIFICULTADES.contains(dificultad)) {
+                throw new FiltroInvalidoException("La dificultad debe ser BAJA, MODERADA o ALTA.");
+            }
+            f.setDificultad(dificultad);
+        }
         if ((f.getPrecioMin() != null && f.getPrecioMin().signum() < 0)
                 || (f.getPrecioMax() != null && f.getPrecioMax().signum() < 0)) {
             throw new FiltroInvalidoException("Los precios no pueden ser negativos.");
@@ -125,7 +137,7 @@ public class DestinoServiceImpl implements DestinoService {
 
     private Destino buscarEntidad(Long id) {
         return destinoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Destino no encontrado con id: " + id));
+                .orElseThrow(() -> new RecursoNoEncontradoException("Destino no encontrado con id: " + id));
     }
 
     private void aplicarDatos(Destino destino, CrearDestinoDto dto) {

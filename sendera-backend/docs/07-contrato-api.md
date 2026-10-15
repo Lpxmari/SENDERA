@@ -24,25 +24,26 @@ El contrato puede comenzar incompleto mientras los requisitos y el MER estén pe
 - Documentar endpoints con OpenAPI.
 - Endpoints protegidos requieren el mecanismo de autenticación acordado, por ejemplo `Authorization: Bearer <token>`.
 
-## 7.3 Rutas candidatas
-Son propuestas para revisión, no contratos aprobados ni garantía de que todos los recursos estén definidos por el MER.
+## 7.3 Rutas implementadas (decisión ADR-004)
+El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1` lo aporta el `context-path` del servidor; los controladores declaran rutas sin él. La definición completa y vigente está en `docs/openapi.yaml`.
 
-| Método | Ruta candidata | Uso | Respuesta típica |
+| Método | Ruta | Acceso | Respuestas |
 |---|---|---|---|
-| POST | `/api/v1/usuarios` | Registrar usuario | 201 Created |
-| POST | `/api/v1/auth/login` | Iniciar sesión | 200 OK |
-| POST | `/api/v1/auth/logout` | Cerrar sesión, si el diseño lo requiere | 204 No Content o 200 |
-| POST | `/api/v1/auth/recuperacion` | Solicitar recuperación | 200 OK con mensaje neutro |
-| GET | `/api/v1/destinos-turisticos` | Listar/buscar destinos | 200 OK |
-| GET | `/api/v1/destinos-turisticos/{destinoId}` | Consultar destino | 200 OK |
-| GET | `/api/v1/actividades-turisticas` | Listar/filtrar actividades | 200 OK |
-| GET | `/api/v1/actividades-turisticas/{actividadId}` | Consultar actividad | 200 OK |
-| GET/POST | `/api/v1/itinerarios` | Listar o crear itinerarios propios | 200 / 201 |
-| GET/PUT/DELETE | `/api/v1/itinerarios/{itinerarioId}` | Consultar, actualizar o eliminar | 200 / 204 |
-| GET/POST | `/api/v1/reservas` | Consultar o crear reservas | 200 / 201 |
-| GET/DELETE | `/api/v1/reservas/{reservaId}` | Consultar/cancelar según contrato | 200 / 204 |
+| POST | `/api/v1/auth/registro` | Público | 201, 400, 409 |
+| POST | `/api/v1/auth/login` | Público | 200, 400, 401 |
+| POST | `/api/v1/auth/recuperar-contrasena` | Público | 204, 400 |
+| POST | `/api/v1/auth/cambiar-contrasena` | Público | 204, 400 |
+| GET | `/api/v1/auth/me` | Autenticado | 200, 401 |
+| GET | `/api/v1/destinos` (filtros: `q`, `precioMin`, `precioMax`, `duracionMin`, `duracionMax`, `dificultad`, `accesibilidad`) | Público | 200, 400 |
+| GET | `/api/v1/destinos/{id}` | Público | 200, 404 |
+| POST / PUT / DELETE | `/api/v1/destinos`, `/api/v1/destinos/{id}` | `ROLE_ADMIN` | 201 / 200 / 204, 400, 401, 403, 404, 409 |
+| GET / POST | `/api/v1/reservas` | Autenticado | 200 / 201, 400, 401, 404, 409 |
+| GET | `/api/v1/reservas/{id}` | Autenticado | 200, 401, 404 |
+| PATCH | `/api/v1/reservas/{id}/cancelar` | Autenticado | 200, 401, 404, 409 |
 
-Revisar los verbos y rutas finales con el equipo, las reglas de negocio y el MER aprobado.
+**Propiedad de las reservas:** cada reserva pertenece al usuario del JWT. `GET /reservas` devuelve solo las propias (el administrador ve todas) y consultar o cancelar una reserva ajena responde 404, para no revelar que existe.
+
+**Rutas aún sin implementar** (siguen siendo candidatas): actividades turísticas, itinerarios (CRUD del usuario), perfil (`PUT /auth/me`), cierre de sesión.
 
 ## 7.4 Códigos HTTP
 - **200 OK:** consulta o actualización exitosa con cuerpo de respuesta.

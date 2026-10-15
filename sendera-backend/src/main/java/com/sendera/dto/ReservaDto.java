@@ -12,5 +12,5 @@ public class ReservaDto {
     private Long itinerarioId;
     private LocalDate fechaReserva;
     private BigDecimal montoTotal;
-    private String estadoPago;
+    private String estadoReserva;
 }

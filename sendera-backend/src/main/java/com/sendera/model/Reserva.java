@@ -17,6 +17,11 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Propietario de la reserva; la autorización por recurso se basa en este campo (MER aprobado). */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "itinerario_id", nullable = false)
     private Itinerario itinerario;
@@ -28,6 +33,6 @@ public class Reserva {
     private BigDecimal montoTotal;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado_pago", nullable = false, length = 20)
-    private EstadoReserva estadoPago;
+    @Column(name = "estado_reserva", nullable = false, length = 20)
+    private EstadoReserva estadoReserva;
 }

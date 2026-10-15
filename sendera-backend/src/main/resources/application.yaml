@@ -6,16 +6,19 @@ server:
 spring:
   application:
     name: sendera-backend
+  config:
+    # Carga el archivo .env local (ignorado por Git) si existe; las variables de entorno reales tienen prioridad.
+    import: optional:file:.env[.properties],optional:file:./sendera-backend/.env[.properties]
   datasource:
     url: jdbc:mysql://localhost:3307/sendera?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: ${DB_USER:root}
-    password: ${DB_PASSWORD:mari}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: validate
-    show-sql: true
-    open-in-view: true
+    show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
@@ -34,10 +37,13 @@ spring:
             enable: true
 
 app:
+  cors:
+    # Lista separada por comas. En produccion define CORS_ORIGINS con el dominio real del frontend.
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   jwt:
-    # Minimo 32 caracteres. En produccion define JWT_SECRET en el entorno.
-    secret: ${JWT_SECRET:sendera-clave-solo-para-desarrollo-cambiar-en-produccion}
+    # Obligatorio, minimo 32 caracteres. Definelo en el entorno (JWT_SECRET); no lo guardes en el repositorio.
+    secret: ${JWT_SECRET}
     expiracion-horas: ${JWT_EXPIRACION_HORAS:24}
   recuperacion:
     expiracion-minutos: ${RECUPERACION_EXPIRACION_MINUTOS:30}

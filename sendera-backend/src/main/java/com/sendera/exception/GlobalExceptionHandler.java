@@ -2,30 +2,27 @@ package com.sendera.exception;
 
 import com.sendera.dto.ApiErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ApiErrorDto> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
-        ApiErrorDto error = ApiErrorDto.builder()
-                .timestamp(LocalDateTime.now().toString())
-                .status(HttpStatus.NOT_FOUND.value())
-                .error(HttpStatus.NOT_FOUND.getReasonPhrase())
-                .message(ex.getMessage())
-                .path(request.getRequestURI())
-                .build();
-
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    @ExceptionHandler(RecursoNoEncontradoException.class)
+    public ResponseEntity<ApiErrorDto> handleNoEncontrado(RecursoNoEncontradoException ex, HttpServletRequest request) {
+        return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
     // ---- Autenticación y validación (más específicos que RuntimeException, por eso tienen prioridad) ----
@@ -55,6 +52,11 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(ReservaNoPermitidaException.class)
+    public ResponseEntity<ApiErrorDto> handleReservaNoPermitida(ReservaNoPermitidaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErrorDto> handleTipoIncorrecto(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         return construir(HttpStatus.BAD_REQUEST, "El valor del parámetro '" + ex.getName() + "' no es válido.", request);
@@ -74,9 +76,41 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.BAD_REQUEST, "El cuerpo de la petición no es válido.", request);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ApiErrorDto> handleAccesoDenegado(AccessDeniedException ex, HttpServletRequest request) {
+        return construir(HttpStatus.FORBIDDEN, "No tienes permisos para realizar esta acción.", request);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ApiErrorDto> handleNoAutenticado(AuthenticationException ex, HttpServletRequest request) {
+        return construir(HttpStatus.UNAUTHORIZED, "Tu sesión no es válida o expiró. Inicia sesión de nuevo.", request);
+    }
+
+    /** Último recurso: errores de Spring MVC conservan su código; el resto es un 500 sin detalles internos. */
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiErrorDto> handleInesperado(Exception ex, HttpServletRequest request) {
+        if (ex instanceof ErrorResponse errorResponse) {
+            HttpStatus status = HttpStatus.valueOf(errorResponse.getStatusCode().value());
+            if (status.is4xxClientError()) {
+                return construir(status, mensajeCliente(status), request);
+            }
+        }
+        log.error("Error inesperado en {} {}", request.getMethod(), request.getRequestURI(), ex);
+        return construir(HttpStatus.INTERNAL_SERVER_ERROR, "Ocurrió un error inesperado. Intenta de nuevo más tarde.", request);
+    }
+
+    private String mensajeCliente(HttpStatus status) {
+        return switch (status) {
+            case NOT_FOUND -> "El recurso solicitado no existe.";
+            case METHOD_NOT_ALLOWED -> "El método HTTP no está permitido para esta ruta.";
+            case UNSUPPORTED_MEDIA_TYPE -> "El tipo de contenido no es compatible.";
+            default -> "La solicitud no es válida.";
+        };
+    }
+
     private ResponseEntity<ApiErrorDto> construir(HttpStatus status, String mensaje, HttpServletRequest request) {
         ApiErrorDto error = ApiErrorDto.builder()
-                .timestamp(LocalDateTime.now().toString())
+                .timestamp(OffsetDateTime.now().toString())
                 .status(status.value())
                 .error(status.getReasonPhrase())
                 .message(mensaje)

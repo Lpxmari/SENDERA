@@ -14,7 +14,7 @@ backend/
     │   │   ├── controller/
     │   │   ├── service/
     │   │   ├── repository/
-    │   │   ├── entity/
+    │   │   ├── model/        # entidades JPA (nombre vigente; antes "entity")
     │   │   ├── dto/
     │   │   ├── exception/
     │   │   ├── config/
@@ -29,7 +29,7 @@ Los paquetes `config` e `integration` se incluyen cuando sean necesarios. Los no
 - **controller:** recibir HTTP, validar el contrato, invocar servicios y devolver códigos/respuestas. No implementar reglas de negocio ni acceder directamente a repositorios.
 - **service:** coordinar casos de uso, reglas de negocio y transacciones. Mantener funciones enfocadas en una responsabilidad.
 - **repository:** consultas y persistencia mediante Spring Data JPA. No exponerlo al frontend.
-- **entity:** representar el modelo persistente aprobado. No crear entidades definitivas mientras el MER esté pendiente.
+- **model (entity):** representar el modelo persistente aprobado. No crear entidades definitivas mientras el MER esté pendiente.
 - **dto:** modelos de entrada/salida de API, con validaciones adecuadas. Evitar exponer entidades.
 - **exception:** excepciones de dominio y manejador global, normalmente con `@RestControllerAdvice`.
 - **config:** configuración de Spring Security, CORS y otras capacidades transversales.
@@ -59,7 +59,7 @@ Los paquetes `config` e `integration` se incluyen cuando sean necesarios. Los no
 - No realizar llamadas lentas a proveedores externos dentro de una transacción de BD salvo justificación.
 - Evitar N+1 y cargas de relaciones innecesarias.
 - Validar entradas y aplicar consultas parametrizadas.
-- Definir migraciones y esquema solo tras aprobar el MER.
+- El esquema se define en `docs/schema.sql` (MER aprobado); no se usan migraciones.
 
 ## 5.7 Integraciones
 Usar adaptadores dedicados para aislar formatos y credenciales de los proveedores externos. Definir timeout, tratamiento de errores, reintentos limitados, idempotencia y trazabilidad según el servicio.
@@ -72,9 +72,16 @@ Usar adaptadores dedicados para aislar formatos y credenciales de los proveedore
 - Toda modificación incompatible debe discutirse y documentarse; coordinar los cambios de backend y frontend en el mismo trabajo o en una secuencia explícita.
 - Añadir verificaciones en pruebas o CI para detectar desviaciones entre el contrato y la implementación cuando la herramienta elegida lo permita.
 
-## 5.9 Decisiones pendientes
-- Versión de Java y Spring Boot.
-- Maven o Gradle.
-- Herramienta de migraciones.
+## 5.9 Decisiones tomadas
+- Java 21 y Spring Boot 3.3.4.
+- Gradle como herramienta de construcción.
+- Paquete `model` para las entidades JPA.
+- Servicios como interfaz + implementación (`service/` y `service/impl/`).
+- Rutas implementadas como definitivas (ADR-004).
+- Roles firmados en el claim `roles` del JWT; `ROLE_ADMIN` gestiona la escritura de destinos.
+- H2 en memoria solo para pruebas (perfil `test`); producción usa MySQL.
+
+## 5.10 Decisiones pendientes
+- Mecanismo para la inactividad de 15 minutos (token corto + refresh).
+- Limitación de intentos de login y recuperación.
 - Convención final de nombres de estados y DTOs.
-- Si los servicios serán interfaces + implementación o clases concretas; evitar interfaces ceremoniales sin necesidad.

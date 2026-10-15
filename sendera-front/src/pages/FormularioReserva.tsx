@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { crearReserva } from '../services/reservaService';
-import { Reserva } from '../types/reserva';
+import { obtenerMensajeError } from '../services/apiClient';
+import { CrearReservaRequest } from '../types/reserva';
 
 const FormularioReserva = () => {
     const { destinoId } = useParams<{ destinoId: string }>();
@@ -12,17 +13,17 @@ const FormularioReserva = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const nuevaReserva: Omit<Reserva, 'id'> = {
-                itinerarioId: Number(destinoId), // Relacionamos la reserva con el destino actual
+            // PENDIENTE: la API aún no ofrece itinerarios por destino, así que el id del destino se envía como
+            // itinerarioId. Es incorrecto semánticamente y debe resolverse con un endpoint de itinerarios.
+            const nuevaReserva: CrearReservaRequest = {
+                itinerarioId: Number(destinoId),
                 fechaReserva: fechaReserva,
-                montoTotal: 0, // En un escenario real, esto se calcula en base al precio del destino o se calcula en el backend
-                estadoPago: 'PENDIENTE',
             };
 
             await crearReserva(nuevaReserva);
             navigate('/confirmacion'); // Redirección tras un 201 Created
         } catch (err) {
-            setError('Error al conectar con el servidor para crear la reserva.');
+            setError(obtenerMensajeError(err, 'No se pudo crear la reserva. Intenta de nuevo.'));
         }
     };
 

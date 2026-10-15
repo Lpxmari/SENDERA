@@ -5,7 +5,7 @@ Verificar que los requisitos funcionales y no funcionales se cumplen, con atenci
 
 ## 8.2 Backend
 - **Unitarias:** reglas de servicios, validaciones, transiciones de estado y conflictos de horario.
-- **Integración:** repositorios, transacciones, serialización, base de datos y migraciones una vez aprobado el MER.
+- **Integración:** repositorios, transacciones, serialización, y base de datos (H2 en memoria en el perfil `test`).
 - **Controladores/API:** códigos HTTP, validación de DTOs y formato uniforme de errores.
 - **Seguridad:** sin token → 401; token válido sin permisos → 403; token vencido o manipulado → rechazado; acceso a recursos ajenos → denegado.
 - **Integraciones:** timeout, respuesta inválida, indisponibilidad, reintentos e idempotencia según el caso.

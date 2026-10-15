@@ -97,7 +97,7 @@ src/main/java/com/sendera/
 ├── controller/
 ├── service/
 ├── repository/
-├── entity/
+├── model/            # entidades JPA
 ├── dto/
 ├── exception/
 ├── config/

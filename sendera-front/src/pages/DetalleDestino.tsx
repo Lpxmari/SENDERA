@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { obtenerMensajeError } from '../services/apiClient';
 import { getDestinoPorId } from '../services/destinoService';
 import { Destino } from '../types/destino';
 import { formatearPrecio } from '../utils/formatearPrecio';
@@ -96,7 +97,7 @@ const DetalleDestino = () => {
                     setDestino(data);
                 }
             } catch (err) {
-                setError('Error al cargar los detalles del destino.');
+                setError(obtenerMensajeError(err, 'Error al cargar los detalles del destino.'));
             } finally {
                 setLoading(false);
             }
