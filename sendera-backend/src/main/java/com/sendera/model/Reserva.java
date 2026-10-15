@@ -17,22 +17,22 @@ public class Reserva {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private LocalDate fechaInicio;
-
-    @Column(nullable = false)
-    private LocalDate fechaFin;
-
-    @Column(nullable = false)
-    private Integer cantidadPersonas;
-
-    @Column(nullable = false)
-    private BigDecimal precioTotal;
-
-    @Column(nullable = false)
-    private String estado; // PENDIENTE, CONFIRMADA, CANCELADA
+    /** Propietario de la reserva; la autorización por recurso se basa en este campo (MER aprobado). */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "destino_id", nullable = false)
-    private Destino destino;
+    @JoinColumn(name = "itinerario_id", nullable = false)
+    private Itinerario itinerario;
+
+    @Column(name = "fecha_reserva", nullable = false)
+    private LocalDate fechaReserva;
+
+    @Column(name = "monto_total", nullable = false, precision = 12, scale = 2)
+    private BigDecimal montoTotal;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "estado_reserva", nullable = false, length = 20)
+    private EstadoReserva estadoReserva;
 }

@@ -6,10 +6,14 @@ import java.util.List;
 
 @Data
 public class DestinoDto {
+
     private Long id;
     private String nombre;
     private String descripcion;
     private String ubicacion;
     private BigDecimal precioBase;
+    private String dificultad;
+    private Boolean accesibilidad;
+
     private List<String> fotosUrl;
 }
