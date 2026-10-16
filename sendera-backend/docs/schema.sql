@@ -1,7 +1,7 @@
 -- REFERENCIA del esquema de base de datos de SENDERA (MER aprobado, docs/04-modelo-entidad-relacion.md).
+-- No se usan migraciones: este es el único script de creación. Para aplicar cambios del esquema a una base
+-- existente se recrea la base (DROP DATABASE sendera;) y se vuelve a ejecutar este archivo.
 -- Mantener este archivo sincronizado con las entidades JPA: Hibernate corre con ddl-auto=validate.
--- Spring ejecuta la copia src/main/resources/schema.sql al arrancar; actualiza ambas copias juntas.
--- Las tablas existentes no se migran: este script solo crea las que faltan y conserva los datos.
 
 CREATE DATABASE IF NOT EXISTS sendera
     CHARACTER SET utf8mb4

@@ -38,9 +38,11 @@ public class CorreoServiceImpl implements CorreoService {
         if (sender == null) {
             // Solo en el perfil "dev" se imprime el enlace; en otros entornos nunca se registra el token.
             if (entorno.acceptsProfiles(Profiles.of("dev"))) {
-                log.warn("SMTP no configurado. Enlace de recuperación para {}: {}", correo, enlace);
+                log.warn("RECUPERACIÓN DE CONTRASEÑA (solo desarrollo, SMTP no configurado) >>> Correo: {} >>> ENLACE: {}",
+                        correo, enlace);
             } else {
-                log.warn("SMTP no configurado: no se envió el correo de recuperación.");
+                log.warn("SMTP no configurado: no se envió el correo de recuperación. "
+                        + "En desarrollo activa el perfil dev (spring.profiles.active=dev en .env) para ver el enlace.");
             }
             return;
         }

@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -41,7 +42,8 @@ class AuthServiceImplTest {
 
     @BeforeEach
     void preparar() {
-        service = new AuthServiceImpl(usuarioRepository, tokenRepository, passwordEncoder, jwtService, correoService);
+        service = new AuthServiceImpl(usuarioRepository, tokenRepository, passwordEncoder, jwtService, correoService,
+                new MockEnvironment());
         ReflectionTestUtils.setField(service, "frontendUrl", "http://localhost:5173");
         ReflectionTestUtils.setField(service, "minutosExpiracion", 30L);
         ReflectionTestUtils.invokeMethod(service, "inicializar");

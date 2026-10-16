@@ -1,5 +1,5 @@
--- Datos de ejemplo de SENDERA (solo desarrollo). Ejecutar manualmente DESPUÉS de inicializar el esquema.
--- No se ejecuta al arrancar: los UPDATE de cupos fijan los itinerarios 1 y 2 a valores de demostración.
+-- Datos de ejemplo de SENDERA (solo desarrollo). Ejecutar DESPUÉS de docs/schema.sql.
+-- Seguro de repetir, salvo los dos UPDATE de cupos, que siempre dejan 11 y 9.
 -- Usuarios de prueba: admin@sendera.com y cliente@sendera.com, contraseña de ambos: Sendera2026
 -- (no usar estas credenciales fuera de desarrollo).
 
@@ -14,18 +14,18 @@ INSERT INTO destinos (id, nombre, descripcion, ubicacion, precio_base) VALUES
   (5, 'Parque Nacional Natural Los Nevados', 'Experiencia de montana entre paramos, lagunas y volcanes.', 'Manizales, Caldas', 175000.00)
 ON DUPLICATE KEY UPDATE id = id;
 
--- 2) Fotos de los destinos
+-- 2) Fotos de los destinos (archivos en sendera-front/public/imagenes/destinos; creditos en CREDITOS.md)
 INSERT IGNORE INTO destino_fotos (destino_id, foto_url) VALUES
-  (1, 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80'),
-  (1, 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80'),
-  (2, 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80'),
-  (2, 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80'),
-  (3, 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80'),
-  (3, 'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=1200&q=80'),
-  (4, 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80'),
-  (4, 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80'),
-  (5, 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80'),
-  (5, 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80');
+  (1, '/imagenes/destinos/tayrona-1.jpg'),
+  (1, '/imagenes/destinos/tayrona-2.jpg'),
+  (2, '/imagenes/destinos/cocora-1.jpg'),
+  (2, '/imagenes/destinos/cocora-2.jpg'),
+  (3, '/imagenes/destinos/cano-cristales-1.jpg'),
+  (3, '/imagenes/destinos/cano-cristales-2.jpg'),
+  (4, '/imagenes/destinos/tatacoa-1.jpg'),
+  (4, '/imagenes/destinos/tatacoa-2.jpg'),
+  (5, '/imagenes/destinos/nevados-1.jpg'),
+  (5, '/imagenes/destinos/nevados-2.jpg');
 
 -- 3) Itinerarios (cupos ya descontados por las reservas activas 101 y 102)
 INSERT INTO itinerarios (id, destino_id, nombre, descripcion, fecha_inicio, fecha_fin, precio_base, cupos_disponibles) VALUES

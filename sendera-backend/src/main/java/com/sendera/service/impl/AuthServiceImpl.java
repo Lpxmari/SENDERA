@@ -13,7 +13,10 @@ import com.sendera.service.AuthService;
 import com.sendera.service.CorreoService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,7 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.Locale;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -40,6 +44,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final CorreoService correoService;
+    private final Environment entorno;
 
     @Value("${app.frontend-url}")
     private String frontendUrl;
@@ -93,7 +98,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public void solicitarRecuperacion(RecuperarContrasenaDto dto) {
-        usuarioRepository.findByCorreo(normalizar(dto.getCorreo())).ifPresent(usuario -> {
+        String correoSolicitado = normalizar(dto.getCorreo());
+        usuarioRepository.findByCorreo(correoSolicitado).ifPresentOrElse(usuario -> {
             // Solo un enlace vigente por usuario
             tokenRepository.deleteByUsuario(usuario);
 
@@ -112,6 +118,11 @@ public class AuthServiceImpl implements AuthService {
                     .queryParam("token", token)
                     .build().toUriString();
             correoService.enviarRecuperacionContrasena(usuario.getCorreo(), usuario.getNombre(), enlace);
+        }, () -> {
+            // La respuesta es igual exista o no el correo (no revela cuentas); solo en dev se explica en consola.
+            if (entorno.acceptsProfiles(Profiles.of("dev"))) {
+                log.warn("Recuperación solicitada para un correo NO registrado: {}. No se genera enlace.", correoSolicitado);
+            }
         });
     }
 
