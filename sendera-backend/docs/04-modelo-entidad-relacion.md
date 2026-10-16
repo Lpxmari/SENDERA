@@ -32,7 +32,7 @@ Esta lista es un inventario de conceptos, no un esquema aprobado.
 - Tablas en plural y `snake_case`, todo en minúsculas.
 - Columnas en `snake_case`; nombres singulares o descriptivos, por ejemplo `destino_id`, `fecha_reserva`.
 - Definir PK, FK, cardinalidades, nulabilidad, restricciones, índices y política de borrado.
-- No se usan migraciones: el esquema vive en `docs/schema.sql` y se mantiene sincronizado con las entidades.
+- No se usan migraciones: `docs/schema.sql` es la referencia del esquema y `src/main/resources/schema.sql` es la copia que Spring ejecuta al arrancar; ambos se mantienen sincronizados con las entidades.
 - No serializar entidades JPA directamente en respuestas REST.
 - Documentar cambios de esquema y su impacto en DTOs, servicios, frontend y pruebas.
 
@@ -57,7 +57,9 @@ Existen en el código y en la BD local estas tablas, creadas antes de aprobar el
 ```text
 usuarios 1───N tokens_recuperacion
 usuarios 1───N reservas            (NUEVA: reservas.usuario_id)
+usuarios 1───N resenas             (NUEVA: resenas.usuario_id)
 destinos 1───N destino_fotos
+destinos 1───N resenas             (NUEVA: resenas.destino_id)
 destinos 1───N itinerarios
 itinerarios 1───N reservas
 ```
@@ -81,6 +83,7 @@ itinerarios 1───N reservas
 | destino_fotos | destino_id, foto_url | BIGINT, VARCHAR(255) | único por (destino, url) |
 | itinerarios | destino_id, nombre, descripcion, fecha_inicio, fecha_fin, precio_base, cupos_disponibles | DATE, DECIMAL, INT | `fecha_fin >= fecha_inicio`; `cupos >= 0` |
 | reservas | itinerario_id, **usuario_id (propuesto)**, fecha_reserva, monto_total, estado | DATE, DECIMAL, ENUM | monto lo calcula el servidor |
+| resenas | destino_id, usuario_id, comentario, calificacion, imagen, imagen_content_type, creada_en | BIGINT, VARCHAR, TINYINT, LONGBLOB, DATETIME | calificación 1–5; imagen opcional |
 
 ## 4.5.5 Estados y transiciones propuestos
 `PENDIENTE → CONFIRMADA → CANCELADA` y `PENDIENTE → CANCELADA`. Una reserva cancelada no vuelve a otro estado. Cancelar devuelve el cupo al itinerario.
@@ -103,8 +106,10 @@ Las de §4.2, además de: ¿una reserva descuenta un cupo por persona o por rese
 | `estado_pago` → `estado_reserva` | Aplicado (columna, entidad, DTO `estadoReserva`, contrato y frontend). `estado_pago` se añadirá si el pago entra en el alcance |
 | `dificultad` restringida | Aplicado como `CHECK` en la BD y `@Pattern` en el DTO; la entidad sigue usando `String` |
 | `accesibilidad` | Se mantiene como booleano (decisión pendiente de ampliarla) |
-| Migraciones | **No se usan** (decisión del equipo). El esquema se crea con `docs/schema.sql` |
+| Migraciones | **No se usan** (decisión del equipo). Spring crea las tablas faltantes desde `src/main/resources/schema.sql`; `docs/schema.sql` es la referencia para ejecución manual |
 
 **Primer administrador:** no existe un endpoint para crearlo. Se promueve una cuenta con `UPDATE usuarios SET rol = 'ROLE_ADMIN' WHERE correo = '...'`.
 
-**Esquema único:** `docs/schema.sql` reemplaza a los scripts anteriores desincronizados. Una base creada con el esquema anterior debe recrearse.
+**Referencia del esquema:** `docs/schema.sql` reemplaza a los scripts anteriores desincronizados. La copia `src/main/resources/schema.sql` se ejecuta al arrancar y debe mantenerse sincronizada. Una base creada con el esquema anterior no se migra automáticamente; alinear un esquema existente requiere una actualización de base de datos planificada y no implica borrarla.
+
+**Reseñas:** `resenas` vincula cada publicación con el destino y con el usuario autenticado. El dueño se determina desde el claim `uid` del JWT; se conserva texto, calificación de 1–5 e imagen binaria opcional (JPEG, PNG o WebP, máximo 5 MB). No se agregó un modelo de avatar.

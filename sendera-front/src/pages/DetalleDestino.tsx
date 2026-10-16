@@ -1,19 +1,29 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { ChangeEvent, FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { useParams, useSearchParams, Link, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { obtenerMensajeError } from '../services/apiClient';
 import { getDestinoPorId } from '../services/destinoService';
+import { crearResena, listarResenas, obtenerUrlImagenResena } from '../services/resenaService';
 import { Destino } from '../types/destino';
+import { Resena } from '../types/resena';
 import { formatearPrecio } from '../utils/formatearPrecio';
 import {
-    calificacionAlojamiento,
     categoriaAlojamiento,
     eslogan,
     estrellasAlojamiento,
-    opinionesAlojamiento,
     serviciosAlojamiento,
 } from '../utils/datosAlojamiento';
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24;
+const TAMANO_MAXIMO_IMAGEN = 5 * 1024 * 1024;
+const TIPOS_IMAGEN_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
+
+interface EstadoResenas {
+    destinoId: string | null;
+    datos: Resena[];
+    cargando: boolean;
+    error: string | null;
+}
 
 const calcularNoches = (llegada: string, salida: string): number => {
     if (!llegada || !salida) return 0;
@@ -77,6 +87,8 @@ const IconoPerfil = () => (
 const DetalleDestino = () => {
     const { id } = useParams<{ id: string }>();
     const [searchParams] = useSearchParams();
+    const ubicacion = useLocation();
+    const { autenticado } = useAuth();
 
     const [destino, setDestino] = useState<Destino | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
@@ -84,6 +96,20 @@ const DetalleDestino = () => {
     const [fotoActiva, setFotoActiva] = useState<number>(0);
     const [guardado, setGuardado] = useState<boolean>(false);
     const [mensaje, setMensaje] = useState<string>('');
+    const [estadoResenas, setEstadoResenas] = useState<EstadoResenas>({
+        destinoId: null,
+        datos: [],
+        cargando: true,
+        error: null,
+    });
+    const [comentario, setComentario] = useState('');
+    const [calificacion, setCalificacion] = useState(0);
+    const [imagen, setImagen] = useState<File | null>(null);
+    const [vistaPrevia, setVistaPrevia] = useState<string | null>(null);
+    const [publicandoResena, setPublicandoResena] = useState(false);
+    const [errorFormulario, setErrorFormulario] = useState<string | null>(null);
+    const referenciaImagen = useRef<HTMLInputElement>(null);
+    const lectorImagen = useRef<FileReader | null>(null);
 
     const [llegada, setLlegada] = useState<string>(searchParams.get('llegada') ?? '');
     const [salida, setSalida] = useState<string>(searchParams.get('salida') ?? '');
@@ -105,7 +131,37 @@ const DetalleDestino = () => {
         cargarDetalle();
     }, [id]);
 
+    useEffect(() => {
+        if (!id) return;
+        let cancelado = false;
+        listarResenas(Number(id))
+            .then((datos) => {
+                if (!cancelado) setEstadoResenas({ destinoId: id, datos, cargando: false, error: null });
+            })
+            .catch((err: unknown) => {
+                if (!cancelado) {
+                    setEstadoResenas({
+                        destinoId: id,
+                        datos: [],
+                        cargando: false,
+                        error: obtenerMensajeError(err, 'No se pudieron cargar las reseñas.'),
+                    });
+                }
+            })
+        return () => {
+            cancelado = true;
+        };
+    }, [id]);
+
+    useEffect(() => {
+        return () => lectorImagen.current?.abort();
+    }, []);
+
     const noches = useMemo(() => calcularNoches(llegada, salida), [llegada, salida]);
+    const estadoResenasActual = estadoResenas.destinoId === id ? estadoResenas : null;
+    const resenas = estadoResenasActual?.datos ?? [];
+    const cargandoResenas = estadoResenasActual?.cargando ?? true;
+    const errorResenas = estadoResenasActual?.error ?? null;
 
     if (loading) return <p className="estado detalle__estado">Cargando detalles…</p>;
     if (error || !destino) {
@@ -125,6 +181,71 @@ const DetalleDestino = () => {
         .slice(0, 2);
 
     const total = noches > 0 ? destino.precioBase * noches : 0;
+    const promedioCalificacion = resenas.length
+        ? (resenas.reduce((totalCalificaciones, resena) => totalCalificaciones + resena.calificacion, 0) / resenas.length).toFixed(1)
+        : null;
+
+    const seleccionarImagen = (evento: ChangeEvent<HTMLInputElement>) => {
+        const archivo = evento.target.files?.[0] ?? null;
+        setErrorFormulario(null);
+        lectorImagen.current?.abort();
+        if (archivo && !TIPOS_IMAGEN_PERMITIDOS.includes(archivo.type)) {
+            setErrorFormulario('La imagen debe ser JPEG, PNG o WebP.');
+            evento.target.value = '';
+            setImagen(null);
+            setVistaPrevia(null);
+            return;
+        }
+        if (archivo && archivo.size > TAMANO_MAXIMO_IMAGEN) {
+            setErrorFormulario('La imagen no puede superar los 5 MB.');
+            evento.target.value = '';
+            setImagen(null);
+            setVistaPrevia(null);
+            return;
+        }
+        setImagen(archivo);
+        setVistaPrevia(null);
+        if (archivo) {
+            const lector = new FileReader();
+            lectorImagen.current = lector;
+            lector.onload = () => {
+                if (typeof lector.result === 'string') setVistaPrevia(lector.result);
+            };
+            lector.onerror = () => setErrorFormulario('No se pudo leer la imagen seleccionada.');
+            lector.readAsDataURL(archivo);
+        }
+    };
+
+    const publicarResena = async (evento: FormEvent<HTMLFormElement>) => {
+        evento.preventDefault();
+        if (!id || !comentario.trim() || calificacion < 1 || calificacion > 5) {
+            setErrorFormulario('Escribe tu reseña y selecciona una calificación de 1 a 5 estrellas.');
+            return;
+        }
+
+        setPublicandoResena(true);
+        setErrorFormulario(null);
+        try {
+            const nuevaResena = await crearResena(
+                Number(id),
+                { comentario: comentario.trim(), calificacion },
+                imagen,
+            );
+            setEstadoResenas((actual) => actual.destinoId === id
+                ? { ...actual, datos: [nuevaResena, ...actual.datos] }
+                : actual);
+            setComentario('');
+            setCalificacion(0);
+            setImagen(null);
+            setVistaPrevia(null);
+            lectorImagen.current?.abort();
+            if (referenciaImagen.current) referenciaImagen.current.value = '';
+        } catch (err) {
+            setErrorFormulario(obtenerMensajeError(err, 'No se pudo publicar la reseña. Intenta de nuevo.'));
+        } finally {
+            setPublicandoResena(false);
+        }
+    };
 
     const parametrosReserva = new URLSearchParams();
     if (llegada) parametrosReserva.set('llegada', llegada);
@@ -219,9 +340,15 @@ const DetalleDestino = () => {
             <div className="detalle__cuerpo">
                 <section className="detalle__info" aria-labelledby="detalle-eslogan">
                     <div className="calificacion">
-                        <span className="calificacion__puntaje">{calificacionAlojamiento.puntaje}</span>
+                        {promedioCalificacion && <span className="calificacion__puntaje">{promedioCalificacion}/5</span>}
                         <span className="calificacion__texto">
-                            {calificacionAlojamiento.etiqueta} · {calificacionAlojamiento.totalResenas} reseñas
+                            {cargandoResenas
+                                ? 'Cargando calificaciones…'
+                                : errorResenas
+                                    ? 'Calificaciones no disponibles'
+                                    : resenas.length
+                                ? `${resenas.length} ${resenas.length === 1 ? 'reseña' : 'reseñas'}`
+                                : 'Aún no hay reseñas'}
                         </span>
                     </div>
 
@@ -272,16 +399,114 @@ const DetalleDestino = () => {
             </div>
 
             <section className="opiniones" aria-labelledby="titulo-opiniones">
-                <h2 id="titulo-opiniones" className="titulo-seccion">Mira algunas de las opiniones</h2>
+                <h2 id="titulo-opiniones" className="titulo-seccion">Reseñas de este destino</h2>
+                {autenticado ? (
+                    <form className="resena-form" onSubmit={publicarResena}>
+                        <h3>Comparte tu experiencia</h3>
+                        <label className="resena-form__campo">
+                            <span>Tu reseña</span>
+                            <textarea
+                                value={comentario}
+                                onChange={(evento) => setComentario(evento.target.value)}
+                                maxLength={2000}
+                                rows={4}
+                                required
+                                placeholder="¿Qué te pareció este destino?"
+                            />
+                            <small>{comentario.length}/2000 caracteres</small>
+                        </label>
+                        <fieldset className="resena-form__calificacion">
+                            <legend>Tu calificación</legend>
+                            <div className="resena-form__estrellas">
+                                {[1, 2, 3, 4, 5].map((estrella) => (
+                                    <label
+                                        key={estrella}
+                                        className={estrella <= calificacion ? 'resena-form__estrella resena-form__estrella--activa' : 'resena-form__estrella'}
+                                    >
+                                        <input
+                                            type="radio"
+                                            name="calificacion"
+                                            value={estrella}
+                                            checked={calificacion === estrella}
+                                            onChange={() => setCalificacion(estrella)}
+                                            required
+                                        />
+                                        <span aria-hidden="true">★</span>
+                                        <span className="solo-lectores">{estrella} {estrella === 1 ? 'estrella' : 'estrellas'}</span>
+                                    </label>
+                                ))}
+                            </div>
+                        </fieldset>
+                        <label className="resena-form__campo">
+                            <span>Foto (opcional)</span>
+                            <input
+                                ref={referenciaImagen}
+                                type="file"
+                                accept="image/jpeg,image/png,image/webp"
+                                onChange={seleccionarImagen}
+                            />
+                        </label>
+                        {vistaPrevia && (
+                            <div className="resena-form__vista-previa">
+                                <img src={vistaPrevia} alt="Vista previa de la imagen adjunta" />
+                                <button
+                                    type="button"
+                                    className="boton-contorno"
+                                    onClick={() => {
+                                        setImagen(null);
+                                        setVistaPrevia(null);
+                                        lectorImagen.current?.abort();
+                                        if (referenciaImagen.current) referenciaImagen.current.value = '';
+                                    }}
+                                >
+                                    Quitar imagen
+                                </button>
+                            </div>
+                        )}
+                        {errorFormulario && <p className="resena-form__error" role="alert">{errorFormulario}</p>}
+                        <button type="submit" className="boton boton--verde" disabled={publicandoResena}>
+                            {publicandoResena ? 'Publicando…' : 'Publicar reseña'}
+                        </button>
+                    </form>
+                ) : (
+                    <p className="opiniones__invitacion">
+                        <Link
+                            to="/login"
+                            state={{ desde: ubicacion.pathname + ubicacion.search }}
+                            className="boton boton--verde"
+                        >
+                            Inicia sesión para escribir una reseña
+                        </Link>
+                    </p>
+                )}
+
+                {errorResenas && <p className="estado estado--error" role="alert">{errorResenas}</p>}
+                {cargandoResenas && <p className="estado" role="status">Cargando reseñas…</p>}
+                {!cargandoResenas && !errorResenas && resenas.length === 0 && (
+                    <p className="opiniones__vacias">Sé la primera persona en compartir su experiencia.</p>
+                )}
                 <div className="opiniones__rejilla">
-                    {opinionesAlojamiento.map((opinion) => (
-                        <figure key={opinion.id} className="opinion">
-                            <blockquote>“{opinion.texto}”</blockquote>
+                    {resenas.map((resena) => (
+                        <figure key={resena.id} className="opinion">
+                            <div className="opinion__contenido">
+                                <p className="opinion__estrellas" role="img" aria-label={`${resena.calificacion} de 5 estrellas`}>
+                                    {'★'.repeat(resena.calificacion)}{'☆'.repeat(5 - resena.calificacion)}
+                                </p>
+                                <blockquote>{resena.comentario}</blockquote>
+                                {resena.imagenUrl && (
+                                    <img
+                                        className="opinion__imagen"
+                                        src={obtenerUrlImagenResena(resena.imagenUrl)}
+                                        alt={`Imagen adjunta a la reseña de ${resena.autor}`}
+                                        loading="lazy"
+                                    />
+                                )}
+                            </div>
                             <figcaption>
                                 <IconoPerfil />
                                 <span>
-                                    <strong>{opinion.autor}</strong>
-                                    {opinion.perfil}
+                                    <strong>{resena.autor}</strong>
+                                    {new Date(resena.creadaEn).toLocaleDateString()}
                                 </span>
                             </figcaption>
                         </figure>

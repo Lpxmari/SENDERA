@@ -59,7 +59,7 @@ Los paquetes `config` e `integration` se incluyen cuando sean necesarios. Los no
 - No realizar llamadas lentas a proveedores externos dentro de una transacción de BD salvo justificación.
 - Evitar N+1 y cargas de relaciones innecesarias.
 - Validar entradas y aplicar consultas parametrizadas.
-- El esquema se define en `docs/schema.sql` (MER aprobado); no se usan migraciones.
+- El esquema se define en `docs/schema.sql` (MER aprobado); Spring ejecuta su copia sincronizada `src/main/resources/schema.sql` al arrancar, antes de la validación de Hibernate. No se usan migraciones.
 
 ## 5.7 Integraciones
 Usar adaptadores dedicados para aislar formatos y credenciales de los proveedores externos. Definir timeout, tratamiento de errores, reintentos limitados, idempotencia y trazabilidad según el servicio.
@@ -80,6 +80,7 @@ Usar adaptadores dedicados para aislar formatos y credenciales de los proveedore
 - Rutas implementadas como definitivas (ADR-004).
 - Roles firmados en el claim `roles` del JWT; `ROLE_ADMIN` gestiona la escritura de destinos.
 - H2 en memoria solo para pruebas (perfil `test`); producción usa MySQL.
+- La inicialización SQL de MySQL está desactivada en el perfil `test`, que deja a Hibernate crear el esquema H2.
 
 ## 5.10 Decisiones pendientes
 - Mecanismo para la inactividad de 15 minutos (token corto + refresh).

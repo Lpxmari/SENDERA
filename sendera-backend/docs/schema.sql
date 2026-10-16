@@ -1,7 +1,7 @@
 -- REFERENCIA del esquema de base de datos de SENDERA (MER aprobado, docs/04-modelo-entidad-relacion.md).
--- No se usan migraciones: este es el único script de creación. Para aplicar cambios del esquema a una base
--- existente se recrea la base (DROP DATABASE sendera;) y se vuelve a ejecutar este archivo.
 -- Mantener este archivo sincronizado con las entidades JPA: Hibernate corre con ddl-auto=validate.
+-- Spring ejecuta la copia src/main/resources/schema.sql al arrancar; actualiza ambas copias juntas.
+-- Las tablas existentes no se migran: este script solo crea las que faltan y conserva los datos.
 
 CREATE DATABASE IF NOT EXISTS sendera
     CHARACTER SET utf8mb4
@@ -54,6 +54,26 @@ CREATE TABLE IF NOT EXISTS destino_fotos (
     UNIQUE KEY uq_destino_fotos_destino_url (destino_id, foto_url),
     CONSTRAINT fk_destino_fotos_destino
         FOREIGN KEY (destino_id) REFERENCES destinos (id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS resenas (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    destino_id BIGINT NOT NULL,
+    usuario_id BIGINT NOT NULL,
+    comentario VARCHAR(2000) NOT NULL,
+    calificacion INT NOT NULL,
+    imagen LONGBLOB NULL,
+    imagen_content_type VARCHAR(20) NULL,
+    creada_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_resenas_calificacion CHECK (calificacion BETWEEN 1 AND 5),
+    INDEX idx_resenas_destino_creada (destino_id, creada_en),
+    INDEX idx_resenas_usuario_id (usuario_id),
+    CONSTRAINT fk_resenas_destino
+        FOREIGN KEY (destino_id) REFERENCES destinos (id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_resenas_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

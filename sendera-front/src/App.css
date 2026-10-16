@@ -570,7 +570,59 @@
 
 /* Opiniones */
 .opiniones { margin-top: 48px; }
+.opiniones__invitacion,
+.opiniones__vacias { margin: 16px 0; color: var(--texto-suave); }
+.opiniones__invitacion .boton { min-height: 42px; }
 .opiniones__rejilla { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.resena-form {
+  display: grid;
+  gap: 16px;
+  margin: 20px 0 28px;
+  padding: 24px;
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  background: var(--crema);
+}
+.resena-form h3 { color: var(--verde); font-size: 19px; }
+.resena-form__campo { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
+.resena-form__campo textarea,
+.resena-form__campo input[type='file'] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: #fff;
+  font: 400 14px/1.5 var(--fuente);
+  color: var(--texto);
+}
+.resena-form__campo textarea { resize: vertical; }
+.resena-form__campo small { color: var(--texto-suave); font-weight: 400; text-align: right; }
+.resena-form__calificacion { margin: 0; padding: 0; border: 0; }
+.resena-form__calificacion legend { margin-bottom: 4px; font-size: 14px; font-weight: 600; }
+.resena-form__estrellas { display: flex; gap: 5px; }
+.resena-form__estrella { position: relative; color: #8a8a8a; cursor: pointer; font-size: 30px; line-height: 1; }
+.resena-form__estrella--activa { color: #d88900; }
+.resena-form__estrella input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.resena-form__estrella:focus-within { outline: 3px solid var(--naranja); outline-offset: 3px; }
+.resena-form__vista-previa { display: flex; align-items: flex-start; gap: 12px; }
+.resena-form__vista-previa img { width: 140px; height: 100px; border-radius: 8px; object-fit: cover; }
+.resena-form__error { color: #b3261e; font-size: 14px; }
+.solo-lectores {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .opinion {
   display: flex;
   flex-direction: column;
@@ -583,6 +635,9 @@
   border-radius: 12px;
   background: #fff;
 }
+.opinion__contenido { display: grid; gap: 12px; }
+.opinion__estrellas { color: #d88900; letter-spacing: 2px; }
+.opinion__imagen { width: 100%; max-height: 240px; border-radius: 8px; object-fit: cover; }
 .opinion blockquote { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 500; }
 .opinion figcaption { display: flex; align-items: center; gap: 12px; color: var(--texto-suave); }
 .opinion figcaption span { display: flex; flex-direction: column; font-size: 13px; }

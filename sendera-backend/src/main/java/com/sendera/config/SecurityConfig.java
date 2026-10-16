@@ -73,6 +73,7 @@ public class SecurityConfig {
                         .requestMatchers(AUTH_PUBLICAS).permitAll()
                         // Consulta de destinos abierta; crear/modificar/eliminar solo administradores
                         .requestMatchers(HttpMethod.GET, "/destinos", "/destinos/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/destinos/*/resenas").authenticated()
                         .requestMatchers(HttpMethod.POST, "/destinos", "/destinos/**").hasAuthority(ROL_ADMIN)
                         .requestMatchers(HttpMethod.PUT, "/destinos/**").hasAuthority(ROL_ADMIN)
                         .requestMatchers(HttpMethod.DELETE, "/destinos/**").hasAuthority(ROL_ADMIN)

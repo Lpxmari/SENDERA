@@ -1,5 +1,5 @@
--- Datos de ejemplo de SENDERA (solo desarrollo). Ejecutar DESPUÉS de docs/schema.sql.
--- Seguro de repetir, salvo los dos UPDATE de cupos, que siempre dejan 11 y 9.
+-- Datos de ejemplo de SENDERA (solo desarrollo). Ejecutar manualmente DESPUÉS de inicializar el esquema.
+-- No se ejecuta al arrancar: los UPDATE de cupos fijan los itinerarios 1 y 2 a valores de demostración.
 -- Usuarios de prueba: admin@sendera.com y cliente@sendera.com, contraseña de ambos: Sendera2026
 -- (no usar estas credenciales fuera de desarrollo).
 

@@ -1,12 +1,16 @@
 package com.sendera.controller;
 
 import com.sendera.config.SecurityConfig;
+import com.sendera.dto.CrearResenaDto;
+import com.sendera.dto.ResenaDto;
 import com.sendera.exception.GlobalExceptionHandler;
+import com.sendera.controller.ResenaController;
 import com.sendera.model.Usuario;
 import com.sendera.security.JwtService;
 import com.sendera.security.UsuarioActual;
 import com.sendera.service.DestinoService;
 import com.sendera.service.ReservaService;
+import com.sendera.service.ResenaService;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +31,13 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -38,7 +45,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** RF-005: autenticación, autorización por rol y formato uniforme de error (sin base de datos). */
-@WebMvcTest({DestinoController.class, ReservaController.class})
+@WebMvcTest({DestinoController.class, ReservaController.class, ResenaController.class})
 @Import({SecurityConfig.class, GlobalExceptionHandler.class, JwtService.class})
 @TestPropertySource(properties = {
         "app.jwt.secret=clave-de-pruebas-con-mas-de-treinta-y-dos-caracteres",
@@ -61,6 +68,8 @@ class SeguridadApiTest {
     DestinoService destinoService;
     @MockBean
     ReservaService reservaService;
+    @MockBean
+    ResenaService resenaService;
 
     private String token(String rol) {
         return jwtService.generar(Usuario.builder().id(1L).correo("a@b.com").rol(rol).build());
@@ -77,6 +86,42 @@ class SeguridadApiTest {
     @Test
     void consultarDestinosEsPublico() throws Exception {
         mockMvc.perform(get("/destinos")).andExpect(status().isOk());
+    }
+
+    @Test
+    void listarResenasEsPublico() throws Exception {
+        mockMvc.perform(get("/destinos/1/resenas")).andExpect(status().isOk());
+    }
+
+    @Test
+    void publicarResenaSinTokenDevuelve401() throws Exception {
+        mockMvc.perform(multipart("/destinos/1/resenas")
+                        .param("comentario", "Un lugar hermoso")
+                        .param("calificacion", "5"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void publicarResenaAsociaElUsuarioDelJwt() throws Exception {
+        when(resenaService.crear(anyLong(), any(CrearResenaDto.class), isNull(), any()))
+                .thenReturn(ResenaDto.builder()
+                        .id(7L)
+                        .destinoId(1L)
+                        .comentario("Un lugar hermoso")
+                        .calificacion(5)
+                        .autor("Ana Pérez")
+                        .build());
+
+        mockMvc.perform(multipart("/destinos/1/resenas")
+                        .header("Authorization", "Bearer " + token("ROLE_CLIENTE"))
+                        .param("comentario", "Un lugar hermoso")
+                        .param("calificacion", "5"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.autor").value("Ana Pérez"))
+                .andExpect(jsonPath("$.calificacion").value(5));
+
+        verify(resenaService).crear(eq(1L), any(CrearResenaDto.class), isNull(),
+                eq(new UsuarioActual(1L, false)));
     }
 
     @Test
