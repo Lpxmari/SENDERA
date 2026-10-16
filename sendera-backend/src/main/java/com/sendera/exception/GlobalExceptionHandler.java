@@ -13,6 +13,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.time.OffsetDateTime;
 
@@ -23,6 +24,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RecursoNoEncontradoException.class)
     public ResponseEntity<ApiErrorDto> handleNoEncontrado(RecursoNoEncontradoException ex, HttpServletRequest request) {
         return construir(HttpStatus.NOT_FOUND, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ArchivoImagenInvalidoException.class)
+    public ResponseEntity<ApiErrorDto> handleImagenInvalida(ArchivoImagenInvalidoException ex, HttpServletRequest request) {
+        return construir(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ApiErrorDto> handleImagenDemasiadoGrande(MaxUploadSizeExceededException ex, HttpServletRequest request) {
+        return construir(HttpStatus.PAYLOAD_TOO_LARGE, "La imagen no puede superar los 5 MB.", request);
     }
 
     // ---- Autenticación y validación (más específicos que RuntimeException, por eso tienen prioridad) ----

@@ -6,15 +6,25 @@ server:
 spring:
   application:
     name: sendera-backend
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
   config:
     # Carga el archivo .env local (ignorado por Git) si existe; las variables de entorno reales tienen prioridad.
     import: optional:file:.env[.properties],optional:file:./sendera-backend/.env[.properties]
   datasource:
-    url: jdbc:mysql://localhost:3307/sendera?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: "jdbc:mysql://localhost:${DB_PORT:3306}/sendera?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
     username: ${DB_USER:root}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      continue-on-error: false
   jpa:
+    defer-datasource-initialization: false
     hibernate:
       ddl-auto: validate
     show-sql: false

@@ -297,10 +297,12 @@ const ResultadosBusqueda = () => {
                                     </span>
 
                                     <div className="resultado-card__pie">
-                                        <p className="resultado-card__nota">
-                                            <span className="calificacion__puntaje">{String(datos.puntaje).replace('.', ',')}</span>
-                                            {datos.etiquetaPuntaje} · {datos.resenas} reseñas
-                                        </p>
+                                        <Link
+                                            className="resultado-card__nota"
+                                            to={`/destinos/${destino.id}?${searchParams.toString()}#titulo-opiniones`}
+                                        >
+                                            Leer reseñas y compartir experiencia
+                                        </Link>
                                         <div className="resultado-card__precio">
                                             <s aria-label="Precio anterior">{formatearPrecio(datos.precioAnterior)}</s>
                                             <strong>{formatearPrecio(destino.precioBase)}</strong>

@@ -31,7 +31,7 @@ El orden puede ajustarse en equipo, pero no se deben saltar decisiones que bloqu
 - Configurar Spring Boot, validación, manejo global de errores y OpenAPI.
 - Configurar React + TypeScript, estructura `components/`, `pages/`, `services/`, `types/`, `utils/`.
 - Implementar contratos de error y convenciones compartidas.
-- Configurar la base de datos con el esquema aprobado (`docs/schema.sql`); sin migraciones.
+- Configurar la inicialización de MySQL con el esquema aprobado (`docs/schema.sql` y su copia `src/main/resources/schema.sql`); sin migraciones.
 
 ## Fase 5 — Seguridad y usuarios
 - Implementar registro, autenticación, recuperación y perfil.

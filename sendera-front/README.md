@@ -54,6 +54,8 @@ Autenticación con **JWT (HS256)** sin estado, contraseñas con **BCrypt** y rec
 
 **Reglas de acceso:** `GET /destinos/**` es público; el resto de la API (reservas, crear destinos) requiere `Authorization: Bearer <token>`.
 
-**Base de datos:** ejecuta `database/migrations/001_usuarios_y_autenticacion.sql` si ya tienes la BD creada (agrega `usuarios` y `tokens_recuperacion`). `ddl-auto` está en `validate`, así que sin estas tablas el backend no arranca.
+**Base de datos:** al iniciar el backend, MySQL crea la base `sendera` si no existe y Spring ejecuta `sendera-backend/src/main/resources/schema.sql` antes de validar las entidades. No se necesitan migraciones ni ejecutar el esquema a mano en una instalación nueva. El puerto se configura con `DB_PORT` (por defecto 3306). La cuenta MySQL debe tener permiso para crear la base; los esquemas existentes no se migran automáticamente.
+
+**Reseñas:** el detalle de cada destino muestra las reseñas obtenidas del backend. Para publicar se requiere iniciar sesión; el autor se asocia en el servidor a la cuenta del JWT. Se acepta texto, calificación de 1–5 estrellas e imagen JPEG, PNG o WebP opcional de hasta 5 MB. La imagen se envía como `multipart/form-data` y se almacena en MySQL; no se incorporan avatares.
 
 **Variables de entorno** (ver `.env.example`): `JWT_SECRET` (mín. 32 caracteres, obligatoria en producción), `FRONTEND_URL`, y `SPRING_MAIL_HOST/PORT/USERNAME/PASSWORD` para el envío real de correos. Sin SMTP configurado, el enlace de recuperación se imprime en la consola del backend (solo desarrollo).

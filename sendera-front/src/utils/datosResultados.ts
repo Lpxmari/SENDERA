@@ -1,5 +1,4 @@
 import { Destino } from '../types/destino';
-import { calificacionAlojamiento } from './datosAlojamiento';
 
 // Datos de ejemplo del mockup de resultados. El backend aún no entrega estrellas,
 // servicios, insignias, calificación ni precio anterior; se generan aquí de forma
@@ -36,9 +35,6 @@ export interface DatosResultado {
     servicios: string[];
     insignia: string;
     precioAnterior: number;
-    puntaje: number;
-    etiquetaPuntaje: string;
-    resenas: number;
 }
 
 export const datosResultado = (destino: Destino): DatosResultado => {
@@ -51,9 +47,6 @@ export const datosResultado = (destino: Destino): DatosResultado => {
         servicios,
         insignia,
         precioAnterior: Math.round((destino.precioBase * 1.22) / 100) * 100,
-        puntaje: calificacionAlojamiento.puntaje,
-        etiquetaPuntaje: calificacionAlojamiento.etiqueta,
-        resenas: calificacionAlojamiento.totalResenas,
     };
 };
 
