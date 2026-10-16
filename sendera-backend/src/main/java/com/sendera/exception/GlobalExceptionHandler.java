@@ -63,6 +63,11 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(OperacionAdminNoPermitidaException.class)
+    public ResponseEntity<ApiErrorDto> handleOperacionAdmin(OperacionAdminNoPermitidaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(ReservaNoPermitidaException.class)
     public ResponseEntity<ApiErrorDto> handleReservaNoPermitida(ReservaNoPermitidaException ex, HttpServletRequest request) {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);

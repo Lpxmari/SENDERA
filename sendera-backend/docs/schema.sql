@@ -16,8 +16,26 @@ CREATE TABLE IF NOT EXISTS usuarios (
     correo VARCHAR(160) NOT NULL,
     contrasena_hash VARCHAR(100) NOT NULL,
     rol VARCHAR(20) NOT NULL DEFAULT 'ROLE_CLIENTE',
+    activo BOOLEAN NOT NULL DEFAULT TRUE,
     fecha_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_usuarios_correo (correo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Registro de acciones administrativas (RF-013). No guarda contrasenas, tokens ni datos personales sensibles:
+-- solo quien actuo, que hizo, sobre que recurso y cuando.
+CREATE TABLE IF NOT EXISTS auditoria_admin (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    admin_id BIGINT NULL,
+    accion VARCHAR(60) NOT NULL,
+    recurso VARCHAR(40) NOT NULL,
+    recurso_id BIGINT NULL,
+    detalle VARCHAR(500) NULL,
+    creada_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_auditoria_admin_creada (creada_en),
+    INDEX idx_auditoria_admin_admin (admin_id),
+    CONSTRAINT fk_auditoria_admin_usuario
+        FOREIGN KEY (admin_id) REFERENCES usuarios (id)
+        ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tokens_recuperacion (

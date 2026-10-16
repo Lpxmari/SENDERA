@@ -34,6 +34,11 @@ public class Usuario {
     @Column(nullable = false, length = 20)
     private String rol;
 
+    /** false = acceso retirado por un administrador (la cuenta y sus reservas se conservan). */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean activo = true;
+
     @PrePersist
     void antesDePersistir() {
         if (fechaRegistro == null) {

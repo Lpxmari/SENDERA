@@ -89,7 +89,8 @@ public class AuthServiceImpl implements AuthService {
         Usuario usuario = usuarioRepository.findByCorreo(normalizar(dto.getCorreo())).orElse(null);
         String hash = usuario != null ? usuario.getContrasenaHash() : hashFicticio;
         boolean coincide = passwordEncoder.matches(dto.getContrasena(), hash);
-        if (usuario == null || !coincide) {
+        // Una cuenta desactivada recibe el mismo error genérico: no se revela su estado.
+        if (usuario == null || !coincide || !usuario.isActivo()) {
             throw new CredencialesInvalidasException();
         }
         return construirRespuesta(usuario);
@@ -165,6 +166,7 @@ public class AuthServiceImpl implements AuthService {
                 .nombre(usuario.getNombre())
                 .apellidos(usuario.getApellidos())
                 .correo(usuario.getCorreo())
+                .rol(usuario.getRol())
                 .build();
     }
 

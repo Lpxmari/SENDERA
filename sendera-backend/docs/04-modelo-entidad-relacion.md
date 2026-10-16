@@ -113,3 +113,8 @@ Las de §4.2, además de: ¿una reserva descuenta un cupo por persona o por rese
 **Referencia del esquema:** `docs/schema.sql` reemplaza a los scripts anteriores desincronizados. La copia `src/main/resources/schema.sql` se ejecuta al arrancar y debe mantenerse sincronizada. Una base creada con el esquema anterior no se migra automáticamente; alinear un esquema existente requiere una actualización de base de datos planificada y no implica borrarla.
 
 **Reseñas:** `resenas` vincula cada publicación con el destino y con el usuario autenticado. El dueño se determina desde el claim `uid` del JWT; se conserva texto, calificación de 1–5 e imagen binaria opcional (JPEG, PNG o WebP, máximo 5 MB). No se agregó un modelo de avatar.
+
+### 4.7 Gestión administrativa (aprobado 2026-10-16, ADR-005)
+- `usuarios.activo BOOLEAN NOT NULL DEFAULT TRUE`: `false` retira el acceso sin borrar la cuenta ni sus reservas.
+- `auditoria_admin(id, admin_id NULL FK→usuarios ON DELETE SET NULL, accion, recurso, recurso_id NULL, detalle NULL, creada_en)`:
+  registro de acciones administrativas. No almacena contraseñas, tokens ni datos personales.

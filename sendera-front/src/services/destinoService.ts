@@ -1,4 +1,4 @@
-import { Destino, FiltroDestinoParams } from '../types/destino';
+import { CrearDestinoDto, Destino, FiltroDestinoParams } from '../types/destino';
 import apiClient from './apiClient';
 
 /** Los errores se propagan sin silenciarlos; la capa de UI decide cómo mostrarlos (ver obtenerMensajeError). */
@@ -21,6 +21,22 @@ export const listarDestinos = async (filtros?: FiltroDestinoParams): Promise<Des
 export const obtenerDestinoPorId = async (id: number): Promise<Destino> => {
     const { data } = await apiClient.get<Destino>(`/destinos/${id}`);
     return data;
+};
+
+/** Solo administradores (el backend responde 403 a cualquier otro rol). */
+export const crearDestino = async (datos: CrearDestinoDto): Promise<Destino> => {
+    const { data } = await apiClient.post<Destino>('/destinos', datos);
+    return data;
+};
+
+export const actualizarDestino = async (id: number, datos: CrearDestinoDto): Promise<Destino> => {
+    const { data } = await apiClient.put<Destino>(`/destinos/${id}`, datos);
+    return data;
+};
+
+/** 409 si el destino tiene itinerarios asociados. */
+export const eliminarDestino = async (id: number): Promise<void> => {
+    await apiClient.delete(`/destinos/${id}`);
 };
 
 // Alias para mantener compatibilidad con los componentes que usan los nombres anteriores

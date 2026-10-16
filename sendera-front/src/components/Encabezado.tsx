@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Encabezado = () => {
     const navigate = useNavigate();
-    const { usuario, autenticado, logout } = useAuth();
+    const { usuario, autenticado, esAdmin, logout } = useAuth();
     const [destino, setDestino] = useState<string>('');
     const [llegada, setLlegada] = useState<string>('');
     const [salida, setSalida] = useState<string>('');
@@ -69,6 +69,7 @@ const Encabezado = () => {
                 {autenticado ? (
                     <>
                         <Link to="/perfil">Mi perfil</Link>
+                        {esAdmin && <Link to="/admin">Administración</Link>}
                         <span className="encabezado__usuario">Hola, {usuario?.nombre}</span>
                         <button
                             type="button"

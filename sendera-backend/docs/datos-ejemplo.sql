@@ -42,8 +42,8 @@ UPDATE itinerarios SET cupos_disponibles = 9  WHERE id = 2;
 
 -- 4) Usuarios de prueba (hash BCrypt de "Sendera2026", generado con BCryptPasswordEncoder)
 INSERT INTO usuarios (nombre, apellidos, correo, contrasena_hash, rol) VALUES
-  ('Admin',   'Sendera', 'admin@sendera.com',   '$2a$10$LUCimwoN9l6uCh.e2F8LyeVHHVJt5/No6SPxo22n6YCpIMNQqFgQK', 'ROLE_ADMIN'),
-  ('Cliente', 'Prueba',  'cliente@sendera.com', '$2a$10$LUCimwoN9l6uCh.e2F8LyeVHHVJt5/No6SPxo22n6YCpIMNQqFgQK', 'ROLE_CLIENTE')
+  ('Admin',   'Sendera', 'admin@sendera.com',   '$2a$10$V3A9kjYDmfrKFY20nk7f7.tNc1zCMr/Vmd2TU206ryWlH9/Ffgo6e', 'ROLE_ADMIN'),
+  ('Cliente', 'Prueba',  'cliente@sendera.com', '$2a$10$V3A9kjYDmfrKFY20nk7f7.tNc1zCMr/Vmd2TU206ryWlH9/Ffgo6e', 'ROLE_CLIENTE')
 ON DUPLICATE KEY UPDATE correo = correo;
 
 -- 5) Reservas de ejemplo, propiedad del cliente de prueba

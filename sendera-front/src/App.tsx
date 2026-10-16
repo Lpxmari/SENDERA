@@ -1,7 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import Encabezado from './components/Encabezado';
 import AuthLayout from './components/auth/AuthLayout';
 import RutaProtegida from './components/auth/RutaProtegida';
+import RutaAdmin from './components/auth/RutaAdmin';
 import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
 import ResultadosBusqueda from './pages/ResultadosBusqueda';
@@ -9,6 +10,9 @@ import DetalleDestino from './pages/DetalleDestino';
 import FormularioReserva from './pages/FormularioReserva';
 import ConfirmacionReserva from './pages/ConfirmacionReserva';
 import Perfil from './pages/Perfil';
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminUsuarios from './pages/admin/AdminUsuarios';
+import AdminDestinos from './pages/admin/AdminDestinos';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import RecuperarContrasena from './pages/RecuperarContrasena';
@@ -36,6 +40,15 @@ function App() {
                         <Route path="/registro" element={<Registro />} />
                         <Route path="/recuperar-contrasena" element={<RecuperarContrasena />} />
                         <Route path="/cambiar-contrasena" element={<CambiarContrasena />} />
+                    </Route>
+
+                    {/* Administración: la ruta se oculta por rol, pero el backend autoriza cada /admin/** */}
+                    <Route element={<RutaAdmin />}>
+                        <Route path="/admin" element={<AdminLayout />}>
+                            <Route index element={<Navigate to="usuarios" replace />} />
+                            <Route path="usuarios" element={<AdminUsuarios />} />
+                            <Route path="destinos" element={<AdminDestinos />} />
+                        </Route>
                     </Route>
 
                     <Route element={<LayoutPrincipal />}>

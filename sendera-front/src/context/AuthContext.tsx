@@ -11,6 +11,7 @@ import {
 interface AuthContextValue {
     usuario: Usuario | null;
     autenticado: boolean;
+    esAdmin: boolean;
     login: (datos: LoginRequest) => Promise<void>;
     registro: (datos: RegistroRequest) => Promise<void>;
     logout: () => void;
@@ -40,7 +41,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }, []);
 
     const value = useMemo(
-        () => ({ usuario, autenticado: usuario !== null, login, registro, logout }),
+        () => ({
+            usuario,
+            autenticado: usuario !== null,
+            esAdmin: usuario?.rol === 'ROLE_ADMIN',
+            login,
+            registro,
+            logout,
+        }),
         [usuario, login, registro, logout],
     );
 

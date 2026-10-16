@@ -16,6 +16,7 @@ Completar la matriz durante el desarrollo. Los nombres de clases/endpoints son c
 | RF-011 | Disponibilidad | service | Se valida el cupo al reservar | `ReservaServiceImplTest` | En desarrollo |
 | RF-012 | Reservas | controller/service/repository | `/api/v1/reservas` | `ReservaServiceImplTest` (monto, cupos, doble cancelación, propiedad), `ReservaPropiedadIntegracionTest` | Probado (sin pruebas contra MySQL) |
 | RF-014 | Pago, si aplica | integration/service | Proveedor externo | — | Pendiente |
+| RF-013 | Gestión administrativa (etapa 1) | `/admin/usuarios`, destinos, auditoría | Usuarios: listar, buscar, cambiar rol, activar/desactivar; salvaguardas del último administrador; auditoría de usuarios y destinos | `AdminUsuariosApiTest`, `UsuarioAdminServiceImplTest`, `UsuarioAdminIntegracionTest`, `DestinoServiceImplTest` |
 | RNF-01 | Rendimiento | API/consultas | Catálogo | Prueba de carga con umbral aprobado | Pendiente |
 | RNF-05 | Inactividad 15 min | seguridad | JWT de 24 h, sin refresh | — | Bloqueado (decisión) |
 | RNF-07 | Accesibilidad | frontend | Componentes/vistas | Contraste y navegación por teclado | Pendiente |

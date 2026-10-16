@@ -78,3 +78,16 @@ El campo `message` debe ser seguro y comprensible. Para validaciones por campo s
 - Mantener el contrato JSON consistente entre backend y frontend.
 - No asumir que los nombres de propiedades JSON deben ser iguales a los nombres `snake_case` de columnas. La base de datos usa `snake_case`; Java y TypeScript usan `camelCase`, salvo que el contrato API acuerde otra cosa.
 - Validar filtros, paginación, ordenamiento y valores de enumeraciones.
+
+## Administración (`ROLE_ADMIN`, RF-013)
+Todo `/api/v1/admin/**` exige `ROLE_ADMIN` (401 sin token o con cuenta desactivada, 403 si el rol no basta).
+
+| Método | Ruta | Descripción | Códigos |
+|---|---|---|---|
+| GET | `/api/v1/admin/usuarios?q=&rol=&activo=&pagina=&tamano=` | Lista paginada de usuarios | 200, 400, 401, 403 |
+| GET | `/api/v1/admin/usuarios/{id}` | Detalle de un usuario | 200, 401, 403, 404 |
+| PATCH | `/api/v1/admin/usuarios/{id}/rol` | Cambia el rol | 200, 400, 401, 403, 404, 409 |
+| PATCH | `/api/v1/admin/usuarios/{id}/activo` | Activa o desactiva la cuenta | 200, 400, 401, 403, 404, 409 |
+
+El login y `GET /auth/me` devuelven además `rol` en el usuario. Las acciones de usuarios y destinos
+(crear, actualizar, eliminar, cambio de rol, activar/desactivar) quedan en `auditoria_admin`.

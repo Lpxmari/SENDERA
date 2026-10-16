@@ -359,6 +359,156 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorInterno'
 
+  /admin/usuarios:
+    get:
+      summary: Listar usuarios (administración)
+      description: Requiere ROLE_ADMIN. Búsqueda por nombre, apellidos o correo; el texto se trata de forma literal.
+      operationId: listarUsuariosAdmin
+      tags:
+        - Administración
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: rol
+          in: query
+          schema:
+            $ref: '#/components/schemas/RolUsuario'
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+        - name: pagina
+          in: query
+          description: Página, empezando en 0.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: tamano
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Página de usuarios, de la más reciente a la más antigua.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaUsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}:
+    get:
+      summary: Consultar un usuario (administración)
+      description: Requiere ROLE_ADMIN.
+      operationId: obtenerUsuarioAdmin
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}/rol:
+    patch:
+      summary: Cambiar el rol de un usuario
+      description: >
+        Requiere ROLE_ADMIN. No se puede cambiar el propio rol ni quitar el rol al último administrador
+        activo (409). La acción queda registrada en la auditoría.
+      operationId: cambiarRolUsuario
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarRolDto'
+      responses:
+        '200':
+          description: Usuario actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}/activo:
+    patch:
+      summary: Activar o desactivar una cuenta
+      description: >
+        Requiere ROLE_ADMIN. Una cuenta desactivada no puede iniciar sesión y sus tokens vigentes dejan de
+        ser válidos (401) de inmediato; sus datos y reservas se conservan. No se puede desactivar la propia
+        cuenta ni al último administrador activo (409). La acción queda registrada en la auditoría.
+      operationId: cambiarActivoUsuario
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarActivoDto'
+      responses:
+        '200':
+          description: Usuario actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
   /auth/registro:
     post:
       summary: Registrar un nuevo usuario
@@ -676,6 +826,64 @@ components:
           type: string
           format: email
           example: "maria@correo.com"
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+
+    RolUsuario:
+      type: string
+      enum: [ROLE_ADMIN, ROLE_CLIENTE]
+
+    UsuarioAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        apellidos:
+          type: string
+        correo:
+          type: string
+          format: email
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+        activo:
+          type: boolean
+        fechaRegistro:
+          type: string
+          format: date-time
+
+    PaginaUsuarioAdmin:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioAdmin'
+        pagina:
+          type: integer
+          description: Página actual, empezando en 0.
+        tamano:
+          type: integer
+        total:
+          type: integer
+          format: int64
+          description: Total de usuarios que cumplen el filtro.
+
+    CambiarRolDto:
+      type: object
+      required: [rol]
+      properties:
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+
+    CambiarActivoDto:
+      type: object
+      required: [activo]
+      properties:
+        activo:
+          type: boolean
 
     AuthRespuesta:
       type: object

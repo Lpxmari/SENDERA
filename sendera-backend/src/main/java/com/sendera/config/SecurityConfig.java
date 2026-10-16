@@ -6,12 +6,17 @@ import com.sendera.dto.ApiErrorDto;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.sendera.security.CuentaActivaVerificador;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -19,6 +24,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -57,6 +63,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper,
+                                                   ObjectProvider<CuentaActivaVerificador> verificadorCuenta,
                                                    @Value("${app.cors.allowed-origins}") List<String> origenesPermitidos) throws Exception {
         // Una cabecera Authorization vencida no debe bloquear rutas públicas (login, destinos).
         RequestMatcher publicas = rutasPublicas();
@@ -77,10 +84,12 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/destinos", "/destinos/**").hasAuthority(ROL_ADMIN)
                         .requestMatchers(HttpMethod.PUT, "/destinos/**").hasAuthority(ROL_ADMIN)
                         .requestMatchers(HttpMethod.DELETE, "/destinos/**").hasAuthority(ROL_ADMIN)
+                        // Gestión administrativa (RF-013): todo /admin/** exige ROLE_ADMIN firmado en el JWT
+                        .requestMatchers("/admin/**").hasAuthority(ROL_ADMIN)
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(oauth -> oauth
                         .bearerTokenResolver(resolver)
-                        .jwt(jwt -> jwt.jwtAuthenticationConverter(convertidorJwt()))
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(convertidorJwt(verificadorCuenta)))
                         .authenticationEntryPoint((req, res, ex) -> escribirError(req, res, objectMapper,
                                 HttpStatus.UNAUTHORIZED, "Tu sesión no es válida o expiró. Inicia sesión de nuevo."))
                         .accessDeniedHandler((req, res, ex) -> escribirError(req, res, objectMapper,
@@ -126,14 +135,26 @@ public class SecurityConfig {
         return decoder;
     }
 
-    /** Toma los roles del claim "roles" firmado en el JWT; nunca de datos enviados por el cliente. */
-    private static JwtAuthenticationConverter convertidorJwt() {
+    /**
+     * Toma los roles del claim "roles" firmado en el JWT; nunca de datos enviados por el cliente.
+     * Además rechaza el token si la cuenta fue desactivada por un administrador.
+     */
+    private static Converter<Jwt, AbstractAuthenticationToken> convertidorJwt(ObjectProvider<CuentaActivaVerificador> verificadorCuenta) {
         JwtGrantedAuthoritiesConverter authorities = new JwtGrantedAuthoritiesConverter();
         authorities.setAuthoritiesClaimName("roles");
         authorities.setAuthorityPrefix("");
         JwtAuthenticationConverter convertidor = new JwtAuthenticationConverter();
         convertidor.setJwtGrantedAuthoritiesConverter(authorities);
-        return convertidor;
+        return jwt -> {
+            CuentaActivaVerificador verificador = verificadorCuenta.getIfAvailable();
+            if (verificador != null) {
+                Number uid = jwt.getClaim("uid");
+                if (uid == null || !verificador.estaActiva(uid.longValue())) {
+                    throw new DisabledException("La cuenta no está activa.");
+                }
+            }
+            return convertidor.convert(jwt);
+        };
     }
 
     private static RequestMatcher rutasPublicas() {
