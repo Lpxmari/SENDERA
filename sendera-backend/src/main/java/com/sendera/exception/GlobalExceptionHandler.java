@@ -63,6 +63,11 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(ContrasenaActualIncorrectaException.class)
+    public ResponseEntity<ApiErrorDto> handleContrasenaActual(ContrasenaActualIncorrectaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(OperacionAdminNoPermitidaException.class)
     public ResponseEntity<ApiErrorDto> handleOperacionAdmin(OperacionAdminNoPermitidaException ex, HttpServletRequest request) {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);

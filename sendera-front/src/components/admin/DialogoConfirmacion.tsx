@@ -4,6 +4,8 @@ interface DialogoConfirmacionProps {
     titulo: string;
     mensaje: string;
     textoConfirmar: string;
+    /** Acciones difíciles de revertir (eliminar, cancelar, desactivar): se resaltan en rojo. */
+    peligro?: boolean;
     procesando?: boolean;
     onConfirmar: () => void;
     onCancelar: () => void;
@@ -14,6 +16,7 @@ const DialogoConfirmacion = ({
     titulo,
     mensaje,
     textoConfirmar,
+    peligro = false,
     procesando = false,
     onConfirmar,
     onCancelar,
@@ -35,12 +38,15 @@ const DialogoConfirmacion = ({
     return (
         <div className="admin-dialogo__fondo">
             <div
-                className="admin-dialogo"
+                className={`admin-dialogo ${peligro ? 'admin-dialogo--peligro' : ''}`}
                 role="alertdialog"
                 aria-modal="true"
                 aria-labelledby="admin-dialogo-titulo"
                 aria-describedby="admin-dialogo-mensaje"
             >
+                <span className="admin-dialogo__icono" aria-hidden="true">
+                    {peligro ? '!' : '?'}
+                </span>
                 <h2 id="admin-dialogo-titulo">{titulo}</h2>
                 <p id="admin-dialogo-mensaje">{mensaje}</p>
                 <div className="admin-dialogo__acciones">
@@ -53,7 +59,12 @@ const DialogoConfirmacion = ({
                     >
                         Cancelar
                     </button>
-                    <button type="button" className="boton boton--verde" onClick={onConfirmar} disabled={procesando}>
+                    <button
+                        type="button"
+                        className={`boton ${peligro ? 'boton--peligro' : 'boton--verde'}`}
+                        onClick={onConfirmar}
+                        disabled={procesando}
+                    >
                         {procesando ? 'Guardando…' : textoConfirmar}
                     </button>
                 </div>

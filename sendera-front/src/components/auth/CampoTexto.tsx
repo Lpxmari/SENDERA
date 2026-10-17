@@ -9,7 +9,17 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> 
 }
 
 const IconoOjo = ({ tachado }: { tachado: boolean }) => (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg
+        viewBox="0 0 24 24"
+        width="18"
+        height="18"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+    >
         <path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" />
         <circle cx="12" cy="12" r="3" />
         {tachado && <path d="m4 4 16 16" />}
@@ -24,7 +34,9 @@ const CampoTexto = ({ etiqueta, valor, onCambio, error, ayuda, type = 'text', ..
 
     return (
         <div className="auth-campo">
-            <label htmlFor={id} className="auth-campo__etiqueta">{etiqueta}</label>
+            <label htmlFor={id} className="auth-campo__etiqueta">
+                {etiqueta}
+            </label>
             <div className="auth-campo__control">
                 <input
                     id={id}
@@ -47,8 +59,16 @@ const CampoTexto = ({ etiqueta, valor, onCambio, error, ayuda, type = 'text', ..
                     </button>
                 )}
             </div>
-            {error && <p id={`${id}-error`} className="auth-campo__error" role="alert">{error}</p>}
-            {!error && ayuda && <p id={`${id}-ayuda`} className="auth-campo__ayuda">{ayuda}</p>}
+            {error && (
+                <p id={`${id}-error`} className="auth-campo__error" role="alert">
+                    {error}
+                </p>
+            )}
+            {!error && ayuda && (
+                <p id={`${id}-ayuda`} className="auth-campo__ayuda">
+                    {ayuda}
+                </p>
+            )}
         </div>
     );
 };

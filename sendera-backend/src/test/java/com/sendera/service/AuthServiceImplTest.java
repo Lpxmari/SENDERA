@@ -1,6 +1,7 @@
 package com.sendera.service;
 
 import com.sendera.dto.*;
+import com.sendera.exception.ContrasenaActualIncorrectaException;
 import com.sendera.exception.CorreoYaRegistradoException;
 import com.sendera.exception.CredencialesInvalidasException;
 import com.sendera.exception.TokenRecuperacionInvalidoException;
@@ -193,5 +194,96 @@ class AuthServiceImplTest {
         assertTrue(passwordEncoder.matches("nueva1234", usuario.getContrasenaHash()));
         verify(usuarioRepository).save(usuario);
         verify(tokenRepository).deleteByUsuario(usuario);
+    }
+
+    // ---------------------------------------------------------------- RF-004: actualizar perfil
+
+    private ActualizarPerfilDto perfil(String nombre, String apellidos, String correo, String contrasenaActual) {
+        ActualizarPerfilDto dto = new ActualizarPerfilDto();
+        dto.setNombre(nombre);
+        dto.setApellidos(apellidos);
+        dto.setCorreo(correo);
+        dto.setContrasenaActual(contrasenaActual);
+        return dto;
+    }
+
+    @Test
+    void actualizarNombreYApellidosNoPideContrasenaNiToca_ElCorreo() {
+        Usuario usuario = usuarioConClave("clave1234");
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.saveAndFlush(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+        when(jwtService.generar(any())).thenReturn("jwt-nuevo");
+
+        AuthRespuestaDto respuesta = service.actualizarPerfil(1L, perfil(" María José ", " Gómez ", " MARIA@correo.com ", null));
+
+        assertEquals("María José", respuesta.getUsuario().getNombre());
+        assertEquals("Gómez", respuesta.getUsuario().getApellidos());
+        assertEquals("maria@correo.com", respuesta.getUsuario().getCorreo());
+        verify(usuarioRepository, never()).existsByCorreo(anyString());
+    }
+
+    @Test
+    void cambiarElCorreoConLaContrasenaCorrectaGuardaYDevuelveSesionNueva() {
+        Usuario usuario = usuarioConClave("clave1234");
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.existsByCorreo("mariana@correo.com")).thenReturn(false);
+        when(usuarioRepository.saveAndFlush(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+        when(jwtService.generar(any())).thenReturn("jwt-nuevo");
+
+        AuthRespuestaDto respuesta = service.actualizarPerfil(1L, perfil("María", "Gutiérrez", " Mariana@Correo.com ", "clave1234"));
+
+        assertEquals("mariana@correo.com", respuesta.getUsuario().getCorreo());
+        assertEquals("jwt-nuevo", respuesta.getToken());
+        ArgumentCaptor<Usuario> guardado = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioRepository).saveAndFlush(guardado.capture());
+        assertEquals("mariana@correo.com", guardado.getValue().getCorreo());
+    }
+
+    @Test
+    void cambiarElCorreoSinContrasenaOConContrasenaIncorrectaSeRechaza() {
+        Usuario usuario = usuarioConClave("clave1234");
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+
+        assertThrows(ContrasenaActualIncorrectaException.class,
+                () -> service.actualizarPerfil(1L, perfil("María", "Gutiérrez", "otro@correo.com", null)));
+        assertThrows(ContrasenaActualIncorrectaException.class,
+                () -> service.actualizarPerfil(1L, perfil("María", "Gutiérrez", "otro@correo.com", "   ")));
+        assertThrows(ContrasenaActualIncorrectaException.class,
+                () -> service.actualizarPerfil(1L, perfil("María", "Gutiérrez", "otro@correo.com", "incorrecta1")));
+
+        verify(usuarioRepository, never()).saveAndFlush(any());
+        assertEquals("maria@correo.com", usuario.getCorreo());
+    }
+
+    @Test
+    void cambiarAUnCorreoYaRegistradoDevuelveConflicto() {
+        Usuario usuario = usuarioConClave("clave1234");
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.existsByCorreo("ocupado@correo.com")).thenReturn(true);
+
+        assertThrows(CorreoYaRegistradoException.class,
+                () -> service.actualizarPerfil(1L, perfil("María", "Gutiérrez", "ocupado@correo.com", "clave1234")));
+        verify(usuarioRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    void actualizarPerfilNoModificaElRol() {
+        Usuario usuario = usuarioConClave("clave1234");
+        usuario.setRol("ROLE_CLIENTE");
+        when(usuarioRepository.findById(1L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.saveAndFlush(any(Usuario.class))).thenAnswer(i -> i.getArgument(0));
+        when(jwtService.generar(any())).thenReturn("jwt");
+
+        service.actualizarPerfil(1L, perfil("María", "Gutiérrez", "maria@correo.com", null));
+
+        assertEquals("ROLE_CLIENTE", usuario.getRol());
+    }
+
+    @Test
+    void actualizarPerfilDeUnUsuarioInexistenteLanzaExcepcion() {
+        when(usuarioRepository.findById(9L)).thenReturn(Optional.empty());
+
+        assertThrows(CredencialesInvalidasException.class,
+                () -> service.actualizarPerfil(9L, perfil("María", "Gutiérrez", "maria@correo.com", null)));
     }
 }

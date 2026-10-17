@@ -10,5 +10,7 @@ export interface SugerenciaViaje {
     tipo: string;
     lugar: string;
     categoria: CategoriaViaje;
+    /** Alojamiento (destino) al que lleva la tarjeta: /destinos/:destinoId. */
+    destinoId: number;
     imagenUrl?: string;
 }

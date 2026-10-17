@@ -9,10 +9,10 @@ export const categoriasViaje: CategoriaViaje[] = [
 
 // Datos de ejemplo del mockup. Reemplazar por una consulta al backend cuando exista el campo `categoria`.
 export const sugerenciasViaje: SugerenciaViaje[] = [
-    { id: 1, nombre: 'Ciudad Amurallada', tipo: 'Centro Histórico', lugar: 'Cartagena', categoria: 'Recorridos Históricos', imagenUrl: '/imagenes/sugerencias/cartagena.jpg' },
-    { id: 2, nombre: 'Barichara', tipo: 'Pueblo patrimonio', lugar: 'Santander', categoria: 'Recorridos Históricos', imagenUrl: '/imagenes/sugerencias/barichara.jpg' },
-    { id: 3, nombre: 'Fogón Paisa', tipo: 'Restaurante de comida típica', lugar: 'Medellín', categoria: 'Comida y Cocina', imagenUrl: '/imagenes/restaurantes/fogon-paisa.jpg' },
-    { id: 4, nombre: 'Casa del Puerto', tipo: 'Restaurante de mar', lugar: 'Cartagena', categoria: 'Comida y Cocina', imagenUrl: '/imagenes/restaurantes/casa-del-puerto.jpg' },
-    { id: 5, nombre: 'Cabo San Juan', tipo: 'Playa en el Parque Tayrona', lugar: 'Santa Marta', categoria: 'Relajación Costera', imagenUrl: '/imagenes/destinos/tayrona-1.jpg' },
-    { id: 6, nombre: 'Parque de los Nevados', tipo: 'Reserva Natural', lugar: 'Caldas', categoria: 'Avistamiento de Fauna', imagenUrl: '/imagenes/destinos/nevados-1.jpg' },
+    { id: 1, destinoId: 1, nombre: 'Hotel Boutique Casa Aurora', tipo: 'Casona colonial', lugar: 'Cartagena', categoria: 'Recorridos Históricos', imagenUrl: '/imagenes/alojamientos/casa-aurora-1.jpg' },
+    { id: 2, destinoId: 4, nombre: 'Posada Colonial El Aljibe', tipo: 'Posada con patio', lugar: 'Villa de Leyva', categoria: 'Recorridos Históricos', imagenUrl: '/imagenes/alojamientos/el-aljibe-1.jpg' },
+    { id: 3, destinoId: 2, nombre: 'Finca Hotel Los Arrayanes', tipo: 'Desayuno campesino incluido', lugar: 'Salento', categoria: 'Comida y Cocina', imagenUrl: '/imagenes/alojamientos/los-arrayanes-2.jpg' },
+    { id: 4, destinoId: 4, nombre: 'Posada El Aljibe', tipo: 'Desayuno casero en el patio', lugar: 'Villa de Leyva', categoria: 'Comida y Cocina', imagenUrl: '/imagenes/alojamientos/el-aljibe-2.jpg' },
+    { id: 5, destinoId: 3, nombre: 'Cabañas Playa Dorada', tipo: 'Cabañas frente al mar', lugar: 'Santa Marta', categoria: 'Relajación Costera', imagenUrl: '/imagenes/alojamientos/playa-dorada-1.jpg' },
+    { id: 6, destinoId: 5, nombre: 'Hotel Mirador del Lago', tipo: 'Hotel junto al lago', lugar: 'Jardín', categoria: 'Avistamiento de Fauna', imagenUrl: '/imagenes/alojamientos/mirador-del-lago-1.jpg' },
 ];

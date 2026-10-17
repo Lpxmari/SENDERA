@@ -1,13 +1,12 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { CategoriaViaje } from '../types/planificador';
 import { categoriasViaje, sugerenciasViaje } from '../utils/sugerenciasViaje';
 
 const PlanificadorViajes = () => {
     const [categoria, setCategoria] = useState<CategoriaViaje | null>(null);
 
-    const sugerencias = categoria
-        ? sugerenciasViaje.filter((s) => s.categoria === categoria)
-        : sugerenciasViaje;
+    const sugerencias = categoria ? sugerenciasViaje.filter((s) => s.categoria === categoria) : sugerenciasViaje;
 
     const handleClickCategoria = (seleccionada: CategoriaViaje) => {
         setCategoria((actual) => (actual === seleccionada ? null : seleccionada));
@@ -37,16 +36,22 @@ const PlanificadorViajes = () => {
             <ul className="planificador__rejilla">
                 {sugerencias.map((s) => (
                     <li key={s.id} className="sugerencia">
-                        <div className="sugerencia__imagen">
-                            {s.imagenUrl ? (
-                                <img src={s.imagenUrl} alt={s.nombre} loading="lazy" />
-                            ) : (
-                                <span className="sin-imagen">Sin imagen</span>
-                            )}
-                        </div>
-                        <h3>{s.nombre}</h3>
-                        <p className="sugerencia__tipo">{s.tipo}</p>
-                        <p className="sugerencia__lugar">{s.lugar}</p>
+                        <Link
+                            to={`/destinos/${s.destinoId}`}
+                            className="sugerencia__enlace"
+                            aria-label={`Ver el detalle de ${s.nombre}, ${s.lugar}`}
+                        >
+                            <div className="sugerencia__imagen">
+                                {s.imagenUrl ? (
+                                    <img src={s.imagenUrl} alt="" loading="lazy" />
+                                ) : (
+                                    <span className="sin-imagen">Sin imagen</span>
+                                )}
+                            </div>
+                            <h3>{s.nombre}</h3>
+                            <p className="sugerencia__tipo">{s.tipo}</p>
+                            <p className="sugerencia__lugar">{s.lugar}</p>
+                        </Link>
                     </li>
                 ))}
             </ul>

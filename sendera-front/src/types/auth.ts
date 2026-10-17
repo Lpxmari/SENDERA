@@ -21,6 +21,14 @@ export interface RegistroRequest {
     contrasena: string;
 }
 
+/** Cuerpo de PUT /auth/me. `contrasenaActual` es obligatoria solo si el correo cambia. */
+export interface ActualizarCuentaRequest {
+    nombre: string;
+    apellidos: string;
+    correo: string;
+    contrasenaActual?: string;
+}
+
 export interface AuthResponse {
     token: string;
     usuario: Usuario;

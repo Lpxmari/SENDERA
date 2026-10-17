@@ -7,6 +7,8 @@ import { crearResena, listarResenas, obtenerUrlImagenResena } from '../services/
 import { Destino } from '../types/destino';
 import { Resena } from '../types/resena';
 import { formatearPrecio } from '../utils/formatearPrecio';
+import { iniciales } from '../utils/iniciales';
+import BotonIcono from '../components/BotonIcono';
 import IconoServicio from '../components/IconoServicio';
 import {
     categoriaAlojamiento,
@@ -17,6 +19,14 @@ import {
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24;
 const TAMANO_MAXIMO_IMAGEN = 5 * 1024 * 1024;
+const MESES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+
+/** ISO a "16 Oct 2026", sin depender del idioma del navegador. */
+const formatearFechaResena = (iso: string): string => {
+    const [anio, mes, dia] = iso.slice(0, 10).split('-').map(Number);
+    return `${dia} ${MESES[mes - 1]} ${anio}`;
+};
+
 const TIPOS_IMAGEN_PERMITIDOS = ['image/jpeg', 'image/png', 'image/webp'];
 
 interface EstadoResenas {
@@ -31,13 +41,6 @@ const calcularNoches = (llegada: string, salida: string): number => {
     const diferencia = (new Date(salida).getTime() - new Date(llegada).getTime()) / MS_POR_DIA;
     return Number.isFinite(diferencia) && diferencia > 0 ? Math.round(diferencia) : 0;
 };
-
-const IconoPerfil = () => (
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7" />
-    </svg>
-);
 
 const DetalleDestino = () => {
     const { id } = useParams<{ id: string }>();
@@ -129,11 +132,6 @@ const DetalleDestino = () => {
 
     const fotos = destino.fotosUrl ?? [];
     const fotoPrincipal = fotos[fotoActiva] ?? null;
-    // Las miniaturas son las demás fotos (sin repetir la principal)
-    const miniaturas = fotos
-        .map((url, indice) => ({ url, indice }))
-        .filter(({ indice }) => indice !== fotoActiva)
-        .slice(0, 2);
 
     const total = noches > 0 ? destino.precioBase * noches : 0;
     const promedioCalificacion = resenas.length
@@ -249,17 +247,15 @@ const DetalleDestino = () => {
                     <p className="detalle__direccion">{destino.ubicacion}</p>
                 </div>
                 <div className="detalle__acciones">
-                    <button type="button" className="boton-contorno" onClick={compartir}>
-                        Compartir
-                    </button>
-                    <button
-                        type="button"
-                        className={`boton-contorno ${guardado ? 'boton-contorno--activo' : ''}`}
+                    <BotonIcono icono="compartir" etiqueta="Compartir este alojamiento" ayuda="Compartir" onClick={compartir} />
+                    <BotonIcono
+                        icono="guardar"
+                        relleno={guardado}
+                        etiqueta={guardado ? 'Quitar de guardados' : 'Guardar este alojamiento'}
+                        ayuda={guardado ? 'Guardado' : 'Guardar'}
                         aria-pressed={guardado}
                         onClick={() => setGuardado((g) => !g)}
-                    >
-                        {guardado ? 'Guardado' : 'Guardar'}
-                    </button>
+                    />
                 </div>
             </header>
             <p className="detalle__aviso" role="status" aria-live="polite">{mensaje}</p>
@@ -267,29 +263,33 @@ const DetalleDestino = () => {
             <section className="galeria" aria-label="Fotos del alojamiento">
                 <div className="galeria__principal">
                     {fotoPrincipal ? (
-                        <img src={fotoPrincipal} alt={`Foto de ${destino.nombre}`} />
+                        <img src={fotoPrincipal} alt={`Foto ${fotoActiva + 1} de ${destino.nombre}`} />
                     ) : (
                         <span className="sin-imagen">Sin imagen</span>
                     )}
+                    {fotos.length > 1 && (
+                        <span className="galeria__contador" aria-hidden="true">
+                            {fotoActiva + 1} / {fotos.length}
+                        </span>
+                    )}
                 </div>
-                {[0, 1].map((posicion) => {
-                    const miniatura = miniaturas[posicion];
-                    return (
-                        <div key={posicion} className={`galeria__mini galeria__mini--${posicion + 1}`}>
-                            {miniatura ? (
+                {fotos.length > 1 && (
+                    <ul className="galeria__miniaturas" aria-label="Todas las fotos">
+                        {fotos.map((url, indice) => (
+                            <li key={url}>
                                 <button
                                     type="button"
-                                    onClick={() => setFotoActiva(miniatura.indice)}
-                                    aria-label={`Ver foto ${miniatura.indice + 1} de ${destino.nombre}`}
+                                    className={indice === fotoActiva ? 'galeria__mini galeria__mini--activa' : 'galeria__mini'}
+                                    onClick={() => setFotoActiva(indice)}
+                                    aria-pressed={indice === fotoActiva}
+                                    aria-label={`Ver foto ${indice + 1} de ${destino.nombre}`}
                                 >
-                                    <img src={miniatura.url} alt="" loading="lazy" />
+                                    <img src={url} alt="" loading="lazy" />
                                 </button>
-                            ) : (
-                                <span className="sin-imagen">Sin imagen</span>
-                            )}
-                        </div>
-                    );
-                })}
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </section>
 
             <div className="detalle__cuerpo">
@@ -354,10 +354,25 @@ const DetalleDestino = () => {
             </div>
 
             <section className="opiniones" aria-labelledby="titulo-opiniones">
-                <h2 id="titulo-opiniones" className="titulo-seccion">Reseñas de este destino</h2>
+                <div className="opiniones__cabecera">
+                    <h2 id="titulo-opiniones" className="titulo-seccion">Reseñas de este destino</h2>
+                    {promedioCalificacion && (
+                        <p className="opiniones__resumen">
+                            <span className="opiniones__promedio">
+                                <span aria-hidden="true">★</span> {promedioCalificacion}
+                            </span>
+                            <span>
+                                de 5 · {resenas.length} {resenas.length === 1 ? 'reseña' : 'reseñas'}
+                            </span>
+                        </p>
+                    )}
+                </div>
                 {autenticado ? (
                     <form className="resena-form" onSubmit={publicarResena}>
-                        <h3>Comparte tu experiencia</h3>
+                        <div className="resena-form__encabezado">
+                            <h3>Comparte tu experiencia</h3>
+                            <p>Tu opinión ayuda a otros viajeros a elegir mejor su próximo destino.</p>
+                        </div>
                         <label className="resena-form__campo">
                             <span>Tu reseña</span>
                             <textarea
@@ -386,14 +401,18 @@ const DetalleDestino = () => {
                                             onChange={() => setCalificacion(estrella)}
                                             required
                                         />
-                                        <span aria-hidden="true">★</span>
+                                        <span aria-hidden="true">{estrella <= calificacion ? '★' : '☆'}</span>
                                         <span className="solo-lectores">{estrella} {estrella === 1 ? 'estrella' : 'estrellas'}</span>
                                     </label>
                                 ))}
+                                <span className="resena-form__valor" aria-live="polite">
+                                    {calificacion > 0 ? `${calificacion} de 5` : 'Toca una estrella'}
+                                </span>
                             </div>
                         </fieldset>
                         <label className="resena-form__campo">
                             <span>Foto (opcional)</span>
+                            <small className="resena-form__ayuda-foto">Formatos JPG, PNG o WEBP.</small>
                             <input
                                 ref={referenciaImagen}
                                 type="file"
@@ -419,9 +438,11 @@ const DetalleDestino = () => {
                             </div>
                         )}
                         {errorFormulario && <p className="resena-form__error" role="alert">{errorFormulario}</p>}
-                        <button type="submit" className="boton boton--verde" disabled={publicandoResena}>
-                            {publicandoResena ? 'Publicando…' : 'Publicar reseña'}
-                        </button>
+                        <div className="resena-form__acciones">
+                            <button type="submit" className="boton boton--verde" disabled={publicandoResena}>
+                                {publicandoResena ? 'Publicando…' : 'Publicar reseña'}
+                            </button>
+                        </div>
                     </form>
                 ) : (
                     <p className="opiniones__invitacion">
@@ -438,7 +459,7 @@ const DetalleDestino = () => {
                 {errorResenas && <p className="estado estado--error" role="alert">{errorResenas}</p>}
                 {cargandoResenas && <p className="estado" role="status">Cargando reseñas…</p>}
                 {!cargandoResenas && !errorResenas && resenas.length === 0 && (
-                    <p className="opiniones__vacias">Sé la primera persona en compartir su experiencia.</p>
+                    <p className="opiniones__vacias">Todavía no hay reseñas. Sé la primera persona en compartir su experiencia.</p>
                 )}
                 <div className="opiniones__rejilla">
                     {resenas.map((resena) => (
@@ -458,10 +479,12 @@ const DetalleDestino = () => {
                                 )}
                             </div>
                             <figcaption>
-                                <IconoPerfil />
+                                <span className="opinion__avatar" aria-hidden="true">
+                                    {iniciales(resena.autor)}
+                                </span>
                                 <span>
                                     <strong>{resena.autor}</strong>
-                                    {new Date(resena.creadaEn).toLocaleDateString()}
+                                    {formatearFechaResena(resena.creadaEn)}
                                 </span>
                             </figcaption>
                         </figure>

@@ -1,9 +1,13 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
+import BotonAccion from '../../components/BotonAccion';
 import DialogoConfirmacion from '../../components/admin/DialogoConfirmacion';
+import PaginacionAdmin from '../../components/admin/PaginacionAdmin';
+import IconoAdmin from '../../components/admin/IconoAdmin';
 import { useAuth } from '../../context/AuthContext';
 import { cambiarActivoUsuario, cambiarRolUsuario, listarUsuariosAdmin } from '../../services/adminService';
 import { obtenerMensajeError } from '../../services/apiClient';
 import { FiltroUsuariosAdmin, PaginaUsuarios, RolUsuario, UsuarioAdmin } from '../../types/admin';
+import { iniciales } from '../../utils/iniciales';
 
 const TAMANO_PAGINA = 10;
 
@@ -135,8 +139,6 @@ const AdminUsuarios = () => {
         }
     };
 
-    const totalPaginas = datos ? Math.max(1, Math.ceil(datos.total / datos.tamano)) : 1;
-
     return (
         <section aria-labelledby="admin-usuarios-titulo">
             <h1 id="admin-usuarios-titulo" className="admin__h1">
@@ -183,10 +185,12 @@ const AdminUsuarios = () => {
                     </select>
                 </label>
                 <div className="admin-filtros__acciones">
-                    <button type="submit" className="boton boton--verde">
+                    <button type="submit" className="boton boton--verde boton--con-icono">
+                        <IconoAdmin nombre="lupa" />
                         Buscar
                     </button>
-                    <button type="button" className="boton-contorno" onClick={handleLimpiar}>
+                    <button type="button" className="boton-contorno boton--con-icono" onClick={handleLimpiar}>
+                        <IconoAdmin nombre="limpiar" />
                         Limpiar
                     </button>
                 </div>
@@ -228,11 +232,24 @@ const AdminUsuarios = () => {
                                 return (
                                     <tr key={u.id}>
                                         <td>
-                                            {nombreCompleto(u)}
-                                            {esYo && <span className="admin-etiqueta"> (tú)</span>}
+                                            <div className="admin-tabla__persona">
+                                                <span className="admin-avatar admin-avatar--pequeno" aria-hidden="true">
+                                                    {iniciales(nombreCompleto(u))}
+                                                </span>
+                                                <strong>
+                                                    {nombreCompleto(u)}
+                                                    {esYo && <span className="admin-etiqueta"> (tú)</span>}
+                                                </strong>
+                                            </div>
                                         </td>
                                         <td>{u.correo}</td>
-                                        <td>{ETIQUETA_ROL[u.rol]}</td>
+                                        <td>
+                                            <span
+                                                className={`admin-rol ${u.rol === 'ROLE_ADMIN' ? 'admin-rol--admin' : ''}`}
+                                            >
+                                                {ETIQUETA_ROL[u.rol]}
+                                            </span>
+                                        </td>
                                         <td>
                                             <span
                                                 className={`admin-estado admin-estado--${u.activo ? 'activo' : 'inactivo'}`}
@@ -246,9 +263,14 @@ const AdminUsuarios = () => {
                                                 <span className="admin-etiqueta">No puedes cambiar tu cuenta</span>
                                             ) : (
                                                 <div className="admin-tabla__acciones">
-                                                    <button
-                                                        type="button"
-                                                        className="boton-contorno"
+                                                    <BotonAccion
+                                                        icono={u.rol === 'ROLE_ADMIN' ? 'usuario' : 'escudo'}
+                                                        texto={
+                                                            u.rol === 'ROLE_ADMIN'
+                                                                ? 'Hacer cliente'
+                                                                : 'Hacer administrador'
+                                                        }
+                                                        etiqueta={`${u.rol === 'ROLE_ADMIN' ? 'Hacer cliente a' : 'Hacer administrador a'} ${nombreCompleto(u)}`}
                                                         onClick={() =>
                                                             setPendiente({
                                                                 tipo: 'rol',
@@ -259,15 +281,12 @@ const AdminUsuarios = () => {
                                                                         : 'ROLE_ADMIN',
                                                             })
                                                         }
-                                                        aria-label={`${u.rol === 'ROLE_ADMIN' ? 'Hacer cliente a' : 'Hacer administrador a'} ${nombreCompleto(u)}`}
-                                                    >
-                                                        {u.rol === 'ROLE_ADMIN'
-                                                            ? 'Hacer cliente'
-                                                            : 'Hacer administrador'}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className="boton-contorno"
+                                                    />
+                                                    <BotonAccion
+                                                        icono={u.activo ? 'ban' : 'check'}
+                                                        texto={u.activo ? 'Desactivar' : 'Activar'}
+                                                        etiqueta={`${u.activo ? 'Desactivar' : 'Activar'} la cuenta de ${nombreCompleto(u)}`}
+                                                        peligro={u.activo}
                                                         onClick={() =>
                                                             setPendiente({
                                                                 tipo: 'activo',
@@ -275,10 +294,7 @@ const AdminUsuarios = () => {
                                                                 activo: !u.activo,
                                                             })
                                                         }
-                                                        aria-label={`${u.activo ? 'Desactivar' : 'Activar'} la cuenta de ${nombreCompleto(u)}`}
-                                                    >
-                                                        {u.activo ? 'Desactivar' : 'Activar'}
-                                                    </button>
+                                                    />
                                                 </div>
                                             )}
                                         </td>
@@ -290,29 +306,17 @@ const AdminUsuarios = () => {
                 </div>
             )}
 
-            {datos && datos.total > 0 && (
-                <nav className="admin-paginacion" aria-label="Paginación de usuarios">
-                    <button
-                        type="button"
-                        className="boton-contorno"
-                        disabled={pagina === 0 || cargando}
-                        onClick={() => setPagina((p) => p - 1)}
-                    >
-                        Anterior
-                    </button>
-                    <span>
-                        Página {pagina + 1} de {totalPaginas} · {datos.total}{' '}
-                        {datos.total === 1 ? 'usuario' : 'usuarios'}
-                    </span>
-                    <button
-                        type="button"
-                        className="boton-contorno"
-                        disabled={pagina + 1 >= totalPaginas || cargando}
-                        onClick={() => setPagina((p) => p + 1)}
-                    >
-                        Siguiente
-                    </button>
-                </nav>
+            {datos && (
+                <PaginacionAdmin
+                    etiqueta="Paginación de usuarios"
+                    pagina={pagina}
+                    tamano={datos.tamano}
+                    total={datos.total}
+                    cargando={cargando}
+                    singular="usuario"
+                    plural="usuarios"
+                    onCambiar={setPagina}
+                />
             )}
 
             {pendiente && (
@@ -321,6 +325,10 @@ const AdminUsuarios = () => {
                         const d = describirAccion(pendiente);
                         return { titulo: d.titulo, mensaje: d.mensaje, textoConfirmar: d.confirmar };
                     })()}
+                    peligro={
+                        (pendiente.tipo === 'activo' && !pendiente.activo) ||
+                        (pendiente.tipo === 'rol' && pendiente.rol === 'ROLE_CLIENTE')
+                    }
                     procesando={procesando}
                     onConfirmar={confirmar}
                     onCancelar={cancelar}

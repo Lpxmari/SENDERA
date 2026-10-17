@@ -3,6 +3,7 @@ import Encabezado from './components/Encabezado';
 import AuthLayout from './components/auth/AuthLayout';
 import RutaProtegida from './components/auth/RutaProtegida';
 import RutaAdmin from './components/auth/RutaAdmin';
+import RutaCliente from './components/auth/RutaCliente';
 import { AuthProvider } from './context/AuthContext';
 import Home from './pages/Home';
 import ResultadosBusqueda from './pages/ResultadosBusqueda';
@@ -13,6 +14,8 @@ import Perfil from './pages/Perfil';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
 import AdminDestinos from './pages/admin/AdminDestinos';
+import AdminReservas from './pages/admin/AdminReservas';
+import AdminResenas from './pages/admin/AdminResenas';
 import Login from './pages/Login';
 import Registro from './pages/Registro';
 import RecuperarContrasena from './pages/RecuperarContrasena';
@@ -48,6 +51,8 @@ function App() {
                             <Route index element={<Navigate to="usuarios" replace />} />
                             <Route path="usuarios" element={<AdminUsuarios />} />
                             <Route path="destinos" element={<AdminDestinos />} />
+                            <Route path="reservas" element={<AdminReservas />} />
+                            <Route path="resenas" element={<AdminResenas />} />
                         </Route>
                     </Route>
 
@@ -59,7 +64,9 @@ function App() {
                         {/* Requieren sesión iniciada */}
                         <Route element={<RutaProtegida />}>
                             <Route path="/reservar/:destinoId" element={<FormularioReserva />} />
-                            <Route path="/perfil" element={<Perfil />} />
+                            <Route element={<RutaCliente />}>
+                                <Route path="/perfil" element={<Perfil />} />
+                            </Route>
                             <Route path="/confirmacion" element={<ConfirmacionReserva />} />
                         </Route>
                     </Route>

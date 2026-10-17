@@ -1,6 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import apiClient from './apiClient';
-import { cambiarActivoUsuario, cambiarRolUsuario, listarUsuariosAdmin } from './adminService';
+import {
+    cambiarActivoUsuario,
+    cambiarEstadoReserva,
+    cambiarRolUsuario,
+    eliminarResenaAdmin,
+    listarResenasAdmin,
+    listarReservasAdmin,
+    listarUsuariosAdmin,
+} from './adminService';
 import { actualizarDestino, crearDestino, eliminarDestino } from './destinoService';
 
 vi.mock('./apiClient', () => ({
@@ -74,5 +82,61 @@ describe('destinoService (escritura de administrador)', () => {
         expect(apiClient.post).toHaveBeenCalledWith('/destinos', DATOS);
         expect(apiClient.put).toHaveBeenCalledWith('/destinos/1', DATOS);
         expect(apiClient.delete).toHaveBeenCalledWith('/destinos/1');
+    });
+});
+
+describe('adminService: reservas y reseñas', () => {
+    beforeEach(() => {
+        get.mockResolvedValue({ data: { contenido: [], pagina: 0, tamano: 10, total: 0 } });
+        patch.mockResolvedValue({ data: { id: 3 } });
+    });
+
+    it('lista reservas enviando solo los filtros con valor', async () => {
+        await listarReservasAdmin({
+            estado: 'CONFIRMADA',
+            q: ' ana ',
+            desde: '2026-10-01',
+            hasta: '',
+            pagina: 1,
+            tamano: 10,
+        });
+
+        expect(get).toHaveBeenCalledWith('/admin/reservas', {
+            params: { estado: 'CONFIRMADA', q: 'ana', desde: '2026-10-01', pagina: 1, tamano: 10 },
+        });
+    });
+
+    it('lista reservas sin filtros con parámetros vacíos', async () => {
+        await listarReservasAdmin();
+
+        expect(get).toHaveBeenCalledWith('/admin/reservas', { params: {} });
+    });
+
+    it('cambia el estado de una reserva con el cuerpo del contrato', async () => {
+        await cambiarEstadoReserva(3, 'CANCELADA');
+
+        expect(patch).toHaveBeenCalledWith('/admin/reservas/3/estado', { estado: 'CANCELADA' });
+    });
+
+    it('lista reseñas con destino, calificación máxima y texto', async () => {
+        await listarResenasAdmin({ destinoId: 5, calificacionMax: 2, q: 'sucio', pagina: 0, tamano: 10 });
+
+        expect(get).toHaveBeenCalledWith('/admin/resenas', {
+            params: { destinoId: 5, calificacionMax: 2, q: 'sucio', pagina: 0, tamano: 10 },
+        });
+    });
+
+    it('omite los filtros de reseñas vacíos', async () => {
+        await listarResenasAdmin({ destinoId: '', calificacionMax: '', q: '  ' });
+
+        expect(get).toHaveBeenCalledWith('/admin/resenas', { params: {} });
+    });
+
+    it('elimina una reseña', async () => {
+        vi.mocked(apiClient.delete).mockResolvedValue({ data: undefined });
+
+        await eliminarResenaAdmin(9);
+
+        expect(apiClient.delete).toHaveBeenCalledWith('/admin/resenas/9');
     });
 });

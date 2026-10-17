@@ -34,6 +34,7 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 | POST | `/api/v1/auth/recuperar-contrasena` | Público | 204, 400 |
 | POST | `/api/v1/auth/cambiar-contrasena` | Público | 204, 400 |
 | GET | `/api/v1/auth/me` | Autenticado | 200, 401 |
+| PUT | `/api/v1/auth/me` | Autenticado; actualiza nombre, apellidos y correo (la contraseña actual es obligatoria si el correo cambia) y devuelve un token nuevo | 200, 400, 401, 409 |
 | GET | `/api/v1/destinos` (filtros: `q`, `precioMin`, `precioMax`, `duracionMin`, `duracionMax`, `dificultad`, `accesibilidad`) | Público | 200, 400 |
 | GET | `/api/v1/destinos/{id}` | Público | 200, 404 |
 | POST / PUT / DELETE | `/api/v1/destinos`, `/api/v1/destinos/{id}` | `ROLE_ADMIN` | 201 / 200 / 204, 400, 401, 403, 404, 409 |
@@ -43,7 +44,7 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 
 **Propiedad de las reservas:** cada reserva pertenece al usuario del JWT. `GET /reservas` devuelve solo las propias (el administrador ve todas) y consultar o cancelar una reserva ajena responde 404, para no revelar que existe.
 
-**Rutas aún sin implementar** (siguen siendo candidatas): actividades turísticas, itinerarios (CRUD del usuario), perfil (`PUT /auth/me`), cierre de sesión.
+**Rutas aún sin implementar** (siguen siendo candidatas): actividades turísticas, itinerarios (CRUD del usuario), campos de perfil que aún no existen en el MER (identificación, fecha de nacimiento, país, intereses, foto), cierre de sesión.
 
 ## 7.4 Códigos HTTP
 - **200 OK:** consulta o actualización exitosa con cuerpo de respuesta.
@@ -91,3 +92,11 @@ Todo `/api/v1/admin/**` exige `ROLE_ADMIN` (401 sin token o con cuenta desactiva
 
 El login y `GET /auth/me` devuelven además `rol` en el usuario. Las acciones de usuarios y destinos
 (crear, actualizar, eliminar, cambio de rol, activar/desactivar) quedan en `auditoria_admin`.
+
+| Método | Ruta | Descripción | Códigos |
+|---|---|---|---|
+| GET | `/api/v1/admin/reservas?estado=&q=&desde=&hasta=&pagina=&tamano=` | Todas las reservas, con filtros | 200, 400, 401, 403 |
+| GET | `/api/v1/admin/reservas/{id}` | Detalle de una reserva | 200, 401, 403, 404 |
+| PATCH | `/api/v1/admin/reservas/{id}/estado` | Confirma o cancela (cancelar devuelve el cupo) | 200, 400, 401, 403, 404, 409 |
+| GET | `/api/v1/admin/resenas?destinoId=&calificacionMax=&q=&pagina=&tamano=` | Reseñas para moderar | 200, 400, 401, 403 |
+| DELETE | `/api/v1/admin/resenas/{id}` | Elimina una reseña | 204, 401, 403, 404 |

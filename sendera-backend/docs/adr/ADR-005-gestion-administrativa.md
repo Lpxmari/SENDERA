@@ -29,3 +29,12 @@ la escritura de destinos restringida a `ROLE_ADMIN`.
 - Cambio de esquema sin migraciones: en una base existente hay que ejecutar
   `ALTER TABLE usuarios ADD COLUMN activo BOOLEAN NOT NULL DEFAULT TRUE AFTER rol;` y crear `auditoria_admin`
   (se crea sola al ejecutar `docs/schema.sql`, que usa `CREATE TABLE IF NOT EXISTS`).
+
+## Etapa 2 (implementada 2026-10-16)
+- **Reservas:** `GET /admin/reservas` (filtros: estado, texto, rango de fechas, paginación) y
+  `PATCH /admin/reservas/{id}/estado`. Transiciones: PENDIENTE → CONFIRMADA, PENDIENTE → CANCELADA y
+  CONFIRMADA → CANCELADA; CANCELADA es final. Cancelar devuelve el cupo al itinerario con bloqueo
+  pesimista, igual que al reservar. Auditoría `RESERVA_CONFIRMAR` / `RESERVA_CANCELAR`.
+- **Reseñas:** `GET /admin/resenas` (destino, calificación máxima, texto) y `DELETE /admin/resenas/{id}`.
+  El listado usa una proyección que no carga la imagen (LONGBLOB). La auditoría `RESENA_ELIMINAR` guarda solo
+  identificadores, nunca el texto de la reseña.

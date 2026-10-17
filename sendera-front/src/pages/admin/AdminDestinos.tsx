@@ -1,5 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import DialogoConfirmacion from '../../components/admin/DialogoConfirmacion';
+import BotonIcono from '../../components/BotonIcono';
+import IconoAdmin from '../../components/admin/IconoAdmin';
 import { obtenerMensajeError } from '../../services/apiClient';
 import { actualizarDestino, crearDestino, eliminarDestino, listarDestinos } from '../../services/destinoService';
 import { CrearDestinoDto, DificultadEnum, Destino } from '../../types/destino';
@@ -168,7 +170,8 @@ const AdminDestinos = () => {
                     Destinos
                 </h1>
                 {!editando && (
-                    <button type="button" className="boton boton--verde" onClick={abrirNuevo}>
+                    <button type="button" className="boton boton--verde boton--con-icono" onClick={abrirNuevo}>
+                        <IconoAdmin nombre="mas" />
                         Nuevo destino
                     </button>
                 )}
@@ -264,8 +267,8 @@ const AdminDestinos = () => {
                             aria-describedby="destino-fotos-ayuda"
                         />
                         <small id="destino-fotos-ayuda">
-                            Usa direcciones completas o rutas del sitio, por ejemplo /imagenes/destinos/tayrona-1.jpg.
-                            La primera foto es la portada.
+                            Usa direcciones completas o rutas del sitio, por ejemplo
+                            /imagenes/alojamientos/casa-aurora-1.jpg. La primera foto es la portada.
                         </small>
                     </div>
 
@@ -319,22 +322,19 @@ const AdminDestinos = () => {
                                     <td>{d.accesibilidad ? 'Sí' : 'No'}</td>
                                     <td>
                                         <div className="admin-tabla__acciones">
-                                            <button
-                                                type="button"
-                                                className="boton-contorno"
+                                            <BotonIcono
+                                                icono="lapiz"
+                                                etiqueta={`Editar ${d.nombre}`}
+                                                ayuda="Editar"
                                                 onClick={() => abrirEdicion(d)}
-                                                aria-label={`Editar ${d.nombre}`}
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className="boton-contorno boton-contorno--peligro"
+                                            />
+                                            <BotonIcono
+                                                icono="papelera"
+                                                etiqueta={`Eliminar ${d.nombre}`}
+                                                ayuda="Eliminar"
+                                                peligro
                                                 onClick={() => setPorEliminar(d)}
-                                                aria-label={`Eliminar ${d.nombre}`}
-                                            >
-                                                Eliminar
-                                            </button>
+                                            />
                                         </div>
                                     </td>
                                 </tr>
@@ -346,6 +346,7 @@ const AdminDestinos = () => {
 
             {porEliminar && (
                 <DialogoConfirmacion
+                    peligro
                     titulo="Eliminar destino"
                     mensaje={`¿Seguro que quieres eliminar “${porEliminar.nombre}”? Esta acción no se puede deshacer. Si tiene itinerarios, no se podrá eliminar.`}
                     textoConfirmar="Sí, eliminar"
