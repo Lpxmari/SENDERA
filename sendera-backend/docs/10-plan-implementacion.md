@@ -9,7 +9,7 @@ El orden puede ajustarse en equipo, pero no se deben saltar decisiones que bloqu
   - Frontend: Prettier (formato), oxlint (lint) y Vitest (pruebas).
   - Backend: JUnit (pruebas). No se usan herramientas de lint ni de formato (decisión del equipo).
 - Añadir `.env.example` sin secretos reales en `sendera-backend/` y en `sendera-front/`.
-- Automatizar lint, build y pruebas en CI: diferido.
+- Automatizar lint, build y pruebas en CI: hecho (`.github/workflows/ci.yaml`, ver `docs/11-ci-cd.md`).
 
 **Salida:** repositorio reproducible y reglas visibles para Claude Code.
 
@@ -68,7 +68,7 @@ Antes de codificar, Claude Code debe indicar requisitos afectados, archivos prev
 ## Estado real (octubre 2026)
 | Fase | Estado |
 |---|---|
-| 1 Preparación | **Cumplida**, salvo el CI (diferido) y aplicar Prettier al código existente del frontend (25 archivos con otro estilo) |
+| 1 Preparación | **Cumplida**, salvo aplicar Prettier al código existente del frontend (25 archivos con otro estilo). CI y CD configurados; faltan los secretos de Railway (`docs/11-ci-cd.md`) |
 | 2 Requisitos | Pendiente de aprobación formal |
 | 3 MER | **Aprobado (2026-10-14)**; registrar la aprobación formal en el historial. Implementado en la Fase C (ver `docs/04` §4.6) |
 | 4 Fundamentos | Hecha: validación, manejo global de errores y contrato OpenAPI único en `docs/openapi.yaml` |
