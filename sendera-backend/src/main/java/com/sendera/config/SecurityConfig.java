@@ -77,6 +77,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(requests -> requests
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        // Chequeo de salud del despliegue: solo health, sin detalles (ver application.yaml)
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(AUTH_PUBLICAS).permitAll()
                         // Consulta de destinos abierta; crear/modificar/eliminar solo administradores
                         .requestMatchers(HttpMethod.GET, "/destinos", "/destinos/**").permitAll()
@@ -164,6 +166,8 @@ public class SecurityConfig {
         }
         matchers.add(new AntPathRequestMatcher("/destinos", HttpMethod.GET.name()));
         matchers.add(new AntPathRequestMatcher("/destinos/**", HttpMethod.GET.name()));
+        matchers.add(new AntPathRequestMatcher("/actuator/health/**", HttpMethod.GET.name()));
+        matchers.add(new AntPathRequestMatcher("/actuator/health", HttpMethod.GET.name()));
         return new OrRequestMatcher(matchers);
     }
 
