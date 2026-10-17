@@ -1,21 +1,68 @@
 server:
-  port: 8080
+  # Las plataformas de despliegue (Railway, etc.) inyectan PORT.
+  port: ${PORT:8080}
   servlet:
     context-path: /api/v1
 
 spring:
   application:
     name: sendera-backend
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+  config:
+    # Carga el archivo .env local (ignorado por Git) si existe; las variables de entorno reales tienen prioridad.
+    import: optional:file:.env[.properties],optional:file:./sendera-backend/.env[.properties]
   datasource:
-    url: jdbc:mysql://localhost:3306/sendera_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    username: root
-    password: tu_contrasena_aqui
+    url: "jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:sendera}?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+    username: ${DB_USER:root}
+    password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
-      ddl-auto: update
-    show-sql: true
+      ddl-auto: validate
+    show-sql: false
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQLDialect
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+  # El envio real de correos se activa definiendo SPRING_MAIL_HOST (ver .env.example).
+  # Sin host, el enlace de recuperacion se imprime en consola (solo desarrollo).
+  mail:
+    port: ${SPRING_MAIL_PORT:587}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+app:
+  cors:
+    # Lista separada por comas. En produccion define CORS_ORIGINS con el dominio real del frontend.
+    allowed-origins: ${CORS_ORIGINS:http://localhost:5173}
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  jwt:
+    # Obligatorio, minimo 32 caracteres. Definelo en el entorno (JWT_SECRET); no lo guardes en el repositorio.
+    secret: ${JWT_SECRET}
+    expiracion-horas: ${JWT_EXPIRACION_HORAS:24}
+  recuperacion:
+    expiracion-minutos: ${RECUPERACION_EXPIRACION_MINUTOS:30}
+  mail:
+    remitente: ${MAIL_REMITENTE:no-reply@sendera.com}
+
+# Actuator: solo se expone /actuator/health (sin detalles) para el chequeo de salud del despliegue.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true

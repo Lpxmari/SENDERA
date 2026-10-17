@@ -1,0 +1,8 @@
+# Perfil solo para desarrollo local: --spring.profiles.active=dev
+# La contrasena de la BD sigue viniendo de DB_PASSWORD.
+spring:
+  jpa:
+    show-sql: true
+app:
+  jwt:
+    secret: ${JWT_SECRET:sendera-clave-solo-para-desarrollo-local-0000}

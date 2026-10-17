@@ -1,0 +1,1368 @@
+openapi: 3.0.3
+info:
+  title: API REST - Proyecto SENDERA
+  description: Contrato de interfaz OpenAPI para la integración entre Frontend (React + TS) y Backend (Spring Boot) del proyecto SENDERA.
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Servidor de Desarrollo Local
+
+security:
+  - bearerAuth: []
+
+paths:
+
+  /destinos:
+    get:
+      summary: Obtener lista de destinos turísticos
+      operationId: listarDestinos
+      description: Consulta pública. Todos los filtros son opcionales y se combinan con AND.
+      tags:
+        - Destinos
+      security: []
+      parameters:
+        - name: q
+          in: query
+          description: Texto a buscar en nombre, ubicación y descripción.
+          schema: { type: string }
+        - name: precioMin
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: precioMax
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: duracionMin
+          in: query
+          description: Duración mínima en días de algún itinerario del destino.
+          schema: { type: integer, minimum: 1 }
+        - name: duracionMax
+          in: query
+          schema: { type: integer, minimum: 1 }
+        - name: dificultad
+          in: query
+          schema: { $ref: '#/components/schemas/Dificultad' }
+        - name: accesibilidad
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Lista de destinos obtenida exitosamente.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Destino'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+    post:
+      summary: Crear un nuevo destino turístico
+      description: Requiere rol ROLE_ADMIN.
+      operationId: crearDestino
+      tags:
+        - Destinos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearDestinoDto'
+      responses:
+        '201':
+          description: Destino creado exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Destino'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /destinos/{id}:
+    get:
+      summary: Obtener detalle de un destino por ID
+      operationId: obtenerDestinoPorId
+      security: []
+      tags:
+        - Destinos
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID del destino a consultar
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Detalle del destino.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Destino'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+    put:
+      summary: Reemplazar un destino turístico
+      description: Requiere rol ROLE_ADMIN.
+      operationId: actualizarDestino
+      tags:
+        - Destinos
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearDestinoDto'
+      responses:
+        '200':
+          description: Destino actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Destino'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+    delete:
+      summary: Eliminar un destino turístico
+      description: Requiere rol ROLE_ADMIN. No se puede eliminar un destino con itinerarios asociados.
+      operationId: eliminarDestino
+      tags:
+        - Destinos
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '204':
+          description: Destino eliminado.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /destinos/{destinoId}/resenas:
+    get:
+      summary: Listar reseñas de un destino
+      operationId: listarResenas
+      tags:
+        - Reseñas
+      security: []
+      parameters:
+        - name: destinoId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Reseñas del destino, con autor, calificación e indicador de imagen opcional.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Resena'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+
+    post:
+      summary: Publicar una reseña para un destino
+      description: Requiere JWT. El usuario se obtiene del claim uid; nunca del formulario. La imagen es opcional (JPEG, PNG o WebP, hasta 5 MB) y queda almacenada como LONGBLOB.
+      operationId: crearResena
+      tags:
+        - Reseñas
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CrearResena'
+      responses:
+        '201':
+          description: Reseña publicada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resena'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '413':
+          description: La imagen supera el tamaño máximo permitido de 5 MB.
+
+  /destinos/{destinoId}/resenas/{resenaId}/imagen:
+    get:
+      summary: Obtener la imagen binaria adjunta a una reseña
+      operationId: obtenerImagenResena
+      tags:
+        - Reseñas
+      security: []
+      parameters:
+        - name: destinoId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: resenaId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Imagen binaria (el tipo MIME corresponde a su contenido validado).
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/webp:
+              schema: { type: string, format: binary }
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+
+  /reservas:
+    get:
+      summary: Obtener lista de reservas
+      description: Devuelve solo las reservas del usuario autenticado (claim uid del JWT); ROLE_ADMIN ve todas.
+      operationId: listarReservas
+      tags:
+        - Reservas
+      responses:
+        '200':
+          description: Lista de reservas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reserva'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+    post:
+      summary: Crear una nueva reserva de itinerario
+      description: El propietario (JWT), el monto y el estado inicial (PENDIENTE) los define el servidor; se descuenta un cupo del itinerario.
+      operationId: crearReserva
+      tags:
+        - Reservas
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CrearReservaDto'
+      responses:
+        '201':
+          description: Reserva creada exitosamente.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /reservas/{id}:
+    get:
+      summary: Obtener detalle de una reserva
+      description: Si la reserva pertenece a otra persona responde 404 (no se revela su existencia); ROLE_ADMIN puede consultar cualquiera.
+      operationId: obtenerReservaPorId
+      tags:
+        - Reservas
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID de la reserva
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Detalle de la reserva.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /reservas/{id}/cancelar:
+    patch:
+      summary: Cancelar una reserva
+      description: Devuelve el cupo al itinerario. Solo el propietario o ROLE_ADMIN; reserva ajena responde 404 y una ya cancelada 409.
+      operationId: cancelarReserva
+      tags:
+        - Reservas
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Reserva cancelada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios:
+    get:
+      summary: Listar usuarios (administración)
+      description: Requiere ROLE_ADMIN. Búsqueda por nombre, apellidos o correo; el texto se trata de forma literal.
+      operationId: listarUsuariosAdmin
+      tags:
+        - Administración
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: rol
+          in: query
+          schema:
+            $ref: '#/components/schemas/RolUsuario'
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+        - name: pagina
+          in: query
+          description: Página, empezando en 0.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: tamano
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Página de usuarios, de la más reciente a la más antigua.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaUsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}:
+    get:
+      summary: Consultar un usuario (administración)
+      description: Requiere ROLE_ADMIN.
+      operationId: obtenerUsuarioAdmin
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}/rol:
+    patch:
+      summary: Cambiar el rol de un usuario
+      description: >
+        Requiere ROLE_ADMIN. No se puede cambiar el propio rol ni quitar el rol al último administrador
+        activo (409). La acción queda registrada en la auditoría.
+      operationId: cambiarRolUsuario
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarRolDto'
+      responses:
+        '200':
+          description: Usuario actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}/activo:
+    patch:
+      summary: Activar o desactivar una cuenta
+      description: >
+        Requiere ROLE_ADMIN. Una cuenta desactivada no puede iniciar sesión y sus tokens vigentes dejan de
+        ser válidos (401) de inmediato; sus datos y reservas se conservan. No se puede desactivar la propia
+        cuenta ni al último administrador activo (409). La acción queda registrada en la auditoría.
+      operationId: cambiarActivoUsuario
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarActivoDto'
+      responses:
+        '200':
+          description: Usuario actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/reservas:
+    get:
+      summary: Listar todas las reservas (administración)
+      description: >
+        Requiere ROLE_ADMIN. Reservas de todos los usuarios, de la más reciente a la más antigua.
+        Los filtros se combinan con AND; el texto busca en usuario, correo, destino e itinerario.
+      operationId: listarReservasAdmin
+      tags:
+        - Administración
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [PENDIENTE, CONFIRMADA, CANCELADA]
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: desde
+          in: query
+          description: Fecha de reserva mínima (incluida).
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          description: Fecha de reserva máxima (incluida).
+          schema:
+            type: string
+            format: date
+        - name: pagina
+          in: query
+          description: Página, empezando en 0.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: tamano
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Página de reservas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaReservaAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/reservas/{id}:
+    get:
+      summary: Consultar una reserva (administración)
+      description: Requiere ROLE_ADMIN.
+      operationId: obtenerReservaAdmin
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Reserva.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaAdmin'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/reservas/{id}/estado:
+    patch:
+      summary: Confirmar o cancelar una reserva
+      description: >
+        Requiere ROLE_ADMIN. Transiciones permitidas: PENDIENTE a CONFIRMADA, PENDIENTE a CANCELADA y
+        CONFIRMADA a CANCELADA. CANCELADA es un estado final (409). Al cancelar se devuelve el cupo al
+        itinerario. La acción queda registrada en la auditoría.
+      operationId: cambiarEstadoReserva
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoReservaDto'
+      responses:
+        '200':
+          description: Reserva actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/resenas:
+    get:
+      summary: Listar reseñas para moderarlas (administración)
+      description: >
+        Requiere ROLE_ADMIN. Reseñas de todos los destinos, de la más reciente a la más antigua.
+        No incluye la imagen, solo si existe.
+      operationId: listarResenasAdmin
+      tags:
+        - Administración
+      parameters:
+        - name: destinoId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: calificacionMax
+          in: query
+          description: Muestra reseñas con calificación menor o igual (1 a 5).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+        - name: q
+          in: query
+          description: Busca en el comentario y en el nombre del autor.
+          schema:
+            type: string
+        - name: pagina
+          in: query
+          description: Página, empezando en 0.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: tamano
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Página de reseñas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaResenaAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/resenas/{id}:
+    delete:
+      summary: Eliminar una reseña
+      description: Requiere ROLE_ADMIN. La acción queda registrada en la auditoría sin copiar el texto de la reseña.
+      operationId: eliminarResenaAdmin
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '204':
+          description: Reseña eliminada.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/registro:
+    post:
+      summary: Registrar un nuevo usuario
+      operationId: registrarUsuario
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegistroDto'
+      responses:
+        '201':
+          description: Usuario creado. Devuelve el token de sesión.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRespuesta'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/login:
+    post:
+      summary: Iniciar sesión
+      operationId: iniciarSesion
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginDto'
+      responses:
+        '200':
+          description: Sesión iniciada. Devuelve el token JWT.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRespuesta'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/recuperar-contrasena:
+    post:
+      summary: Solicitar el correo de recuperación de contraseña
+      description: Responde 204 exista o no el correo, para no revelar qué cuentas están registradas.
+      operationId: recuperarContrasena
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecuperarContrasenaDto'
+      responses:
+        '204':
+          description: Solicitud procesada.
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/cambiar-contrasena:
+    post:
+      summary: Cambiar la contraseña con el token recibido por correo
+      operationId: cambiarContrasena
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarContrasenaDto'
+      responses:
+        '204':
+          description: Contraseña actualizada.
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /auth/me:
+    get:
+      summary: Obtener el usuario de la sesión actual
+      operationId: perfilUsuario
+      tags:
+        - Autenticación
+      responses:
+        '200':
+          description: Datos del usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+    put:
+      summary: Actualizar nombre, apellidos y correo de la cuenta propia
+      description: >
+        La identidad sale del JWT. El rol nunca se modifica desde aquí. Si el correo cambia, es obligatorio enviar
+        `contrasenaActual` (400 si falta o es incorrecta) y el nuevo correo no puede pertenecer a otra cuenta (409).
+        Devuelve una sesión nueva porque el correo es el sujeto (`sub`) del JWT: el cliente debe reemplazar el token
+        guardado por el recibido.
+      operationId: actualizarPerfilUsuario
+      tags:
+        - Autenticación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarPerfilDto'
+      responses:
+        '200':
+          description: Cuenta actualizada, con un token nuevo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRespuesta'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdRecurso:
+      name: id
+      in: path
+      required: true
+      description: Identificador del recurso
+      schema:
+        type: integer
+        format: int64
+
+  schemas:
+
+    Dificultad:
+      type: string
+      enum: [BAJA, MODERADA, ALTA]
+
+    Destino:
+      type: object
+      required:
+        - id
+        - nombre
+        - descripcion
+        - ubicacion
+        - precioBase
+        - dificultad
+        - accesibilidad
+        - fotosUrl
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        nombre:
+          type: string
+          example: "Parque Nacional del Café"
+        descripcion:
+          type: string
+          example: "Parque temático sobre la cultura cafetera colombiana."
+        ubicacion:
+          type: string
+          example: "Montenegro, Quindío"
+        precioBase:
+          type: number
+          format: double
+          example: 85000.00
+        dificultad:
+          $ref: '#/components/schemas/Dificultad'
+        accesibilidad:
+          type: boolean
+        fotosUrl:
+          type: array
+          items:
+            type: string
+          example: ["https://ejemplo.com/foto1.jpg", "https://ejemplo.com/foto2.jpg"]
+
+    CrearDestinoDto:
+      type: object
+      required:
+        - nombre
+        - descripcion
+        - ubicacion
+        - precioBase
+        - dificultad
+        - accesibilidad
+      properties:
+        nombre:
+          type: string
+          example: "Valle del Cocora"
+        descripcion:
+          type: string
+          example: "Paisaje natural icónico con palmas de cera."
+        ubicacion:
+          type: string
+          example: "Salento, Quindío"
+        precioBase:
+          type: number
+          format: double
+          example: 50000.00
+        dificultad:
+          $ref: '#/components/schemas/Dificultad'
+        accesibilidad:
+          type: boolean
+        fotosUrl:
+          type: array
+          items:
+            type: string
+          example: ["https://ejemplo.com/cocora.jpg"]
+
+    Resena:
+      type: object
+      required: [id, destinoId, comentario, calificacion, autor, creadaEn]
+      properties:
+        id:
+          type: integer
+          format: int64
+        destinoId:
+          type: integer
+          format: int64
+        comentario:
+          type: string
+          maxLength: 2000
+        calificacion:
+          type: integer
+          minimum: 1
+          maximum: 5
+        autor:
+          type: string
+          description: Nombre y apellidos de la cuenta propietaria de la reseña.
+        creadaEn:
+          type: string
+          format: date-time
+        imagenUrl:
+          type: string
+          nullable: true
+          description: Ruta interna para recuperar la imagen binaria, si se adjuntó.
+
+    CrearResena:
+      type: object
+      required: [comentario, calificacion]
+      properties:
+        comentario:
+          type: string
+          minLength: 1
+          maxLength: 2000
+        calificacion:
+          type: integer
+          minimum: 1
+          maximum: 5
+        imagen:
+          type: string
+          format: binary
+          description: Opcional. JPEG, PNG o WebP; máximo 5 MB.
+
+    Reserva:
+      type: object
+      required:
+        - id
+        - itinerarioId
+        - fechaReserva
+        - montoTotal
+        - estadoReserva
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 101
+        itinerarioId:
+          type: integer
+          format: int64
+          example: 5
+        fechaReserva:
+          type: string
+          format: date
+          example: "2026-10-15"
+        montoTotal:
+          type: number
+          format: double
+          example: 250000.00
+        estadoReserva:
+          type: string
+          enum: [PENDIENTE, CONFIRMADA, CANCELADA]
+          example: "CONFIRMADA"
+
+    CrearReservaDto:
+      type: object
+      description: El monto y el estado no se envían; los define el servidor.
+      required:
+        - itinerarioId
+      properties:
+        itinerarioId:
+          type: integer
+          format: int64
+          example: 5
+        fechaReserva:
+          type: string
+          format: date
+          description: Opcional; por defecto, la fecha actual del servidor.
+          example: "2026-10-15"
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        nombre:
+          type: string
+          example: "María"
+        apellidos:
+          type: string
+          example: "Gutiérrez"
+        correo:
+          type: string
+          format: email
+          example: "maria@correo.com"
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+
+    RolUsuario:
+      type: string
+      enum: [ROLE_ADMIN, ROLE_CLIENTE]
+
+    UsuarioAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        apellidos:
+          type: string
+        correo:
+          type: string
+          format: email
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+        activo:
+          type: boolean
+        fechaRegistro:
+          type: string
+          format: date-time
+
+    PaginaUsuarioAdmin:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioAdmin'
+        pagina:
+          type: integer
+          description: Página actual, empezando en 0.
+        tamano:
+          type: integer
+        total:
+          type: integer
+          format: int64
+          description: Total de usuarios que cumplen el filtro.
+
+    CambiarRolDto:
+      type: object
+      required: [rol]
+      properties:
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+
+    CambiarActivoDto:
+      type: object
+      required: [activo]
+      properties:
+        activo:
+          type: boolean
+
+    ReservaAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        usuarioId:
+          type: integer
+          format: int64
+        usuarioNombre:
+          type: string
+        usuarioCorreo:
+          type: string
+          format: email
+        itinerarioId:
+          type: integer
+          format: int64
+        itinerarioNombre:
+          type: string
+        destinoNombre:
+          type: string
+        fechaReserva:
+          type: string
+          format: date
+        montoTotal:
+          type: number
+        estadoReserva:
+          type: string
+          enum: [PENDIENTE, CONFIRMADA, CANCELADA]
+
+    PaginaReservaAdmin:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaAdmin'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+        total:
+          type: integer
+          format: int64
+
+    CambiarEstadoReservaDto:
+      type: object
+      required: [estado]
+      properties:
+        estado:
+          type: string
+          enum: [CONFIRMADA, CANCELADA]
+
+    ResenaAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        destinoId:
+          type: integer
+          format: int64
+        destinoNombre:
+          type: string
+        usuarioId:
+          type: integer
+          format: int64
+        autor:
+          type: string
+        comentario:
+          type: string
+        calificacion:
+          type: integer
+          minimum: 1
+          maximum: 5
+        tieneImagen:
+          type: boolean
+        creadaEn:
+          type: string
+          format: date-time
+
+    PaginaResenaAdmin:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResenaAdmin'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+        total:
+          type: integer
+          format: int64
+
+    ActualizarPerfilDto:
+      type: object
+      required: [nombre, apellidos, correo]
+      properties:
+        nombre:
+          type: string
+          maxLength: 100
+        apellidos:
+          type: string
+          maxLength: 120
+        correo:
+          type: string
+          format: email
+          maxLength: 160
+        contrasenaActual:
+          type: string
+          maxLength: 64
+          description: Obligatoria solo si el correo cambia.
+
+    AuthRespuesta:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT que se envía como encabezado Authorization con el esquema Bearer.
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+
+    RegistroDto:
+      type: object
+      required: [nombre, apellidos, correo, contrasena]
+      properties:
+        nombre:
+          type: string
+          maxLength: 100
+          example: "María"
+        apellidos:
+          type: string
+          maxLength: 120
+          example: "Gutiérrez"
+        correo:
+          type: string
+          format: email
+          example: "maria@correo.com"
+        contrasena:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 64
+          description: Debe incluir letras y números.
+
+    LoginDto:
+      type: object
+      required: [correo, contrasena]
+      properties:
+        correo:
+          type: string
+          format: email
+        contrasena:
+          type: string
+          format: password
+
+    RecuperarContrasenaDto:
+      type: object
+      required: [correo]
+      properties:
+        correo:
+          type: string
+          format: email
+
+    CambiarContrasenaDto:
+      type: object
+      required: [token, nuevaContrasena]
+      properties:
+        token:
+          type: string
+          description: Token recibido en el enlace del correo.
+        nuevaContrasena:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 64
+
+    ApiError:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-10-02T11:42:00Z"
+        status:
+          type: integer
+          example: 404
+        error:
+          type: string
+          example: "Not Found"
+        message:
+          type: string
+          example: "El recurso solicitado no fue encontrado."
+        path:
+          type: string
+          example: "/api/v1/destinos/999"
+
+  responses:
+
+    PeticionInvalida:
+      description: Petición inválida o datos faltantes (400 Bad Request)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    RecursoNoEncontrado:
+      description: Recurso no encontrado (404 Not Found)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    ErrorInterno:
+      description: Error interno del servidor (500 Internal Server Error)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    NoAutorizado:
+      description: Credenciales incorrectas o sesión inválida/expirada (401 Unauthorized)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    Prohibido:
+      description: Sesión válida sin permisos para la operación (403 Forbidden)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    Conflicto:
+      description: Conflicto con el estado actual, por ejemplo correo ya registrado, destino con itinerarios, sin cupos o reserva ya cancelada (409 Conflict)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
