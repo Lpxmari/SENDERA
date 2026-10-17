@@ -31,6 +31,9 @@ class DestinoServiceImplTest {
     @Mock
     private ItinerarioRepository itinerarioRepository;
 
+    @Mock
+    private AuditoriaService auditoriaService;
+
     @InjectMocks
     private DestinoServiceImpl destinoService;
 
@@ -63,5 +66,47 @@ class DestinoServiceImplTest {
         assertEquals("BAJA", resultado.get(0).getDificultad());
         assertTrue(resultado.get(0).getAccesibilidad());
         verify(destinoRepository, times(1)).findAll(any(Specification.class), any(Sort.class));
+    }
+
+    @Test
+    void crearDestino_DeberiaAuditarLaAccionDelAdministrador() {
+        com.sendera.dto.CrearDestinoDto dto = new com.sendera.dto.CrearDestinoDto();
+        dto.setNombre("Valle de Cocora");
+        dto.setDescripcion("Palmas de cera");
+        dto.setUbicacion("Salento");
+        dto.setPrecioBase(new BigDecimal("85000.00"));
+        dto.setDificultad("BAJA");
+        dto.setAccesibilidad(true);
+        dto.setFotosUrl(List.of());
+        when(destinoRepository.save(any(Destino.class))).thenReturn(destinoEjemplo);
+        com.sendera.security.UsuarioActual admin = new com.sendera.security.UsuarioActual(9L, true);
+
+        destinoService.crearDestino(dto, admin);
+
+        verify(auditoriaService).registrar(admin, "DESTINO_CREAR", "destino", 1L, "Valle de Cocora");
+    }
+
+    @Test
+    void eliminarDestino_DeberiaAuditarSoloSiSeElimina() {
+        when(destinoRepository.findById(1L)).thenReturn(java.util.Optional.of(destinoEjemplo));
+        when(itinerarioRepository.existsByDestinoId(1L)).thenReturn(false);
+        com.sendera.security.UsuarioActual admin = new com.sendera.security.UsuarioActual(9L, true);
+
+        destinoService.eliminarDestino(1L, admin);
+
+        verify(destinoRepository).delete(destinoEjemplo);
+        verify(auditoriaService).registrar(admin, "DESTINO_ELIMINAR", "destino", 1L, "Valle de Cocora");
+    }
+
+    @Test
+    void eliminarDestinoConItinerarios_NoDeberiaAuditar() {
+        when(destinoRepository.findById(1L)).thenReturn(java.util.Optional.of(destinoEjemplo));
+        when(itinerarioRepository.existsByDestinoId(1L)).thenReturn(true);
+        com.sendera.security.UsuarioActual admin = new com.sendera.security.UsuarioActual(9L, true);
+
+        org.junit.jupiter.api.Assertions.assertThrows(com.sendera.exception.DestinoConItinerariosException.class,
+                () -> destinoService.eliminarDestino(1L, admin));
+
+        org.mockito.Mockito.verifyNoInteractions(auditoriaService);
     }
 }

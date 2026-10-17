@@ -1,19 +1,16 @@
 import { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import { AuthResponse, LoginRequest, RegistroRequest, Usuario } from '../types/auth';
-import {
-    borrarSesion,
-    guardarSesion,
-    iniciarSesion,
-    leerSesion,
-    registrarUsuario,
-} from '../services/authService';
+import { borrarSesion, guardarSesion, iniciarSesion, leerSesion, registrarUsuario } from '../services/authService';
 
 interface AuthContextValue {
     usuario: Usuario | null;
     autenticado: boolean;
+    esAdmin: boolean;
     login: (datos: LoginRequest) => Promise<void>;
     registro: (datos: RegistroRequest) => Promise<void>;
     logout: () => void;
+    /** Reemplaza la sesión (usuario y token) tras actualizar la cuenta. */
+    actualizarSesion: (sesion: AuthResponse) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -34,14 +31,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         abrirSesion(await registrarUsuario(datos));
     }, []);
 
+    const actualizarSesion = useCallback((sesion: AuthResponse) => {
+        abrirSesion(sesion);
+    }, []);
+
     const logout = useCallback(() => {
         borrarSesion();
         setUsuario(null);
     }, []);
 
     const value = useMemo(
-        () => ({ usuario, autenticado: usuario !== null, login, registro, logout }),
-        [usuario, login, registro, logout],
+        () => ({
+            usuario,
+            autenticado: usuario !== null,
+            esAdmin: usuario?.rol === 'ROLE_ADMIN',
+            login,
+            registro,
+            logout,
+            actualizarSesion,
+        }),
+        [usuario, login, registro, logout, actualizarSesion],
     );
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

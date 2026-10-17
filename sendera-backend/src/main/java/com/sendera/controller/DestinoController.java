@@ -8,6 +8,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import com.sendera.security.UsuarioActual;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -48,19 +51,21 @@ public class DestinoController {
     }
 
     @PostMapping
-    public ResponseEntity<DestinoDto> crearDestino(@Valid @RequestBody CrearDestinoDto dto) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(destinoService.crearDestino(dto));
+    public ResponseEntity<DestinoDto> crearDestino(@Valid @RequestBody CrearDestinoDto dto,
+                                                   @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(destinoService.crearDestino(dto, UsuarioActual.desde(jwt)));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<DestinoDto> actualizarDestino(@PathVariable Long id,
-                                                        @Valid @RequestBody CrearDestinoDto dto) {
-        return ResponseEntity.ok(destinoService.actualizarDestino(id, dto));
+                                                        @Valid @RequestBody CrearDestinoDto dto,
+                                                        @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(destinoService.actualizarDestino(id, dto, UsuarioActual.desde(jwt)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarDestino(@PathVariable Long id) {
-        destinoService.eliminarDestino(id);
+    public ResponseEntity<Void> eliminarDestino(@PathVariable Long id, @AuthenticationPrincipal Jwt jwt) {
+        destinoService.eliminarDestino(id, UsuarioActual.desde(jwt));
         return ResponseEntity.noContent().build();
     }
 }

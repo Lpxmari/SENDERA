@@ -359,6 +359,358 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorInterno'
 
+  /admin/usuarios:
+    get:
+      summary: Listar usuarios (administración)
+      description: Requiere ROLE_ADMIN. Búsqueda por nombre, apellidos o correo; el texto se trata de forma literal.
+      operationId: listarUsuariosAdmin
+      tags:
+        - Administración
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: rol
+          in: query
+          schema:
+            $ref: '#/components/schemas/RolUsuario'
+        - name: activo
+          in: query
+          schema:
+            type: boolean
+        - name: pagina
+          in: query
+          description: Página, empezando en 0.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: tamano
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Página de usuarios, de la más reciente a la más antigua.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaUsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}:
+    get:
+      summary: Consultar un usuario (administración)
+      description: Requiere ROLE_ADMIN.
+      operationId: obtenerUsuarioAdmin
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}/rol:
+    patch:
+      summary: Cambiar el rol de un usuario
+      description: >
+        Requiere ROLE_ADMIN. No se puede cambiar el propio rol ni quitar el rol al último administrador
+        activo (409). La acción queda registrada en la auditoría.
+      operationId: cambiarRolUsuario
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarRolDto'
+      responses:
+        '200':
+          description: Usuario actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/usuarios/{id}/activo:
+    patch:
+      summary: Activar o desactivar una cuenta
+      description: >
+        Requiere ROLE_ADMIN. Una cuenta desactivada no puede iniciar sesión y sus tokens vigentes dejan de
+        ser válidos (401) de inmediato; sus datos y reservas se conservan. No se puede desactivar la propia
+        cuenta ni al último administrador activo (409). La acción queda registrada en la auditoría.
+      operationId: cambiarActivoUsuario
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarActivoDto'
+      responses:
+        '200':
+          description: Usuario actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsuarioAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/reservas:
+    get:
+      summary: Listar todas las reservas (administración)
+      description: >
+        Requiere ROLE_ADMIN. Reservas de todos los usuarios, de la más reciente a la más antigua.
+        Los filtros se combinan con AND; el texto busca en usuario, correo, destino e itinerario.
+      operationId: listarReservasAdmin
+      tags:
+        - Administración
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [PENDIENTE, CONFIRMADA, CANCELADA]
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: desde
+          in: query
+          description: Fecha de reserva mínima (incluida).
+          schema:
+            type: string
+            format: date
+        - name: hasta
+          in: query
+          description: Fecha de reserva máxima (incluida).
+          schema:
+            type: string
+            format: date
+        - name: pagina
+          in: query
+          description: Página, empezando en 0.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: tamano
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Página de reservas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaReservaAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/reservas/{id}:
+    get:
+      summary: Consultar una reserva (administración)
+      description: Requiere ROLE_ADMIN.
+      operationId: obtenerReservaAdmin
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Reserva.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaAdmin'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/reservas/{id}/estado:
+    patch:
+      summary: Confirmar o cancelar una reserva
+      description: >
+        Requiere ROLE_ADMIN. Transiciones permitidas: PENDIENTE a CONFIRMADA, PENDIENTE a CANCELADA y
+        CONFIRMADA a CANCELADA. CANCELADA es un estado final (409). Al cancelar se devuelve el cupo al
+        itinerario. La acción queda registrada en la auditoría.
+      operationId: cambiarEstadoReserva
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CambiarEstadoReservaDto'
+      responses:
+        '200':
+          description: Reserva actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReservaAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/resenas:
+    get:
+      summary: Listar reseñas para moderarlas (administración)
+      description: >
+        Requiere ROLE_ADMIN. Reseñas de todos los destinos, de la más reciente a la más antigua.
+        No incluye la imagen, solo si existe.
+      operationId: listarResenasAdmin
+      tags:
+        - Administración
+      parameters:
+        - name: destinoId
+          in: query
+          schema:
+            type: integer
+            format: int64
+        - name: calificacionMax
+          in: query
+          description: Muestra reseñas con calificación menor o igual (1 a 5).
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 5
+        - name: q
+          in: query
+          description: Busca en el comentario y en el nombre del autor.
+          schema:
+            type: string
+        - name: pagina
+          in: query
+          description: Página, empezando en 0.
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: tamano
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Página de reseñas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginaResenaAdmin'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
+  /admin/resenas/{id}:
+    delete:
+      summary: Eliminar una reseña
+      description: Requiere ROLE_ADMIN. La acción queda registrada en la auditoría sin copiar el texto de la reseña.
+      operationId: eliminarResenaAdmin
+      tags:
+        - Administración
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '204':
+          description: Reseña eliminada.
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '403':
+          $ref: '#/components/responses/Prohibido'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
   /auth/registro:
     post:
       summary: Registrar un nuevo usuario
@@ -471,6 +823,37 @@ paths:
                 $ref: '#/components/schemas/Usuario'
         '401':
           $ref: '#/components/responses/NoAutorizado'
+    put:
+      summary: Actualizar nombre, apellidos y correo de la cuenta propia
+      description: >
+        La identidad sale del JWT. El rol nunca se modifica desde aquí. Si el correo cambia, es obligatorio enviar
+        `contrasenaActual` (400 si falta o es incorrecta) y el nuevo correo no puede pertenecer a otra cuenta (409).
+        Devuelve una sesión nueva porque el correo es el sujeto (`sub`) del JWT: el cliente debe reemplazar el token
+        guardado por el recibido.
+      operationId: actualizarPerfilUsuario
+      tags:
+        - Autenticación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActualizarPerfilDto'
+      responses:
+        '200':
+          description: Cuenta actualizada, con un token nuevo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthRespuesta'
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
 
 components:
 
@@ -676,6 +1059,179 @@ components:
           type: string
           format: email
           example: "maria@correo.com"
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+
+    RolUsuario:
+      type: string
+      enum: [ROLE_ADMIN, ROLE_CLIENTE]
+
+    UsuarioAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        apellidos:
+          type: string
+        correo:
+          type: string
+          format: email
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+        activo:
+          type: boolean
+        fechaRegistro:
+          type: string
+          format: date-time
+
+    PaginaUsuarioAdmin:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/UsuarioAdmin'
+        pagina:
+          type: integer
+          description: Página actual, empezando en 0.
+        tamano:
+          type: integer
+        total:
+          type: integer
+          format: int64
+          description: Total de usuarios que cumplen el filtro.
+
+    CambiarRolDto:
+      type: object
+      required: [rol]
+      properties:
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+
+    CambiarActivoDto:
+      type: object
+      required: [activo]
+      properties:
+        activo:
+          type: boolean
+
+    ReservaAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        usuarioId:
+          type: integer
+          format: int64
+        usuarioNombre:
+          type: string
+        usuarioCorreo:
+          type: string
+          format: email
+        itinerarioId:
+          type: integer
+          format: int64
+        itinerarioNombre:
+          type: string
+        destinoNombre:
+          type: string
+        fechaReserva:
+          type: string
+          format: date
+        montoTotal:
+          type: number
+        estadoReserva:
+          type: string
+          enum: [PENDIENTE, CONFIRMADA, CANCELADA]
+
+    PaginaReservaAdmin:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReservaAdmin'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+        total:
+          type: integer
+          format: int64
+
+    CambiarEstadoReservaDto:
+      type: object
+      required: [estado]
+      properties:
+        estado:
+          type: string
+          enum: [CONFIRMADA, CANCELADA]
+
+    ResenaAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        destinoId:
+          type: integer
+          format: int64
+        destinoNombre:
+          type: string
+        usuarioId:
+          type: integer
+          format: int64
+        autor:
+          type: string
+        comentario:
+          type: string
+        calificacion:
+          type: integer
+          minimum: 1
+          maximum: 5
+        tieneImagen:
+          type: boolean
+        creadaEn:
+          type: string
+          format: date-time
+
+    PaginaResenaAdmin:
+      type: object
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResenaAdmin'
+        pagina:
+          type: integer
+        tamano:
+          type: integer
+        total:
+          type: integer
+          format: int64
+
+    ActualizarPerfilDto:
+      type: object
+      required: [nombre, apellidos, correo]
+      properties:
+        nombre:
+          type: string
+          maxLength: 100
+        apellidos:
+          type: string
+          maxLength: 120
+        correo:
+          type: string
+          format: email
+          maxLength: 160
+        contrasenaActual:
+          type: string
+          maxLength: 64
+          description: Obligatoria solo si el correo cambia.
 
     AuthRespuesta:
       type: object

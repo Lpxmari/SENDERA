@@ -61,7 +61,7 @@ const validarViajero = (d: PerfilEditable): string | null => {
 };
 
 const Perfil = () => {
-    const { usuario } = useAuth();
+    const { usuario, actualizarSesion } = useAuth();
     const [perfil, setPerfil] = useState<PerfilViajero | null>(null);
     const [opiniones, setOpiniones] = useState<OpinionViajero[]>([]);
     const [historial, setHistorial] = useState<ViajeHistorial[] | null>(null);
@@ -71,6 +71,7 @@ const Perfil = () => {
     const [borrador, setBorrador] = useState<PerfilEditable | null>(null);
     const [textoDestinos, setTextoDestinos] = useState('');
     const [textoIntereses, setTextoIntereses] = useState('');
+    const [contrasenaActual, setContrasenaActual] = useState('');
     const [errorFormulario, setErrorFormulario] = useState<string | null>(null);
     const [aviso, setAviso] = useState<string | null>(null);
     const [fotoVista, setFotoVista] = useState<string | null>(null);
@@ -118,6 +119,7 @@ const Perfil = () => {
         setBorrador(aEditable(perfil));
         setTextoDestinos(perfil.destinosFavoritos.join(', '));
         setTextoIntereses(perfil.intereses.join(', '));
+        setContrasenaActual('');
         setErrorFormulario(null);
         setAviso(null);
         setActiva(tarjeta);
@@ -126,6 +128,7 @@ const Perfil = () => {
     const cancelar = () => {
         setActiva(null);
         setBorrador(null);
+        setContrasenaActual('');
         setErrorFormulario(null);
     };
 
@@ -142,14 +145,23 @@ const Perfil = () => {
             setErrorFormulario(mensaje);
             return;
         }
+        if (cambiaElCorreo(datos) && !contrasenaActual) {
+            setErrorFormulario('Para cambiar tu correo escribe tu contraseña actual.');
+            return;
+        }
         try {
-            setPerfil(await actualizarPerfil(usuario.id, datos));
+            const resultado = await actualizarPerfil(usuario.id, datos, contrasenaActual);
+            setPerfil(resultado.perfil);
+            actualizarSesion(resultado.sesion);
             cancelar();
             setAviso('Tus cambios se guardaron.');
         } catch (error) {
             setErrorFormulario(obtenerMensajeError(error, 'No pudimos guardar tus cambios. Intenta de nuevo.'));
         }
     };
+
+    const cambiaElCorreo = (datos: PerfilEditable): boolean =>
+        datos.correo.trim().toLowerCase() !== perfil.correo.trim().toLowerCase();
 
     const cambiarCampo = (campo: keyof PerfilEditable) => (e: ChangeEvent<HTMLInputElement>) =>
         setBorrador((actual) => (actual ? { ...actual, [campo]: e.target.value } : actual));
@@ -362,6 +374,18 @@ const Perfil = () => {
                                     type: 'email',
                                     autoComplete: 'email',
                                 })}
+                                {cambiaElCorreo(borrador) && (
+                                    <label className="perfil-campo" htmlFor="perfil-contrasena-actual">
+                                        <span>Contraseña actual (necesaria para cambiar tu correo)</span>
+                                        <input
+                                            id="perfil-contrasena-actual"
+                                            type="password"
+                                            autoComplete="current-password"
+                                            value={contrasenaActual}
+                                            onChange={(e) => setContrasenaActual(e.target.value)}
+                                        />
+                                    </label>
+                                )}
                                 {campo('perfil-pais', 'País de Residencia', borrador.paisResidencia, 'paisResidencia', {
                                     autoComplete: 'country-name',
                                 })}

@@ -1,6 +1,7 @@
 package com.sendera.service.impl;
 
 import com.sendera.dto.*;
+import com.sendera.exception.ContrasenaActualIncorrectaException;
 import com.sendera.exception.CorreoYaRegistradoException;
 import com.sendera.exception.CredencialesInvalidasException;
 import com.sendera.exception.TokenRecuperacionInvalidoException;
@@ -89,7 +90,8 @@ public class AuthServiceImpl implements AuthService {
         Usuario usuario = usuarioRepository.findByCorreo(normalizar(dto.getCorreo())).orElse(null);
         String hash = usuario != null ? usuario.getContrasenaHash() : hashFicticio;
         boolean coincide = passwordEncoder.matches(dto.getContrasena(), hash);
-        if (usuario == null || !coincide) {
+        // Una cuenta desactivada recibe el mismo error genérico: no se revela su estado.
+        if (usuario == null || !coincide || !usuario.isActivo()) {
             throw new CredencialesInvalidasException();
         }
         return construirRespuesta(usuario);
@@ -152,6 +154,33 @@ public class AuthServiceImpl implements AuthService {
         return convertirADto(usuario);
     }
 
+    @Override
+    @Transactional
+    public AuthRespuestaDto actualizarPerfil(Long usuarioId, ActualizarPerfilDto dto) {
+        Usuario usuario = usuarioRepository.findById(usuarioId).orElseThrow(CredencialesInvalidasException::new);
+        String correoNuevo = normalizar(dto.getCorreo());
+
+        if (!correoNuevo.equals(usuario.getCorreo())) {
+            String actual = dto.getContrasenaActual();
+            if (actual == null || actual.isBlank() || !passwordEncoder.matches(actual, usuario.getContrasenaHash())) {
+                throw new ContrasenaActualIncorrectaException();
+            }
+            if (usuarioRepository.existsByCorreo(correoNuevo)) {
+                throw new CorreoYaRegistradoException();
+            }
+            usuario.setCorreo(correoNuevo);
+        }
+        usuario.setNombre(dto.getNombre().trim());
+        usuario.setApellidos(dto.getApellidos().trim());
+        try {
+            usuario = usuarioRepository.saveAndFlush(usuario);
+        } catch (DataIntegrityViolationException e) {
+            // Otra cuenta tomó ese correo entre la comprobación y el guardado
+            throw new CorreoYaRegistradoException();
+        }
+        return construirRespuesta(usuario);
+    }
+
     private AuthRespuestaDto construirRespuesta(Usuario usuario) {
         return AuthRespuestaDto.builder()
                 .token(jwtService.generar(usuario))
@@ -165,6 +194,7 @@ public class AuthServiceImpl implements AuthService {
                 .nombre(usuario.getNombre())
                 .apellidos(usuario.getApellidos())
                 .correo(usuario.getCorreo())
+                .rol(usuario.getRol())
                 .build();
     }
 

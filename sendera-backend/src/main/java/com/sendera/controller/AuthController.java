@@ -1,6 +1,7 @@
 package com.sendera.controller;
 
 import com.sendera.dto.*;
+import com.sendera.security.UsuarioActual;
 import com.sendera.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,13 @@ public class AuthController {
     public ResponseEntity<Void> cambiarContrasena(@Valid @RequestBody CambiarContrasenaDto dto) {
         authService.cambiarContrasena(dto);
         return ResponseEntity.noContent().build();
+    }
+
+    /** Actualiza la cuenta propia; la identidad sale del JWT. Devuelve un token nuevo (el correo es su sujeto). */
+    @PutMapping("/me")
+    public ResponseEntity<AuthRespuestaDto> actualizarPerfil(@Valid @RequestBody ActualizarPerfilDto dto,
+                                                             @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(authService.actualizarPerfil(UsuarioActual.desde(jwt).id(), dto));
     }
 
     @GetMapping("/me")

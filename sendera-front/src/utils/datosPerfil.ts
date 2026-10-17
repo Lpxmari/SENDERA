@@ -20,13 +20,13 @@ export const opinionesSimuladas: OpinionViajero[] = [
 ];
 
 export const historialSimulado: ViajeHistorial[] = [
-    { id: 1, destino: 'Valle del Cocora', fechaReserva: '2026-08-12', montoTotal: 450000, estadoReserva: 'CONFIRMADA' },
+    { id: 1, destino: 'Finca Hotel Los Arrayanes', fechaReserva: '2026-08-12', montoTotal: 450000, estadoReserva: 'CONFIRMADA' },
     {
         id: 2,
-        destino: 'Cartagena histórica',
+        destino: 'Hotel Boutique Casa Aurora',
         fechaReserva: '2026-05-03',
         montoTotal: 980000,
         estadoReserva: 'CONFIRMADA',
     },
-    { id: 3, destino: 'Eje Cafetero', fechaReserva: '2026-02-20', montoTotal: 620000, estadoReserva: 'CANCELADA' },
+    { id: 3, destino: 'Cabañas Playa Dorada', fechaReserva: '2026-02-20', montoTotal: 620000, estadoReserva: 'CANCELADA' },
 ];

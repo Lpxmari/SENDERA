@@ -1,34 +1,58 @@
+import { AuthResponse, Usuario } from '../types/auth';
 import { OpinionViajero, PerfilEditable, PerfilViajero, ViajeHistorial } from '../types/perfil';
-import { Usuario } from '../types/auth';
 import { historialSimulado, opinionesSimuladas, perfilSimulado } from '../utils/datosPerfil';
+import { actualizarCuenta } from './authService';
 
 /*
- * SIMULADO: todavía no hay endpoints de perfil en docs/openapi.yaml.
- * Al conectarlo, solo cambia el cuerpo de estas funciones por llamadas a apiClient
- * (p. ej. GET/PUT /usuarios/me); las firmas y los tipos se mantienen.
+ * Nombre, apellidos y correo son REALES: se leen de la sesión y se guardan con PUT /auth/me.
+ * El resto (identificación, fecha de nacimiento, país, destinos favoritos, intereses, foto, opiniones e historial)
+ * sigue SIMULADO en memoria hasta que el MER y docs/openapi.yaml definan esos campos; se pierde al recargar.
  */
-/** Perfiles simulados por id de usuario: cada sesión ve solo el suyo. */
 const perfilesGuardados = new Map<number, PerfilViajero>();
 
+/** Mezcla los datos reales de la cuenta (sesión) con los campos simulados de esa persona. */
 export const fetchPerfil = async (usuario: Usuario): Promise<PerfilViajero> => {
-    let perfil = perfilesGuardados.get(usuario.id);
-    if (perfil === undefined) {
-        perfil = perfilSimulado({
-            nombre: usuario.nombre,
-            apellidos: usuario.apellidos,
-            correo: usuario.correo,
-        });
-        perfilesGuardados.set(usuario.id, perfil);
-    }
+    const real = { nombre: usuario.nombre, apellidos: usuario.apellidos, correo: usuario.correo };
+    const guardado = perfilesGuardados.get(usuario.id);
+    const perfil = guardado ? { ...guardado, ...real } : perfilSimulado(real);
+    perfilesGuardados.set(usuario.id, perfil);
     return perfil;
 };
 
-export const actualizarPerfil = async (usuarioId: number, cambios: PerfilEditable): Promise<PerfilViajero> => {
+export interface ResultadoActualizarPerfil {
+    perfil: PerfilViajero;
+    /** Sesión nueva devuelta por el backend; quien llama debe guardarla (el token anterior puede dejar de servir). */
+    sesion: AuthResponse;
+}
+
+/**
+ * Guarda en el backend nombre, apellidos y correo, y en memoria el resto. Si el correo cambia, el backend exige
+ * `contrasenaActual`. Los errores se propagan sin silenciarlos para que la pantalla muestre el mensaje del servidor.
+ */
+export const actualizarPerfil = async (
+    usuarioId: number,
+    cambios: PerfilEditable,
+    contrasenaActual?: string,
+): Promise<ResultadoActualizarPerfil> => {
     const actual = perfilesGuardados.get(usuarioId);
     if (actual === undefined) throw new Error('El perfil no se ha cargado.');
-    const actualizado = { ...actual, ...cambios };
-    perfilesGuardados.set(usuarioId, actualizado);
-    return actualizado;
+
+    const sesion = await actualizarCuenta({
+        nombre: cambios.nombre,
+        apellidos: cambios.apellidos,
+        correo: cambios.correo,
+        contrasenaActual: contrasenaActual || undefined,
+    });
+
+    const perfil = {
+        ...actual,
+        ...cambios,
+        nombre: sesion.usuario.nombre,
+        apellidos: sesion.usuario.apellidos,
+        correo: sesion.usuario.correo,
+    };
+    perfilesGuardados.set(usuarioId, perfil);
+    return { perfil, sesion };
 };
 
 export const fetchOpiniones = async (): Promise<OpinionViajero[]> => opinionesSimuladas;

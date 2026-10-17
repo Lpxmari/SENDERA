@@ -11,6 +11,8 @@ import com.sendera.model.Itinerario;
 import com.sendera.repository.DestinoRepository;
 import com.sendera.repository.DestinoSpecifications;
 import com.sendera.repository.ItinerarioRepository;
+import com.sendera.security.UsuarioActual;
+import com.sendera.service.AuditoriaService;
 import com.sendera.service.DestinoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
@@ -34,6 +36,7 @@ public class DestinoServiceImpl implements DestinoService {
 
     private final DestinoRepository destinoRepository;
     private final ItinerarioRepository itinerarioRepository;
+    private final AuditoriaService auditoriaService;
 
     @Override
     @Transactional(readOnly = true)
@@ -58,28 +61,34 @@ public class DestinoServiceImpl implements DestinoService {
 
     @Override
     @Transactional
-    public DestinoDto crearDestino(CrearDestinoDto dto) {
+    public DestinoDto crearDestino(CrearDestinoDto dto, UsuarioActual actor) {
         Destino destino = new Destino();
         aplicarDatos(destino, dto);
-        return convertirADto(destinoRepository.save(destino));
+        destino = destinoRepository.save(destino);
+        auditoriaService.registrar(actor, "DESTINO_CREAR", "destino", destino.getId(), destino.getNombre());
+        return convertirADto(destino);
     }
 
     @Override
     @Transactional
-    public DestinoDto actualizarDestino(Long id, CrearDestinoDto dto) {
+    public DestinoDto actualizarDestino(Long id, CrearDestinoDto dto, UsuarioActual actor) {
         Destino destino = buscarEntidad(id);
         aplicarDatos(destino, dto);
-        return convertirADto(destinoRepository.save(destino));
+        destino = destinoRepository.save(destino);
+        auditoriaService.registrar(actor, "DESTINO_ACTUALIZAR", "destino", id, destino.getNombre());
+        return convertirADto(destino);
     }
 
     @Override
     @Transactional
-    public void eliminarDestino(Long id) {
+    public void eliminarDestino(Long id, UsuarioActual actor) {
         Destino destino = buscarEntidad(id);
         if (itinerarioRepository.existsByDestinoId(id)) {
             throw new DestinoConItinerariosException();
         }
+        String nombre = destino.getNombre();
         destinoRepository.delete(destino);
+        auditoriaService.registrar(actor, "DESTINO_ELIMINAR", "destino", id, nombre);
     }
 
     // ------------------------------------------------------------------ filtros

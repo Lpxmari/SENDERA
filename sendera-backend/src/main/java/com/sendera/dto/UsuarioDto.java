@@ -10,4 +10,5 @@ public class UsuarioDto {
     private String nombre;
     private String apellidos;
     private String correo;
+    private String rol;
 }
