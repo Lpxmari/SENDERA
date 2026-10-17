@@ -66,3 +66,8 @@ management:
       show-details: never
       probes:
         enabled: true
+  health:
+    # El correo es un servicio externo opcional: si el SMTP no esta configurado o cae, la app sigue
+    # siendo util y no debe marcarse como caida (el healthcheck de Railway reiniciaria el servicio).
+    mail:
+      enabled: false
