@@ -24,7 +24,9 @@ Se invoca desde el CI (`workflow_call`) **solo** tras un push a `main` con backe
 1. **Desplegar backend en Railway**: sube solo la carpeta `sendera-backend` con `railway up`. Entorno protegido `production`; nunca hay dos despliegues a la vez.
 2. **Prueba de humo**: espera `GET {APP_URL}/api/v1/actuator/health` con `"status":"UP"`, comprueba que `GET /api/v1/destinos` responde y que `GET /api/v1/admin/usuarios` sin token devuelve **401** (que la seguridad sigue cerrada).
 
-La configuración de Railway (comando de arranque y chequeo de salud) está en `sendera-backend/railway.json`.
+La configuración de Railway está en dos archivos de `sendera-backend`:
+- `railpack.json`: comando de arranque (`java … -jar build/libs/app.jar`). Es necesario porque el comando por defecto de Railpack busca el jar en `*/build/libs/` (proyectos multimódulo) y este proyecto es de un solo módulo, así que la app nunca arrancaba y el chequeo de salud fallaba.
+- `railway.json`: constructor (Railpack), ruta del chequeo de salud y política de reinicio.
 
 ## Configuración que debe hacer el equipo (una sola vez)
 
@@ -42,7 +44,7 @@ La configuración de Railway (comando de arranque y chequeo de salud) está en `
 Crea también el entorno **production** (Settings → Environments) y, si quieres, exige aprobación manual antes de desplegar.
 
 **Railway → variables del servicio** (nunca en el repositorio):
-`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (mínimo 32 caracteres), `CORS_ORIGINS` (dominio real del frontend, sin comodines), `FRONTEND_URL` y, si se envían correos, `SPRING_MAIL_*`. Para que Railway use Java 21 define `NIXPACKS_JDK_VERSION=21`. **No actives el perfil `dev` en producción.**
+`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (mínimo 32 caracteres), `CORS_ORIGINS` (dominio real del frontend, sin comodines), `FRONTEND_URL` y, si se envían correos, `SPRING_MAIL_*`. Railpack detecta Java 21 por sí mismo (opcional: `RAILPACK_JDK_VERSION=21`). **No actives el perfil `dev` en producción** y no crees variables con puntos o minúsculas (como `spring.profiles.active`): Railway las pasa como secretos del build y lo rompen.
 
 **Protección de la rama:** en Settings → Branches exige que los trabajos `1. Backend` y `2. Frontend` pasen antes de fusionar a `main`.
 
