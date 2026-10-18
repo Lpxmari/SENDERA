@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CategoriaViaje } from '../types/planificador';
 import { categoriasViaje, sugerenciasViaje } from '../utils/sugerenciasViaje';
+import IconoUbicacion from './IconoUbicacion';
 
 const PlanificadorViajes = () => {
     const [categoria, setCategoria] = useState<CategoriaViaje | null>(null);
@@ -50,7 +51,10 @@ const PlanificadorViajes = () => {
                             </div>
                             <h3>{s.nombre}</h3>
                             <p className="sugerencia__tipo">{s.tipo}</p>
-                            <p className="sugerencia__lugar">{s.lugar}</p>
+                            <p className="sugerencia__lugar">
+                                <IconoUbicacion />
+                                {s.lugar}
+                            </p>
                         </Link>
                     </li>
                 ))}
