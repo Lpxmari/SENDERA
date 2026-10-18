@@ -1,16 +1,19 @@
 name: CD
 
-# Despliegue continuo del backend en Railway. Lo invoca el CI (workflow_call) solo tras un push a main
-# cuyo backend y frontend ya pasaron todas las comprobaciones. Se usa workflow_call y no workflow_run
-# para no ejecutar código de forks con acceso a los secretos de despliegue.
+# Despliegue continuo en Railway (un solo ambiente: production). Lo invoca el CI (workflow_call) solo tras
+# un push a main (merge de un PR) cuyo backend y frontend ya pasaron todas las comprobaciones. Se usa
+# workflow_call y no workflow_run para no ejecutar código de forks con acceso a los secretos de despliegue.
+#
+# Orden: backend -> prueba de humo del backend -> frontend -> prueba de humo del frontend.
+# El frontend va después porque necesita que la API esté arriba (y su CORS apunte al dominio del frontend).
 #
 # Configuración necesaria en GitHub (Settings > Secrets and variables > Actions):
-#   secrets.RAILWAY_TOKEN        token de proyecto de Railway
-#   secrets.RAILWAY_SERVICE_ID   id del servicio del backend en Railway
-#   vars.APP_URL                 URL pública del backend, sin barra final (ej. https://sendera-api.up.railway.app)
-# Y en Railway, variables del servicio (nunca en el repositorio): DB_HOST, DB_PORT, DB_NAME, DB_USER,
-#   DB_PASSWORD, JWT_SECRET (32+ caracteres), CORS_ORIGINS (dominio real del frontend), FRONTEND_URL,
-#   y las SPRING_MAIL_* si se envían correos. Ver docs/11-ci-cd.md.
+#   secrets.RAILWAY_TOKEN               token de proyecto de Railway (sirve para los dos servicios)
+#   secrets.RAILWAY_SERVICE_ID          id del servicio del backend en Railway
+#   secrets.RAILWAY_FRONTEND_SERVICE_ID id del servicio del frontend en Railway
+#   vars.APP_URL                        URL pública del backend, sin barra final (ej. https://sendera-api.up.railway.app)
+#   vars.FRONTEND_URL                   URL pública del frontend, sin barra final
+# Y en Railway, variables de cada servicio (nunca en el repositorio). Ver docs/11-ci-cd.md.
 on:
   workflow_call:
 
@@ -50,33 +53,101 @@ jobs:
         run: railway up --service="$RAILWAY_SERVICE_ID" --ci
 
   smoke-test:
-    name: 4. Prueba de humo (health y API)
+    name: 4. Prueba de humo del backend (health y API)
     needs: deploy
     runs-on: ubuntu-latest
+    # Mismo entorno que el despliegue: así ve APP_URL aunque esté definida en el entorno y no en el repositorio.
+    environment: production
     env:
       APP_URL: ${{ vars.APP_URL }}
     steps:
       - name: Esperar a que la app responda en /actuator/health
         run: |
           if [ -z "$APP_URL" ]; then echo "Falta la variable APP_URL"; exit 1; fi
+          URL="${APP_URL%/}/api/v1/actuator/health"
+          echo "Comprobando $URL"
           for i in $(seq 1 20); do
-            if curl -fsS "$APP_URL/api/v1/actuator/health" | grep -q '"status":"UP"'; then
+            codigo=$(curl -sS -m 10 -o respuesta.txt -w '%{http_code}' "$URL" || true)
+            if [ "$codigo" = "200" ] && grep -Eq '"status" *: *"UP"' respuesta.txt; then
               echo "La app está arriba"
               exit 0
             fi
-            echo "Intento $i: aún no responde, esperando 15 s..."
+            # Muestra qué contesta el servidor para poder diagnosticar (código y cuerpo del health, sin datos sensibles)
+            echo "Intento $i: HTTP ${codigo:-000} - $(head -c 200 respuesta.txt 2>/dev/null) - esperando 15 s..."
             sleep 15
           done
           echo "La app no respondió con estado UP"
           exit 1
 
       - name: Verificar que la API pública responde
-        run: curl -fsS "$APP_URL/api/v1/destinos" > /dev/null
+        run: curl -fsS "${APP_URL%/}/api/v1/destinos" > /dev/null
 
       - name: Verificar que la parte protegida sigue cerrada
         run: |
-          codigo=$(curl -s -o /dev/null -w '%{http_code}' "$APP_URL/api/v1/admin/usuarios")
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' "${APP_URL%/}/api/v1/admin/usuarios")
           if [ "$codigo" != "401" ]; then
             echo "Se esperaba 401 sin token en /admin/usuarios y se obtuvo $codigo"
+            exit 1
+          fi
+
+  deploy-frontend:
+    name: 5. Desplegar frontend en Railway
+    needs: smoke-test
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ vars.FRONTEND_URL }}
+    container: ghcr.io/railwayapp/cli:5.63.4
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_FRONTEND_SERVICE_ID: ${{ secrets.RAILWAY_FRONTEND_SERVICE_ID }}
+    steps:
+      - name: Descargar el commit que pasó el CI
+        uses: actions/checkout@v4
+
+      - name: Comprobar la configuración del despliegue
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ] || [ -z "$RAILWAY_FRONTEND_SERVICE_ID" ]; then
+            echo "Faltan los secretos RAILWAY_TOKEN y/o RAILWAY_FRONTEND_SERVICE_ID (ver docs/11-ci-cd.md)."
+            exit 1
+          fi
+
+      # Railway compila el frontend (Railpack) con las variables del servicio, entre ellas VITE_API_URL,
+      # que Vite incrusta en el build. Solo se sube la carpeta del frontend.
+      - name: Desplegar
+        working-directory: sendera-front
+        run: railway up --service="$RAILWAY_FRONTEND_SERVICE_ID" --ci
+
+  smoke-test-frontend:
+    name: 6. Prueba de humo del frontend
+    needs: deploy-frontend
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+    steps:
+      - name: Esperar a que el frontend responda
+        run: |
+          if [ -z "$FRONTEND_URL" ]; then echo "Falta la variable FRONTEND_URL"; exit 1; fi
+          URL="${FRONTEND_URL%/}/"
+          echo "Comprobando $URL"
+          for i in $(seq 1 20); do
+            codigo=$(curl -sS -m 10 -o respuesta.html -w '%{http_code}' "$URL" || true)
+            if [ "$codigo" = "200" ] && grep -q '<div id="root"' respuesta.html; then
+              echo "El frontend está arriba"
+              exit 0
+            fi
+            echo "Intento $i: HTTP ${codigo:-000} - esperando 15 s..."
+            sleep 15
+          done
+          echo "El frontend no respondió con la aplicación"
+          exit 1
+
+      # React Router maneja las rutas en el navegador: una ruta interna debe devolver el mismo index.html.
+      - name: Verificar que las rutas internas funcionan (SPA)
+        run: |
+          codigo=$(curl -s -o /dev/null -w '%{http_code}' "${FRONTEND_URL%/}/login")
+          if [ "$codigo" != "200" ]; then
+            echo "Se esperaba 200 en /login (fallback de la SPA) y se obtuvo $codigo"
             exit 1
           fi
