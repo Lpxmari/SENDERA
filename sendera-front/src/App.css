@@ -360,7 +360,8 @@
 
 .sugerencia h3 { font-size: 15px; font-weight: 600; }
 .sugerencia__tipo { font-size: 13px; color: var(--texto-suave); }
-.sugerencia__lugar { margin-top: 2px; font-size: 13px; font-weight: 600; }
+.sugerencia__lugar { display: flex; align-items: center; gap: 6px; margin-top: 2px; font-size: 13px; font-weight: 600; }
+.sugerencia__lugar svg { color: var(--naranja); flex-shrink: 0; }
 
 /* ===== Responsive ===== */
 @media (max-width: 960px) {
