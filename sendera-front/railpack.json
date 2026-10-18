@@ -1,0 +1,6 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "deploy": {
+    "startCommand": "./node_modules/.bin/serve --single --no-clipboard --listen $PORT dist"
+  }
+}
