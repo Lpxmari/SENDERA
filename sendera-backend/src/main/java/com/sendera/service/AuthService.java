@@ -11,6 +11,8 @@ public interface AuthService {
     /** Siempre responde igual exista o no el correo, para no revelar qué cuentas existen. */
     void solicitarRecuperacion(RecuperarContrasenaDto dto);
 
+    void verificarCodigo(VerificarCodigoDto dto);
+
     void cambiarContrasena(CambiarContrasenaDto dto);
 
     UsuarioDto obtenerPerfil(String correo);

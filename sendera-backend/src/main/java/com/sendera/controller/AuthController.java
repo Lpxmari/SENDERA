@@ -34,6 +34,12 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
+    @PostMapping("/verificar-codigo")
+    public ResponseEntity<Void> verificarCodigo(@Valid @RequestBody VerificarCodigoDto dto) {
+        authService.verificarCodigo(dto);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/cambiar-contrasena")
     public ResponseEntity<Void> cambiarContrasena(@Valid @RequestBody CambiarContrasenaDto dto) {
         authService.cambiarContrasena(dto);

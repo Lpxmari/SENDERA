@@ -77,7 +77,7 @@ tasks.named('jacocoTestReport') {
 }
 
 // Umbral mínimo de cobertura de líneas. Se evalúa con ./gradlew check (lo ejecuta el CI).
-// Cobertura medida el 2026-10-17: 77 %. Súbelo a medida que crezcan las pruebas.
+// Cobertura medida el 2026-10-19: 84,9 %. Súbelo a medida que crezcan las pruebas.
 tasks.named('jacocoTestCoverageVerification') {
     violationRules {
         rule {

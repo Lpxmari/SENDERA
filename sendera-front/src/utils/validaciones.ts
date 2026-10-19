@@ -16,3 +16,9 @@ export const validarContrasenaNueva = (contrasena: string): string | null => {
 
 export const validarCoincidencia = (a: string, b: string): string | null =>
     a !== b ? 'Las contraseñas no coinciden.' : null;
+
+export const validarCodigo = (codigo: string): string | null => {
+    if (!codigo.trim()) return 'Ingresa el código que te enviamos.';
+    if (!/^\d{6}$/.test(codigo.trim())) return 'El código tiene 6 números.';
+    return null;
+};

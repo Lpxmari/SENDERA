@@ -5,6 +5,7 @@ import {
     LoginRequest,
     RecuperarContrasenaRequest,
     RegistroRequest,
+    VerificarCodigoRequest,
 } from '../types/auth';
 import apiClient from './apiClient';
 
@@ -29,6 +30,10 @@ export const actualizarCuenta = async (datos: ActualizarCuentaRequest): Promise<
 
 export const solicitarRecuperacion = async (datos: RecuperarContrasenaRequest): Promise<void> => {
     await apiClient.post('/auth/recuperar-contrasena', datos);
+};
+
+export const verificarCodigo = async (datos: VerificarCodigoRequest): Promise<void> => {
+    await apiClient.post('/auth/verificar-codigo', datos);
 };
 
 export const cambiarContrasena = async (datos: CambiarContrasenaRequest): Promise<void> => {
