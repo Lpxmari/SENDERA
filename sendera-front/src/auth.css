@@ -32,6 +32,11 @@
 .auth-campo__input::placeholder { color: #9a9a9a; }
 .auth-campo__input:focus { outline: none; border-color: var(--verde); box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.18); }
 .auth-campo__input--error { border-color: #c0392b; }
+.auth-campo__input[autocomplete="one-time-code"] {
+    font-size: 24px;
+    letter-spacing: 8px;
+    text-align: center;
+}
 .auth-campo__control:has(.auth-campo__ojo) .auth-campo__input { padding-right: 44px; }
 .auth-campo__ojo {
     position: absolute; top: 50%; right: 6px; transform: translateY(-50%);

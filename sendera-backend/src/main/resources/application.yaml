@@ -30,16 +30,6 @@ spring:
   jackson:
     serialization:
       write-dates-as-timestamps: false
-  # El envio real de correos se activa definiendo SPRING_MAIL_HOST (ver .env.example).
-  # Sin host, el enlace de recuperacion se imprime en consola (solo desarrollo).
-  mail:
-    port: ${SPRING_MAIL_PORT:587}
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
 
 app:
   cors:
@@ -51,9 +41,17 @@ app:
     secret: ${JWT_SECRET}
     expiracion-horas: ${JWT_EXPIRACION_HORAS:24}
   recuperacion:
-    expiracion-minutos: ${RECUPERACION_EXPIRACION_MINUTOS:30}
+    expiracion-minutos: ${RECUPERACION_EXPIRACION_MINUTOS:15}
   mail:
     remitente: ${MAIL_REMITENTE:no-reply@sendera.com}
+    nombre-remitente: ${MAIL_NOMBRE_REMITENTE:Sendera}
+    brevo-api-key: ${BREVO_API_KEY:}
+    brevo-url: ${BREVO_API_URL:https://api.brevo.com/v3}
+    smtp:
+      host: ${MAIL_HOST:}
+      port: ${MAIL_PORT:587}
+      usuario: ${MAIL_USERNAME:}
+      contrasena: ${MAIL_PASSWORD:}
 
 # Actuator: solo se expone /actuator/health (sin detalles) para el chequeo de salud del despliegue.
 management:

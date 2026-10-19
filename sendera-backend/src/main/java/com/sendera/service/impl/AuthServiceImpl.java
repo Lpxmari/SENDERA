@@ -22,15 +22,9 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Base64;
-import java.util.HexFormat;
 import java.util.Locale;
 
 @Slf4j
@@ -39,6 +33,8 @@ import java.util.Locale;
 public class AuthServiceImpl implements AuthService {
 
     private static final SecureRandom RANDOM = new SecureRandom();
+    private static final int MAX_INTENTOS = 5;
+    private static final long ESPERA_REENVIO_SEGUNDOS = 60;
 
     private final UsuarioRepository usuarioRepository;
     private final TokenRecuperacionRepository tokenRepository;
@@ -46,9 +42,6 @@ public class AuthServiceImpl implements AuthService {
     private final JwtService jwtService;
     private final CorreoService correoService;
     private final Environment entorno;
-
-    @Value("${app.frontend-url}")
-    private String frontendUrl;
 
     @Value("${app.recuperacion.expiracion-minutos}")
     private long minutosExpiracion;
@@ -101,48 +94,47 @@ public class AuthServiceImpl implements AuthService {
     @Transactional
     public void solicitarRecuperacion(RecuperarContrasenaDto dto) {
         String correoSolicitado = normalizar(dto.getCorreo());
-        usuarioRepository.findByCorreo(correoSolicitado).ifPresentOrElse(usuario -> {
-            // Solo un enlace vigente por usuario
-            tokenRepository.deleteByUsuario(usuario);
+        Usuario usuario = usuarioRepository.findByCorreo(correoSolicitado).orElse(null);
 
-            byte[] bytes = new byte[32];
-            RANDOM.nextBytes(bytes);
-            String token = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-
-            tokenRepository.save(TokenRecuperacion.builder()
-                    .usuario(usuario)
-                    .tokenHash(hash(token))
-                    .expiraEn(LocalDateTime.now().plusMinutes(minutosExpiracion))
-                    .build());
-
-            String enlace = UriComponentsBuilder.fromUriString(frontendUrl)
-                    .path("/cambiar-contrasena")
-                    .queryParam("token", token)
-                    .build().toUriString();
-            correoService.enviarRecuperacionContrasena(usuario.getCorreo(), usuario.getNombre(), enlace);
-        }, () -> {
-            // La respuesta es igual exista o no el correo (no revela cuentas); solo en dev se explica en consola.
+        if (usuario == null || !usuario.isActivo()) {
+            passwordEncoder.matches("000000", hashFicticio);
             if (entorno.acceptsProfiles(Profiles.of("dev"))) {
-                log.warn("Recuperación solicitada para un correo NO registrado: {}. No se genera enlace.", correoSolicitado);
+                log.warn("Recuperación solicitada para un correo NO registrado o inactivo: {}. No se genera código.", correoSolicitado);
             }
-        });
+            return;
+        }
+
+        LocalDateTime ahora = LocalDateTime.now();
+        TokenRecuperacion ultimo = tokenRepository.findFirstByUsuarioOrderByIdDesc(usuario).orElse(null);
+        if (ultimo != null && ultimo.getCreadoEn().isAfter(ahora.minusSeconds(ESPERA_REENVIO_SEGUNDOS))) {
+            return;
+        }
+
+        tokenRepository.deleteByUsuario(usuario);
+        String codigo = String.format("%06d", RANDOM.nextInt(1_000_000));
+        tokenRepository.save(TokenRecuperacion.builder()
+                .usuario(usuario)
+                .codigoHash(passwordEncoder.encode(codigo))
+                .expiraEn(ahora.plusMinutes(minutosExpiracion))
+                .intentos(0)
+                .build());
+
+        correoService.enviarCodigoRecuperacion(usuario.getCorreo(), usuario.getNombre(), codigo);
     }
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = TokenRecuperacionInvalidoException.class)
+    public void verificarCodigo(VerificarCodigoDto dto) {
+        validarCodigo(dto.getCorreo(), dto.getCodigo());
+    }
+
+    @Override
+    @Transactional(noRollbackFor = TokenRecuperacionInvalidoException.class)
     public void cambiarContrasena(CambiarContrasenaDto dto) {
-        TokenRecuperacion token = tokenRepository.findByTokenHash(hash(dto.getToken()))
-                .orElseThrow(TokenRecuperacionInvalidoException::new);
-
-        if (token.getExpiraEn().isBefore(LocalDateTime.now())) {
-            tokenRepository.delete(token);
-            throw new TokenRecuperacionInvalidoException();
-        }
-
+        TokenRecuperacion token = validarCodigo(dto.getCorreo(), dto.getCodigo());
         Usuario usuario = token.getUsuario();
         usuario.setContrasenaHash(passwordEncoder.encode(dto.getNuevaContrasena()));
         usuarioRepository.save(usuario);
-        // El enlace es de un solo uso: se eliminan todos los tokens del usuario
         tokenRepository.deleteByUsuario(usuario);
     }
 
@@ -181,6 +173,38 @@ public class AuthServiceImpl implements AuthService {
         return construirRespuesta(usuario);
     }
 
+    private TokenRecuperacion validarCodigo(String correo, String codigo) {
+        Usuario usuario = usuarioRepository.findByCorreo(normalizar(correo)).orElse(null);
+        TokenRecuperacion token = usuario == null ? null : tokenRepository.findFirstByUsuarioOrderByIdDesc(usuario).orElse(null);
+
+        if (token == null) {
+            passwordEncoder.matches(codigo, hashFicticio);
+            throw new TokenRecuperacionInvalidoException();
+        }
+
+        if (!token.getExpiraEn().isAfter(LocalDateTime.now())) {
+            tokenRepository.delete(token);
+            throw new TokenRecuperacionInvalidoException();
+        }
+
+        int intentosAntes = token.getIntentos();
+        if (tokenRepository.consumirIntento(token.getId(), MAX_INTENTOS) == 0) {
+            tokenRepository.delete(token);
+            throw new TokenRecuperacionInvalidoException("Ingresaste un código incorrecto demasiadas veces. Solicita un código nuevo.");
+        }
+
+        if (!passwordEncoder.matches(codigo, token.getCodigoHash())) {
+            if (intentosAntes + 1 >= MAX_INTENTOS) {
+                tokenRepository.delete(token);
+                throw new TokenRecuperacionInvalidoException("Ingresaste un código incorrecto demasiadas veces. Solicita un código nuevo.");
+            }
+            throw new TokenRecuperacionInvalidoException();
+        }
+
+        tokenRepository.devolverIntento(token.getId());
+        return token;
+    }
+
     private AuthRespuestaDto construirRespuesta(Usuario usuario) {
         return AuthRespuestaDto.builder()
                 .token(jwtService.generar(usuario))
@@ -200,14 +224,5 @@ public class AuthServiceImpl implements AuthService {
 
     private String normalizar(String correo) {
         return correo.trim().toLowerCase(Locale.ROOT);
-    }
-
-    private String hash(String token) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256").digest(token.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 no disponible", e);
-        }
     }
 }

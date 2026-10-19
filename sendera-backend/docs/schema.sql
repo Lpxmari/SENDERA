@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS tokens_recuperacion (
     usuario_id BIGINT NOT NULL,
     token_hash VARCHAR(64) NOT NULL,
     expira_en DATETIME NOT NULL,
+    intentos INT NOT NULL DEFAULT 0,
     creado_en DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY uq_tokens_recuperacion_hash (token_hash),
     INDEX idx_tokens_recuperacion_usuario (usuario_id),
@@ -134,32 +135,3 @@ CREATE TABLE IF NOT EXISTS reservas (
         ON DELETE RESTRICT ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Datos de ejemplo del catálogo (dificultad y accesibilidad toman los valores por defecto).
--- No hay reservas de ejemplo: toda reserva necesita un propietario.
-INSERT INTO destinos (id, nombre, descripcion, ubicacion, precio_base) VALUES
-    (1, 'Parque Nacional Natural Tayrona', 'Senderos costeros, playas y bosque tropical con recorridos de dificultad moderada.', 'Santa Marta, Magdalena', 145000.00),
-    (2, 'Valle de Cocora', 'Paisajes de palma de cera y rutas guiadas por el paisaje cultural cafetero.', 'Salento, Quindio', 85000.00),
-    (3, 'Caño Cristales', 'Recorrido natural por rios y pozas de colores en la Serrania de la Macarena.', 'La Macarena, Meta', 220000.00),
-    (4, 'Desierto de la Tatacoa', 'Observacion del paisaje desertico, senderos interpretativos y cielo nocturno.', 'Villavieja, Huila', 95000.00),
-    (5, 'Parque Nacional Natural Los Nevados', 'Experiencia de montana entre paramos, lagunas y volcanes.', 'Manizales, Caldas', 175000.00)
-ON DUPLICATE KEY UPDATE id = id;
-
-INSERT IGNORE INTO destino_fotos (destino_id, foto_url) VALUES
-    (1, 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80'),
-    (1, 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80'),
-    (2, 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80'),
-    (2, 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80'),
-    (3, 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=1200&q=80'),
-    (3, 'https://images.unsplash.com/photo-1472396961693-142e6e269027?auto=format&fit=crop&w=1200&q=80'),
-    (4, 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=80'),
-    (4, 'https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=1200&q=80'),
-    (5, 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=80'),
-    (5, 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80');
-
-INSERT INTO itinerarios (id, destino_id, nombre, descripcion, fecha_inicio, fecha_fin, precio_base, cupos_disponibles) VALUES
-    (1, 1, 'Tayrona accesible en tres dias', 'Visita guiada con pausas, transporte local y alojamiento cercano al parque.', '2026-11-10', '2026-11-12', 435000.00, 12),
-    (2, 2, 'Cocora y cultura cafetera', 'Caminata guiada de baja dificultad y visita a una finca cafetera.', '2026-11-18', '2026-11-19', 195000.00, 10),
-    (3, 3, 'Expedicion a Caño Cristales', 'Recorrido guiado de naturaleza con transporte y alojamiento en La Macarena.', '2026-12-03', '2026-12-06', 890000.00, 8),
-    (4, 4, 'Tatacoa y observacion astronomica', 'Senderos al atardecer y actividad de observacion del cielo.', '2027-01-15', '2027-01-16', 210000.00, 14),
-    (5, 5, 'Paramo de Los Nevados', 'Ruta guiada de montana con aclimatacion y paradas de descanso.', '2027-02-10', '2027-02-12', 525000.00, 8)
-ON DUPLICATE KEY UPDATE id = id;
