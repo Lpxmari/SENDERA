@@ -72,4 +72,4 @@ Crea también el entorno **production** (Settings → Environments) y, si quiere
 ## Pendiente / decisiones abiertas
 - **Esquema de la base de producción:** la aplicación no crea las tablas (`ddl-auto: validate`). Se carga una vez `docs/schema.sql` en la base de Railway. Los cambios de esquema se aplican a mano (no hay migraciones, decisión del equipo).
 - **Formato (Prettier):** `npm run format:check` no se exige hasta aplicar Prettier a los 25 archivos antiguos del frontend.
-- **Cobertura:** el umbral parte del 70 % (se midió 77 % el 2026-10-17); súbelo al aumentar las pruebas.
+- **Cobertura:** el umbral es 70 %. Medido el 2026-10-19 en `dev`: 84,9 % (141 pruebas). Antes de añadir pruebas de correo, cuentas y filtros de destinos bajó a 66-69 %, lo que hizo fallar el CI; súbelo al aumentar las pruebas.
