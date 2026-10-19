@@ -1,14 +1,14 @@
 import { FormEvent, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import CampoTexto from '../components/auth/CampoTexto';
 import { obtenerMensajeError, solicitarRecuperacion } from '../services/authService';
 import { validarCorreo } from '../utils/validaciones';
 
 const RecuperarContrasena = () => {
+    const navigate = useNavigate();
     const [correo, setCorreo] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [errorGeneral, setErrorGeneral] = useState<string | null>(null);
-    const [enviado, setEnviado] = useState(false);
     const [cargando, setCargando] = useState(false);
 
     const handleSubmit = async (e: FormEvent) => {
@@ -21,9 +21,9 @@ const RecuperarContrasena = () => {
         setCargando(true);
         try {
             await solicitarRecuperacion({ correo: correo.trim() });
-            setEnviado(true);
+            navigate('/cambiar-contrasena', { state: { correo: correo.trim() } });
         } catch (err) {
-            setErrorGeneral(obtenerMensajeError(err, 'No se pudo enviar el correo. Intenta de nuevo.'));
+            setErrorGeneral(obtenerMensajeError(err, 'No se pudo enviar el código. Intenta de nuevo.'));
         } finally {
             setCargando(false);
         }
@@ -34,28 +34,19 @@ const RecuperarContrasena = () => {
             <div className="auth-encabezado">
                 <h1 className="auth-titulo">Recuperar contraseña</h1>
                 <p className="auth-subtitulo">
-                    Ingresa el correo electrónico asociado a tu cuenta y te enviaremos las instrucciones para recuperar tu contraseña.
+                    Ingresa el correo electrónico asociado a tu cuenta y te enviaremos un código de 6 dígitos.
                 </p>
             </div>
 
-            {enviado ? (
-                <div className="auth-form">
-                    <p className="auth-exito" role="status">
-                        Si el correo está registrado, recibirás las instrucciones en unos minutos. Revisa también tu carpeta de spam.
-                    </p>
-                    <Link to="/login" className="auth-enlace auth-enlace--centro">← Volver a iniciar sesión</Link>
-                </div>
-            ) : (
-                <form className="auth-form" onSubmit={handleSubmit} noValidate>
-                    {errorGeneral && <p className="auth-alerta" role="alert">{errorGeneral}</p>}
-                    <CampoTexto etiqueta="Correo electrónico" type="email" autoComplete="email"
-                                placeholder="Ingresa tu correo" valor={correo} onCambio={setCorreo} error={error} />
-                    <button type="submit" className="auth-boton" disabled={cargando}>
-                        {cargando ? 'Enviando…' : 'Enviar instrucciones'}
-                    </button>
-                    <Link to="/login" className="auth-enlace auth-enlace--centro">← Volver a iniciar sesión</Link>
-                </form>
-            )}
+            <form className="auth-form" onSubmit={handleSubmit} noValidate>
+                {errorGeneral && <p className="auth-alerta" role="alert">{errorGeneral}</p>}
+                <CampoTexto etiqueta="Correo electrónico" type="email" autoComplete="email"
+                            placeholder="Ingresa tu correo" valor={correo} onCambio={setCorreo} error={error} />
+                <button type="submit" className="auth-boton" disabled={cargando}>
+                    {cargando ? 'Enviando…' : 'Enviar código'}
+                </button>
+                <Link to="/login" className="auth-enlace auth-enlace--centro">← Volver a iniciar sesión</Link>
+            </form>
         </>
     );
 };

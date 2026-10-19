@@ -38,7 +38,13 @@ export interface RecuperarContrasenaRequest {
     correo: string;
 }
 
+export interface VerificarCodigoRequest {
+    correo: string;
+    codigo: string;
+}
+
 export interface CambiarContrasenaRequest {
-    token: string;
+    correo: string;
+    codigo: string;
     nuevaContrasena: string;
 }

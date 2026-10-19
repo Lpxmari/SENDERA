@@ -5,7 +5,7 @@ import lombok.*;
 
 import java.time.LocalDateTime;
 
-/** Token de un solo uso para restablecer la contraseña. Solo se guarda su hash SHA-256. */
+/** Código de un solo uso para restablecer la contraseña. */
 @Entity
 @Table(name = "tokens_recuperacion")
 @Getter @Setter
@@ -22,10 +22,14 @@ public class TokenRecuperacion {
     private Usuario usuario;
 
     @Column(name = "token_hash", nullable = false, unique = true, length = 64)
-    private String tokenHash;
+    private String codigoHash;
 
     @Column(name = "expira_en", nullable = false)
     private LocalDateTime expiraEn;
+
+    @Column(nullable = false)
+    @Builder.Default
+    private int intentos = 0;
 
     @Column(name = "creado_en", nullable = false, updatable = false)
     private LocalDateTime creadoEn;

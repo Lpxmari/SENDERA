@@ -9,7 +9,8 @@ const Login = () => {
     const { login, autenticado } = useAuth();
     const navigate = useNavigate();
     const ubicacion = useLocation();
-    const destino = (ubicacion.state as { desde?: string } | null)?.desde ?? '/';
+    const destino = (ubicacion.state as { desde?: string; mensaje?: string } | null)?.desde ?? '/';
+    const mensaje = (ubicacion.state as { desde?: string; mensaje?: string } | null)?.mensaje ?? null;
 
     const [correo, setCorreo] = useState('');
     const [contrasena, setContrasena] = useState('');
@@ -47,6 +48,7 @@ const Login = () => {
             </div>
 
             <form className="auth-form" onSubmit={handleSubmit} noValidate>
+                {mensaje && <p className="auth-exito" role="status">{mensaje}</p>}
                 {errorGeneral && <p className="auth-alerta" role="alert">{errorGeneral}</p>}
                 <CampoTexto
                     etiqueta="Ingresa tu correo:"

@@ -58,7 +58,8 @@ public class SecurityConfig {
 
     /** Rutas de autenticación que no requieren sesión. */
     private static final String[] AUTH_PUBLICAS = {
-            "/auth/registro", "/auth/login", "/auth/recuperar-contrasena", "/auth/cambiar-contrasena"
+            "/auth/registro", "/auth/login", "/auth/recuperar-contrasena", "/auth/verificar-codigo",
+            "/auth/cambiar-contrasena"
     };
 
     @Bean
