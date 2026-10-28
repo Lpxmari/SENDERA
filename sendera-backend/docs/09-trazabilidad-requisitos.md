@@ -10,9 +10,9 @@ Completar la matriz durante el desarrollo. Los nombres de clases/endpoints son c
 | RF-004 | Perfil (nombre, apellidos y correo) | controller/service/dto | `PUT /auth/me`; el rol no se modifica; cambiar el correo exige la contraseña actual y devuelve un token nuevo | `AuthServiceImplTest`, `PerfilApiTest` | Parcial: los demás campos del perfil esperan el MER |
 | RF-005 | Roles | config/controller | Escritura de destinos solo `ROLE_ADMIN`; rol firmado en el claim `roles` | `SeguridadApiTest` (401/403/201, identidad tomada del token), `ReservaPropiedadIntegracionTest` (propiedad con H2) | Probado (sin pruebas contra MySQL) |
 | RF-006 | Catálogo de destinos | controller/service/repository | `GET /api/v1/destinos`, `/destinos/{id}` | `DestinoServiceImplTest`, `SeguridadApiTest` | En desarrollo (sin paginación) |
-| RF-007 | Catálogo de actividades | — | Sin implementar | — | Pendiente |
+| RF-007 | Catálogo de actividades | controller/service/repository | `GET /api/v1/actividades`, `/actividades/{id}` | `ViajeServiceImplIntegracionTest`, `ViajesApiTest` | En desarrollo (solo lectura; sin gestión administrativa) |
 | RF-008 | Filtros | service/repository | Parámetros de `GET /destinos` | `DestinoServiceImplTest` (casos límite pendientes) | En desarrollo |
-| RF-009/010 | Itinerarios | — | Sin endpoints (existe la entidad `Itinerario`) | — | Pendiente |
+| RF-009/010 | Itinerarios personales (`viajes`) | controller/service/repository/dto | `GET/POST /api/v1/viajes`, `GET/PUT/DELETE /api/v1/viajes/{id}` | `ViajeServiceImplIntegracionTest` (propiedad, fechas pasadas, solapes, orden, eliminar, hora de la primera actividad), `ViajesApiTest` (401, 404 ajeno, 409, 204 al eliminar); front: `ListaItinerarios`, `DetalleItinerario`, `CrearItinerario`, `Encabezado` | En desarrollo (backend y pantallas de lista, detalle y crear/editar; falta la reserva de actividades, mockup 3) |
 | RF-011 | Disponibilidad | service | Se valida el cupo al reservar | `ReservaServiceImplTest` | En desarrollo |
 | RF-012 | Reservas | controller/service/repository | `/api/v1/reservas` | `ReservaServiceImplTest` (monto, cupos, doble cancelación, propiedad), `ReservaPropiedadIntegracionTest` | Probado (sin pruebas contra MySQL) |
 | RF-014 | Pago, si aplica | integration/service | Proveedor externo | — | Pendiente |

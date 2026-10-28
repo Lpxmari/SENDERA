@@ -54,7 +54,7 @@ En el frontend:
 Crea también el entorno **production** (Settings → Environments) y, si quieres, exige aprobación manual antes de desplegar.
 
 **Railway → variables del servicio** (nunca en el repositorio):
-`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (mínimo 32 caracteres), `CORS_ORIGINS` (dominio real del frontend, sin comodines), `FRONTEND_URL` y, si se envían correos, `SPRING_MAIL_*`. Railpack detecta Java 21 por sí mismo (opcional: `RAILPACK_JDK_VERSION=21`). **No actives el perfil `dev` en producción** y no crees variables con puntos o minúsculas (como `spring.profiles.active`): Railway las pasa como secretos del build y lo rompen.
+`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET` (mínimo 32 caracteres), `CORS_ORIGINS` (dominio real del frontend, sin comodines), `FRONTEND_URL` y, para el correo de recuperación de contraseña, `BREVO_API_KEY` y `MAIL_REMITENTE` (un remitente verificado en Brevo). Sin ellas la app arranca, pero el código no se envía y solo queda un aviso en el log. SMTP (`MAIL_HOST`, `MAIL_USERNAME`, `MAIL_PASSWORD`) es la alternativa para local; Railway suele bloquear los puertos SMTP en planes que no son Pro. Railpack detecta Java 21 por sí mismo (opcional: `RAILPACK_JDK_VERSION=21`). **No actives el perfil `dev` en producción** y no crees variables con puntos o minúsculas (como `spring.profiles.active`): Railway las pasa como secretos del build y lo rompen.
 
 **Railway → servicio del frontend** (un servicio aparte en el mismo proyecto y ambiente):
 - `VITE_API_URL` = URL completa y **https** del backend con el prefijo, por ejemplo `https://tu-api.up.railway.app/api/v1`. Vite la incrusta al compilar, así que si cambia hay que volver a desplegar. Si falta, el frontend llamaría a `/api/v1` en su propio dominio y fallaría.
@@ -70,6 +70,6 @@ Crea también el entorno **production** (Settings → Environments) y, si quiere
 - Pruebas: `SaludDelServicioTest`.
 
 ## Pendiente / decisiones abiertas
-- **Esquema de la base de producción:** la aplicación no crea las tablas (`ddl-auto: validate`). Se carga una vez `docs/schema.sql` en la base de Railway. Los cambios de esquema se aplican a mano (no hay migraciones, decisión del equipo).
+- **Esquema de la base de producción:** la aplicación no crea las tablas (`ddl-auto: validate`). Se carga una vez `docs/schema.sql` en la base de Railway. Los cambios de esquema se aplican a mano (no hay migraciones, decisión del equipo): **cada vez que una entidad gane una columna o tabla, hay que ejecutar el `ALTER` en la base de Railway antes de desplegar**, o la app no arrancará y el chequeo de salud fallará. Scripts necesarios en bases ya creadas: `docs/actualizar-recuperacion-por-codigo.sql` (columna `intentos`) y `docs/actualizar-viajes-actividades.sql` (tablas `actividades`, `viajes` y `viaje_actividades`; opcionalmente `docs/datos-actividades.sql` para el catálogo de ejemplo).
 - **Formato (Prettier):** `npm run format:check` no se exige hasta aplicar Prettier a los 25 archivos antiguos del frontend.
 - **Cobertura:** el umbral es 70 %. Medido el 2026-10-19 en `dev`: 84,9 % (141 pruebas). Antes de añadir pruebas de correo, cuentas y filtros de destinos bajó a 66-69 %, lo que hizo fallar el CI; súbelo al aumentar las pruebas.

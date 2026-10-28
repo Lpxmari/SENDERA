@@ -1,0 +1,279 @@
+/* ===== Itinerarios personales: crear / editar ===== */
+.itinerario {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 40px 24px 72px;
+}
+
+.itinerario__titulo {
+  font-size: 44px;
+  line-height: 1.1;
+  font-weight: 800;
+  color: var(--naranja-oscuro);
+}
+
+.itinerario__subtitulo {
+  margin-top: 10px;
+  margin-bottom: 28px;
+  font-size: 20px;
+  color: var(--texto-suave);
+}
+
+.itinerario__seccion {
+  margin-top: 36px;
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--naranja-oscuro);
+}
+
+.itinerario__ayuda { margin-top: 8px; color: var(--texto-suave); }
+
+.itinerario__error {
+  margin-top: 8px;
+  color: #a3231b;
+  font-weight: 600;
+}
+
+/* --- Campos --- */
+.itinerario__campo { display: grid; gap: 8px; margin-top: 18px; }
+.itinerario__campo label { font-weight: 700; font-size: 17px; }
+.itinerario__campo input,
+.agregar-actividad input,
+.agregar-actividad select,
+.actividad-fila__panel input {
+  min-height: 48px;
+  padding: 10px 14px;
+  border: 1px solid #b9b49a;
+  border-radius: 8px;
+  background: #fff;
+  font: 400 17px/1.3 var(--fuente);
+  color: var(--texto);
+}
+.itinerario__campo input:focus-visible,
+.agregar-actividad input:focus-visible,
+.agregar-actividad select:focus-visible,
+.actividad-fila__panel input:focus-visible { outline: 3px solid var(--verde); outline-offset: 2px; }
+.itinerario__campo input[aria-invalid='true'] { border-color: #a3231b; }
+
+.itinerario__fechas { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+
+/* --- Días y actividades --- */
+.itinerario__dia { margin-top: 28px; }
+.itinerario__dia h3 { font-size: 26px; font-weight: 800; color: var(--verde); }
+.itinerario__lista { display: grid; gap: 14px; margin: 14px 0; padding: 0; list-style: none; }
+
+.actividad-fila {
+  padding: 18px 22px;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+.actividad-fila--conflicto { border-color: var(--naranja-oscuro); background: #fff8f2; }
+.actividad-fila__principal { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+.actividad-fila__datos h4 { font-size: 22px; font-weight: 800; color: var(--verde-oscuro); }
+.actividad-fila__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; margin-top: 8px; font-size: 17px; }
+.actividad-fila__meta > span:not(.badge) { display: inline-flex; align-items: center; gap: 6px; }
+.actividad-fila__meta svg { color: var(--verde); }
+.actividad-fila__punto { width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.badge--conflicto { background: #ffe9dc; color: #8a3a00; }
+.actividad-fila__acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+
+.actividad-fila__panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--borde);
+}
+.actividad-fila__panel p { flex-basis: 100%; color: var(--texto-suave); }
+.actividad-fila__panel label { display: grid; gap: 6px; font-weight: 700; }
+
+/* --- Botones de acción (objetivos de al menos 44 px, con texto además del ícono) --- */
+.accion-itinerario {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 10px 18px;
+  border: 2px solid var(--verde);
+  border-radius: 8px;
+  background: #fff;
+  font: 700 16px/1 var(--fuente);
+  color: var(--verde);
+  cursor: pointer;
+}
+.accion-itinerario:hover:not(:disabled) { background: var(--verde); color: #fff; }
+.accion-itinerario:focus-visible { outline: 3px solid var(--verde); outline-offset: 2px; }
+.accion-itinerario:disabled { opacity: 0.5; cursor: not-allowed; }
+.accion-itinerario--neutra { border-color: #b9b49a; color: var(--texto); }
+.accion-itinerario--neutra:hover:not(:disabled) { background: var(--texto); border-color: var(--texto); }
+.accion-itinerario--peligro { border-color: #a3231b; color: #a3231b; }
+.accion-itinerario--peligro:hover:not(:disabled) { background: #a3231b; color: #fff; }
+.accion-itinerario--solida { background: var(--verde); color: #fff; }
+.accion-itinerario--solida:hover:not(:disabled) { background: var(--verde-oscuro); }
+
+/* --- Agregar actividad --- */
+.agregar-actividad__abrir { margin-top: 4px; }
+.agregar-actividad {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 16px;
+  margin-top: 8px;
+  padding: 18px 22px;
+  border: 1px dashed var(--verde);
+  border-radius: 14px;
+  background: #f4faf6;
+}
+.agregar-actividad__campo { display: grid; gap: 6px; }
+.agregar-actividad__campo label { font-weight: 700; }
+.agregar-actividad__campo select { min-width: 280px; }
+.agregar-actividad__detalle { flex-basis: 100%; color: var(--texto-suave); }
+.agregar-actividad__acciones { display: flex; gap: 12px; }
+
+/* --- Aviso de conflicto y guardado --- */
+.itinerario__aviso {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 16px 20px;
+  border: 1.5px solid var(--naranja);
+  border-radius: 12px;
+  background: #fdf4dc;
+  font-weight: 600;
+}
+.itinerario__aviso svg { flex-shrink: 0; margin-top: 2px; color: var(--naranja-oscuro); }
+.itinerario__aviso ul { margin: 8px 0 0; padding-left: 20px; font-weight: 400; }
+
+.itinerario__guardar { display: flex; justify-content: flex-end; margin-top: 28px; }
+.itinerario__boton-guardar { min-height: 52px; padding: 14px 32px; font-size: 18px; }
+.itinerario__boton-guardar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ===== Lista "Mis itinerarios y reservas" ===== */
+.lista-itinerarios__encabezado { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 36px; }
+.lista-itinerarios__encabezado .itinerario__subtitulo { margin-bottom: 0; }
+.lista-itinerarios__titulo { color: var(--verde); }
+/* Más específico que `.boton` (App.css), que si no impone su tamaño pequeño */
+.lista-itinerarios__encabezado .lista-itinerarios__crear { padding: 18px 28px; font-size: 20px; border-radius: 10px; }
+.lista-itinerarios__guardado {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 14px 20px;
+  border: 1.5px solid var(--verde);
+  border-radius: 12px;
+  background: #e6f2ea;
+  font-weight: 700;
+  color: var(--verde-oscuro);
+}
+
+.lista-itinerarios { display: grid; gap: 24px; margin: 0; padding: 0; list-style: none; }
+.viaje-tarjeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 32px 40px;
+  border: 1px solid #d9d4bf;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+.viaje-tarjeta__datos h2 { font-size: 34px; line-height: 1.2; font-weight: 800; color: var(--verde); }
+.viaje-tarjeta__datos p { display: flex; align-items: center; gap: 10px; margin: 12px 0 0; font-size: 20px; }
+.viaje-tarjeta__datos p svg { flex-shrink: 0; color: var(--verde); }
+.viaje-tarjeta__actividades {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: #e6f2ea;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--verde);
+}
+.viaje-tarjeta__acciones { display: flex; flex-wrap: wrap; gap: 16px; }
+.viaje-tarjeta__acciones .accion-itinerario { min-width: 160px; min-height: 56px; font-size: 18px; text-decoration: none; }
+
+/* ===== Ver un itinerario ===== */
+/* El diálogo de confirmación pinta en rojo con esta variable, que fuera del panel de administración no existe. */
+.detalle-itinerario { --admin-peligro: #a3231b; }
+.detalle-itinerario .boton--peligro { background: var(--admin-peligro); }
+.detalle-itinerario .boton--peligro:hover { background: #82190f; }
+
+.detalle-itinerario__volver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--naranja-oscuro);
+  text-decoration: underline;
+}
+.detalle-itinerario__volver:hover { color: var(--naranja); }
+.detalle-itinerario__volver--centrado { align-self: center; margin-top: 20px; }
+
+.detalle-itinerario__resumen {
+  margin-top: 28px;
+  padding: 28px 40px;
+  border: 1px solid #d9d4bf;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+}
+.detalle-itinerario__resumen p { display: flex; align-items: center; gap: 12px; margin: 0; font-size: 22px; }
+.detalle-itinerario__resumen p + p { margin-top: 14px; }
+.detalle-itinerario__resumen svg { flex-shrink: 0; color: var(--verde); }
+
+.detalle-actividad {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px 28px;
+  border: 1px solid #d9d4bf;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+}
+.detalle-actividad__icono {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #e6f2ea;
+  color: var(--verde);
+}
+.detalle-actividad__hora { margin: 0; font-size: 20px; font-weight: 800; color: var(--naranja-oscuro); }
+.detalle-actividad h4 { margin: 4px 0 0; font-size: 26px; font-weight: 800; color: var(--verde); }
+.detalle-actividad__lugar { display: flex; align-items: center; gap: 8px; margin: 10px 0 0; font-size: 18px; }
+.detalle-actividad__lugar svg { color: var(--verde); }
+
+.detalle-itinerario__acciones { display: flex; flex-direction: column; gap: 14px; margin-top: 36px; }
+.detalle-itinerario__acciones .accion-itinerario { min-height: 60px; font-size: 20px; text-decoration: none; }
+
+@media (max-width: 720px) {
+  .detalle-itinerario__resumen { padding: 22px 20px; }
+  .detalle-actividad { padding: 18px 16px; gap: 14px; }
+  .detalle-actividad h4 { font-size: 22px; }
+  .viaje-tarjeta { padding: 24px 20px; }
+  .viaje-tarjeta__datos h2 { font-size: 28px; }
+  .viaje-tarjeta__acciones { width: 100%; }
+  .viaje-tarjeta__acciones .accion-itinerario { flex: 1 1 140px; }
+  .lista-itinerarios__crear { width: 100%; text-align: center; }
+  .itinerario { padding: 28px 16px 56px; }
+  .itinerario__titulo { font-size: 34px; }
+  .itinerario__fechas { grid-template-columns: 1fr; gap: 0; }
+  .agregar-actividad__campo select { min-width: 0; width: 100%; }
+  .agregar-actividad__campo { flex: 1 1 100%; }
+  .itinerario__guardar .boton { width: 100%; }
+}

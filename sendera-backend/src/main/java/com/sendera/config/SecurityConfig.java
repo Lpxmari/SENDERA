@@ -83,6 +83,7 @@ public class SecurityConfig {
                         .requestMatchers(AUTH_PUBLICAS).permitAll()
                         // Consulta de destinos abierta; crear/modificar/eliminar solo administradores
                         .requestMatchers(HttpMethod.GET, "/destinos", "/destinos/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actividades", "/actividades/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/destinos/*/resenas").authenticated()
                         .requestMatchers(HttpMethod.POST, "/destinos", "/destinos/**").hasAuthority(ROL_ADMIN)
                         .requestMatchers(HttpMethod.PUT, "/destinos/**").hasAuthority(ROL_ADMIN)
@@ -167,6 +168,8 @@ public class SecurityConfig {
         }
         matchers.add(new AntPathRequestMatcher("/destinos", HttpMethod.GET.name()));
         matchers.add(new AntPathRequestMatcher("/destinos/**", HttpMethod.GET.name()));
+        matchers.add(new AntPathRequestMatcher("/actividades", HttpMethod.GET.name()));
+        matchers.add(new AntPathRequestMatcher("/actividades/**", HttpMethod.GET.name()));
         matchers.add(new AntPathRequestMatcher("/actuator/health/**", HttpMethod.GET.name()));
         matchers.add(new AntPathRequestMatcher("/actuator/health", HttpMethod.GET.name()));
         return new OrRequestMatcher(matchers);

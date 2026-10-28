@@ -1,3 +1,4 @@
+import type { ComponentProps } from 'react';
 import { BrowserRouter as Router, Routes, Route, Outlet, Navigate } from 'react-router-dom';
 import Encabezado from './components/Encabezado';
 import AuthLayout from './components/auth/AuthLayout';
@@ -11,6 +12,9 @@ import DetalleDestino from './pages/DetalleDestino';
 import FormularioReserva from './pages/FormularioReserva';
 import ConfirmacionReserva from './pages/ConfirmacionReserva';
 import Perfil from './pages/Perfil';
+import CrearItinerario from './pages/CrearItinerario';
+import DetalleItinerario from './pages/DetalleItinerario';
+import ListaItinerarios from './pages/ListaItinerarios';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminUsuarios from './pages/admin/AdminUsuarios';
 import AdminDestinos from './pages/admin/AdminDestinos';
@@ -23,9 +27,9 @@ import CambiarContrasena from './pages/CambiarContrasena';
 import './App.css';
 import './auth.css';
 
-const LayoutPrincipal = () => (
+const LayoutPrincipal = ({ encabezado }: { encabezado?: ComponentProps<typeof Encabezado>['variante'] }) => (
     <div className="app-container">
-        <Encabezado />
+        <Encabezado variante={encabezado} />
         <main>
             <Outlet />
         </main>
@@ -68,6 +72,24 @@ function App() {
                                 <Route path="/perfil" element={<Perfil />} />
                             </Route>
                             <Route path="/confirmacion" element={<ConfirmacionReserva />} />
+                        </Route>
+                    </Route>
+
+                    {/* Itinerarios personales: encabezado sin buscador (lista y formulario) o solo con "Mi Perfil" (detalle) */}
+                    <Route element={<LayoutPrincipal encabezado="itinerarios" />}>
+                        <Route element={<RutaProtegida />}>
+                            <Route element={<RutaCliente />}>
+                                <Route path="/itinerarios" element={<ListaItinerarios />} />
+                                <Route path="/itinerarios/nuevo" element={<CrearItinerario />} />
+                                <Route path="/itinerarios/:id/editar" element={<CrearItinerario />} />
+                            </Route>
+                        </Route>
+                    </Route>
+                    <Route element={<LayoutPrincipal encabezado="detalle" />}>
+                        <Route element={<RutaProtegida />}>
+                            <Route element={<RutaCliente />}>
+                                <Route path="/itinerarios/:id" element={<DetalleItinerario />} />
+                            </Route>
                         </Route>
                     </Route>
                 </Routes>
