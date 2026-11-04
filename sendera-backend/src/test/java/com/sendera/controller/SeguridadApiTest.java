@@ -115,6 +115,45 @@ class SeguridadApiTest {
     }
 
     @Test
+    void losFiltrosDeDestinosLleganCompletosAlServicio() throws Exception {
+        // CP-005 / RNF-26: precio, dificultad y accesibilidad viajan juntos y sin alterarse hasta el servicio.
+        mockMvc.perform(get("/destinos").param("precioMin", "0").param("precioMax", "500000")
+                        .param("dificultad", "baja").param("accesibilidad", "true"))
+                .andExpect(status().isOk());
+        org.mockito.ArgumentCaptor<com.sendera.dto.FiltroDestinoDto> captor =
+                org.mockito.ArgumentCaptor.forClass(com.sendera.dto.FiltroDestinoDto.class);
+        verify(destinoService).listarDestinos(captor.capture());
+        com.sendera.dto.FiltroDestinoDto filtro = captor.getValue();
+        org.junit.jupiter.api.Assertions.assertEquals(0, filtro.getPrecioMin().compareTo(java.math.BigDecimal.ZERO));
+        org.junit.jupiter.api.Assertions.assertEquals(0, filtro.getPrecioMax().compareTo(new java.math.BigDecimal("500000")));
+        org.junit.jupiter.api.Assertions.assertEquals("baja", filtro.getDificultad());
+        org.junit.jupiter.api.Assertions.assertEquals(Boolean.TRUE, filtro.getAccesibilidad());
+    }
+
+    @Test
+    void filtrosInvalidosDeDestinosDevuelven400ConMensajeClaro() throws Exception {
+        // CP-005 / RNF-13: la excepción de filtro inválido se traduce en 400 con el formato uniforme de error.
+        when(destinoService.listarDestinos(org.mockito.ArgumentMatchers.argThat(f -> f != null && "EXTREMA".equals(f.getDificultad()))))
+                .thenThrow(new com.sendera.exception.FiltroInvalidoException("La dificultad debe ser BAJA, MODERADA o ALTA."));
+        when(destinoService.listarDestinos(org.mockito.ArgumentMatchers.argThat(f -> f != null && f.getPrecioMin() != null
+                && f.getPrecioMin().signum() < 0)))
+                .thenThrow(new com.sendera.exception.FiltroInvalidoException("Los precios no pueden ser negativos."));
+
+        mockMvc.perform(get("/destinos").param("dificultad", "EXTREMA"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("La dificultad debe ser BAJA, MODERADA o ALTA."));
+        mockMvc.perform(get("/destinos").param("precioMin", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Los precios no pueden ser negativos."));
+    }
+
+    @Test
+    void unPrecioQueNoEsNumeroEnLosFiltrosDeDestinosDevuelve400() throws Exception {
+        mockMvc.perform(get("/destinos").param("precioMin", "abc")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/destinos").param("accesibilidad", "quizas")).andExpect(status().isBadRequest());
+    }
+
+    @Test
     void listarResenasEsPublico() throws Exception {
         mockMvc.perform(get("/destinos/1/resenas")).andExpect(status().isOk());
     }
