@@ -38,8 +38,8 @@ Los casos de esta sección aún no tienen identificadores CP- oficiales; se enla
 | Solo itinerarios reservables | El endpoint devuelve únicamente los que tienen cupos > 0 y `fechaFin` ≥ hoy, ordenados por inicio, y 404 si el destino no existe. | `ItinerarioDisponibleIntegracionTest`, `DestinoServiceImplTest`, `SeguridadApiTest` |
 | Fecha de la reserva | Obligatoria, no pasada (400) y dentro del itinerario (409). | `ReservaApiTest`, `ReservaServiceImplTest` |
 
-## 8.4.2 Casos de prueba de duración de actividades (RNF-26 / RF-008, PROPUESTA)
-Se enlazan por el nombre de la prueba; el requisito RNF-26 está pendiente de aprobación del equipo.
+## 8.4.2 Casos de prueba de duración de actividades (RNF-26 / RF-008)
+Requisitos aprobados por el equipo. Se enlazan por el nombre de la prueba; no se asignó aquí ningún identificador CP- (ver la nota de 8.4.1).
 
 | Caso | Qué verifica | Prueba |
 |------|--------------|--------|
