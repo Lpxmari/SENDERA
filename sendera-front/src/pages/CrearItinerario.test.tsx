@@ -125,6 +125,34 @@ describe('CrearItinerario', () => {
         expect(within(fila).getByText('Dificultad baja')).toBeInTheDocument();
     });
 
+    it('el filtro de duración vuelve a pedir el catálogo al servidor y muestra solo lo devuelto', async () => {
+        renderizar();
+        await esperarFormulario();
+        rellenarFechas();
+        vi.mocked(fetchActividades).mockResolvedValueOnce([catalogo[1]]);
+
+        fireEvent.click(screen.getByRole('button', { name: /Agregar actividad al Día 1/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'De 1 a 3 horas' }));
+
+        await waitFor(() => expect(fetchActividades).toHaveBeenLastCalledWith(undefined, 'DE_61_A_180_MIN'));
+        await waitFor(() => expect(screen.queryByRole('option', { name: /Recorrido por Filandia/ })).not.toBeInTheDocument());
+        expect(screen.getByRole('option', { name: 'Visita a finca cafetera (2 horas)' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'De 1 a 3 horas' })).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('si el filtro falla conserva el catálogo y muestra un mensaje claro', async () => {
+        renderizar();
+        await esperarFormulario();
+        rellenarFechas();
+        vi.mocked(fetchActividades).mockRejectedValueOnce(new Error('sin red'));
+
+        fireEvent.click(screen.getByRole('button', { name: /Agregar actividad al Día 1/ }));
+        fireEvent.click(screen.getByRole('button', { name: 'Más de 3 horas' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('No se pudo aplicar el filtro de duración');
+        expect(screen.getByRole('option', { name: /Recorrido por Filandia/ })).toBeInTheDocument();
+    });
+
     it('elimina una actividad', async () => {
         renderizar();
         await esperarFormulario();

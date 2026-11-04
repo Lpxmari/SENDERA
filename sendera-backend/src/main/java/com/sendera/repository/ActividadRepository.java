@@ -11,11 +11,17 @@ import java.util.Optional;
 
 public interface ActividadRepository extends JpaRepository<Actividad, Long> {
 
-    @Query("select a from Actividad a join fetch a.destino order by a.nombre asc, a.id asc")
-    List<Actividad> findTodas();
-
-    @Query("select a from Actividad a join fetch a.destino d where d.id = :destinoId order by a.nombre asc, a.id asc")
-    List<Actividad> findPorDestino(@Param("destinoId") Long destinoId);
+    /** Filtros opcionales (null = sin filtro); los límites de duración son inclusivos. */
+    @Query("""
+            select a from Actividad a join fetch a.destino d
+            where (:destinoId is null or d.id = :destinoId)
+              and (:minMinutos is null or a.duracionMinutos >= :minMinutos)
+              and (:maxMinutos is null or a.duracionMinutos <= :maxMinutos)
+            order by a.nombre asc, a.id asc
+            """)
+    List<Actividad> buscar(@Param("destinoId") Long destinoId,
+                           @Param("minMinutos") Integer minMinutos,
+                           @Param("maxMinutos") Integer maxMinutos);
 
     @Query("select a from Actividad a join fetch a.destino where a.id = :id")
     Optional<Actividad> findConDestinoById(@Param("id") Long id);

@@ -89,6 +89,18 @@ class SeguridadApiTest {
     }
 
     @Test
+    void duracionMinYDuracionMaxYaNoFiltranDestinos() throws Exception {
+        // RNF-26: la duración es atributo de las actividades; los parámetros antiguos se ignoran, no dan 400.
+        mockMvc.perform(get("/destinos").param("duracionMin", "3").param("duracionMax", "5"))
+                .andExpect(status().isOk());
+        org.mockito.ArgumentCaptor<com.sendera.dto.FiltroDestinoDto> captor =
+                org.mockito.ArgumentCaptor.forClass(com.sendera.dto.FiltroDestinoDto.class);
+        verify(destinoService).listarDestinos(captor.capture());
+        org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getQ());
+        org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getPrecioMin());
+    }
+
+    @Test
     void listarItinerariosDeUnDestinoEsPublico() throws Exception {
         mockMvc.perform(get("/destinos/1/itinerarios")).andExpect(status().isOk());
         verify(destinoService).listarItinerariosDisponibles(1L);

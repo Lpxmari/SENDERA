@@ -3,6 +3,7 @@ package com.sendera.controller;
 import com.sendera.config.SecurityConfig;
 import com.sendera.dto.ActividadDto;
 import com.sendera.dto.ViajeDto;
+import com.sendera.exception.FiltroInvalidoException;
 import com.sendera.exception.GlobalExceptionHandler;
 import com.sendera.exception.HorarioSolapadoException;
 import com.sendera.exception.RecursoNoEncontradoException;
@@ -181,13 +182,30 @@ class ViajesApiTest {
         ActividadDto actividad = ActividadDto.builder().id(3L).destinoId(1L).destinoNombre("Filandia").ubicacion("Filandia, Quindío")
                 .nombre("Recorrido").descripcion("d").duracionMinutos(180).dificultad("BAJA")
                 .precioPorPersona(new BigDecimal("80000")).accesibilidad(true).build();
-        when(actividadService.listar(null)).thenReturn(List.of(actividad));
-        when(actividadService.listar(1L)).thenReturn(List.of(actividad));
+        when(actividadService.listar(null, null)).thenReturn(List.of(actividad));
+        when(actividadService.listar(1L, null)).thenReturn(List.of(actividad));
         when(actividadService.obtenerPorId(3L)).thenReturn(actividad);
 
         mockMvc.perform(get("/actividades")).andExpect(status().isOk()).andExpect(jsonPath("$[0].nombre").value("Recorrido"));
         mockMvc.perform(get("/actividades").param("destinoId", "1")).andExpect(status().isOk());
         mockMvc.perform(get("/actividades/3")).andExpect(status().isOk()).andExpect(jsonPath("$.duracionMinutos").value(180));
+    }
+
+    @Test
+    void elCatalogoFiltraPorDuracionYRechazaValoresDesconocidos() throws Exception {
+        ActividadDto corta = ActividadDto.builder().id(4L).destinoId(1L).destinoNombre("Filandia").ubicacion("Filandia, Quindío")
+                .nombre("Paseo corto").descripcion("d").duracionMinutos(45).dificultad("BAJA")
+                .precioPorPersona(new BigDecimal("20000")).accesibilidad(true).build();
+        when(actividadService.listar(1L, "HASTA_60_MIN")).thenReturn(List.of(corta));
+        when(actividadService.listar(null, "RAPIDA"))
+                .thenThrow(new FiltroInvalidoException("La duración debe ser HASTA_60_MIN, DE_61_A_180_MIN o MAS_DE_180_MIN."));
+
+        mockMvc.perform(get("/actividades").param("destinoId", "1").param("duracion", "HASTA_60_MIN"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].duracionMinutos").value(45));
+        mockMvc.perform(get("/actividades").param("duracion", "RAPIDA"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("La duración debe ser HASTA_60_MIN, DE_61_A_180_MIN o MAS_DE_180_MIN."));
     }
 
     @Test

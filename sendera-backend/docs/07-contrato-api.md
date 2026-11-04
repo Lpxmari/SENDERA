@@ -35,7 +35,9 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 | POST | `/api/v1/auth/cambiar-contrasena` | Público | 204, 400 |
 | GET | `/api/v1/auth/me` | Autenticado | 200, 401 |
 | PUT | `/api/v1/auth/me` | Autenticado; actualiza nombre, apellidos y correo (la contraseña actual es obligatoria si el correo cambia) y devuelve un token nuevo | 200, 400, 401, 409 |
-| GET | `/api/v1/destinos` (filtros: `q`, `precioMin`, `precioMax`, `duracionMin`, `duracionMax`, `dificultad`, `accesibilidad`) | Público | 200, 400 |
+| GET | `/api/v1/destinos` (filtros: `q`, `precioMin`, `precioMax`, `dificultad`, `accesibilidad`; la duración ya no filtra destinos: es un atributo de las actividades) | Público | 200, 400 |
+| GET | `/api/v1/actividades` (filtros: `destinoId`, `duracion` = `HASTA_60_MIN`, `DE_61_A_180_MIN` o `MAS_DE_180_MIN`) | Público | 200, 400 |
+| GET | `/api/v1/actividades/{id}` | Público | 200, 404 |
 | GET | `/api/v1/destinos/{id}` | Público | 200, 404 |
 | GET | `/api/v1/destinos/{id}/itinerarios` | Público; itinerarios reservables (cupos > 0 y `fechaFin` ≥ hoy); su `id` es el `itinerarioId` de `POST /reservas` | 200, 404 |
 | GET / POST | `/api/v1/destinos/{destinoId}/resenas` | GET público; POST autenticado y solo con una reserva `CONFIRMADA` del destino (403, también para administradores) y una única reseña por persona y destino (409) | 200 / 201, 400, 401, 403, 404, 409, 413 |

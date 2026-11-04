@@ -31,13 +31,6 @@ paths:
         - name: precioMax
           in: query
           schema: { type: number, minimum: 0 }
-        - name: duracionMin
-          in: query
-          description: Duración mínima en días de algún itinerario del destino.
-          schema: { type: integer, minimum: 1 }
-        - name: duracionMax
-          in: query
-          schema: { type: integer, minimum: 1 }
         - name: dificultad
           in: query
           schema: { $ref: '#/components/schemas/Dificultad' }
@@ -414,7 +407,7 @@ paths:
   /actividades:
     get:
       summary: Listar actividades turísticas
-      description: Catálogo público de solo lectura. Se puede filtrar por destino. La ubicación es la del destino.
+      description: Catálogo público de solo lectura. Se puede filtrar por destino y por duración (atributo de la actividad, no del alojamiento). La ubicación es la del destino.
       operationId: listarActividades
       security: []
       tags:
@@ -427,6 +420,19 @@ paths:
           schema:
             type: integer
             format: int64
+        - name: duracion
+          in: query
+          required: false
+          description: >-
+            Rango de duración según duracionMinutos, con límites inclusivos. HASTA_60_MIN = 1 a 60 min;
+            DE_61_A_180_MIN = 61 a 180 min; MAS_DE_180_MIN = 181 min o más. Se combina con destinoId.
+            Un valor desconocido responde 400.
+          schema:
+            type: string
+            enum:
+              - HASTA_60_MIN
+              - DE_61_A_180_MIN
+              - MAS_DE_180_MIN
       responses:
         '200':
           description: Lista de actividades ordenada por nombre.

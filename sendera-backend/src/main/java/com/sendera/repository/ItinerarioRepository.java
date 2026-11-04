@@ -8,13 +8,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 public interface ItinerarioRepository extends JpaRepository<Itinerario, Long> {
-
-    List<Itinerario> findByDestinoIdIn(Collection<Long> destinoIds);
 
     /** Bloquea la fila para que dos reservas simultáneas no consuman el mismo cupo. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)

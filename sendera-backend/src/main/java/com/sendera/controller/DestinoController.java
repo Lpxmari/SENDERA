@@ -30,16 +30,12 @@ public class DestinoController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) BigDecimal precioMin,
             @RequestParam(required = false) BigDecimal precioMax,
-            @RequestParam(required = false) Integer duracionMin,
-            @RequestParam(required = false) Integer duracionMax,
             @RequestParam(required = false) String dificultad,
             @RequestParam(required = false) Boolean accesibilidad) {
         FiltroDestinoDto filtro = FiltroDestinoDto.builder()
                 .q(q)
                 .precioMin(precioMin)
                 .precioMax(precioMax)
-                .duracionMin(duracionMin)
-                .duracionMax(duracionMax)
                 .dificultad(dificultad)
                 .accesibilidad(accesibilidad)
                 .build();

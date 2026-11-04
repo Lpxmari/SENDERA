@@ -8,7 +8,6 @@ import com.sendera.dto.ItinerarioDto;
 import com.sendera.exception.DestinoConItinerariosException;
 import com.sendera.exception.FiltroInvalidoException;
 import com.sendera.model.Destino;
-import com.sendera.model.Itinerario;
 import com.sendera.repository.DestinoRepository;
 import com.sendera.repository.DestinoSpecifications;
 import com.sendera.repository.ItinerarioRepository;
@@ -21,11 +20,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -48,10 +45,6 @@ public class DestinoServiceImpl implements DestinoService {
 
         List<Destino> destinos = destinoRepository.findAll(
                 DestinoSpecifications.conFiltros(f), Sort.by(Sort.Direction.ASC, "id"));
-
-        if (f.getDuracionMin() != null || f.getDuracionMax() != null) {
-            destinos = filtrarPorDuracion(destinos, f);
-        }
         return destinos.stream().map(this::convertirADto).collect(Collectors.toList());
     }
 
@@ -130,37 +123,6 @@ public class DestinoServiceImpl implements DestinoService {
                 && f.getPrecioMin().compareTo(f.getPrecioMax()) > 0) {
             throw new FiltroInvalidoException("El precio mínimo no puede ser mayor que el máximo.");
         }
-        if ((f.getDuracionMin() != null && f.getDuracionMin() < 1)
-                || (f.getDuracionMax() != null && f.getDuracionMax() < 1)) {
-            throw new FiltroInvalidoException("La duración debe ser de al menos 1 día.");
-        }
-        if (f.getDuracionMin() != null && f.getDuracionMax() != null
-                && f.getDuracionMin() > f.getDuracionMax()) {
-            throw new FiltroInvalidoException("La duración mínima no puede ser mayor que la máxima.");
-        }
-    }
-
-    private List<Destino> filtrarPorDuracion(List<Destino> destinos, FiltroDestinoDto f) {
-        if (destinos.isEmpty()) {
-            return destinos;
-        }
-        List<Long> ids = destinos.stream().map(Destino::getId).collect(Collectors.toList());
-        Map<Long, List<Itinerario>> porDestino = itinerarioRepository.findByDestinoIdIn(ids).stream()
-                .collect(Collectors.groupingBy(i -> i.getDestino().getId()));
-
-        return destinos.stream()
-                .filter(d -> porDestino.getOrDefault(d.getId(), List.of()).stream()
-                        .anyMatch(i -> cumpleDuracion(duracionEnDias(i), f)))
-                .collect(Collectors.toList());
-    }
-
-    private boolean cumpleDuracion(long dias, FiltroDestinoDto f) {
-        return (f.getDuracionMin() == null || dias >= f.getDuracionMin())
-                && (f.getDuracionMax() == null || dias <= f.getDuracionMax());
-    }
-
-    private long duracionEnDias(Itinerario itinerario) {
-        return ChronoUnit.DAYS.between(itinerario.getFechaInicio(), itinerario.getFechaFin()) + 1;
     }
 
     // ------------------------------------------------------------------ utilidades

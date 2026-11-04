@@ -34,6 +34,10 @@ El sistema permitirá listar actividades y consultar sus detalles, incluyendo in
 El usuario podrá filtrar opciones por criterios aprobados como precio, duración, dificultad y accesibilidad.  
 **Aceptación:** combinaciones de filtros se validan; consultas son parametrizadas y se prueban casos límite.
 
+> **PROPUESTA — pendiente de aprobación del equipo (no sustituye el texto aprobado de arriba).**
+> Texto propuesto para RF-008: «El usuario podrá filtrar destinos por precio, dificultad y accesibilidad, y actividades por duración (hasta 60 min, 61–180 min, más de 180 min).»
+> Motivo: la duración no es un atributo del alojamiento/destino; pertenece a las actividades (`Actividad.duracionMinutos`). Por eso `GET /destinos` ya no acepta `duracionMin`/`duracionMax` y el filtro vive en `GET /actividades?duracion=`. Véase la propuesta RNF-26 en `03-requisitos-no-funcionales.md`.
+
 ## RF-009 — Creación y edición de itinerarios
 El usuario podrá crear y modificar itinerarios propios con las actividades seleccionadas, sujeto a las reglas aprobadas.  
 **Aceptación:** el sistema valida datos, permisos de propiedad y conflictos de horarios cuando esa regla aplique.

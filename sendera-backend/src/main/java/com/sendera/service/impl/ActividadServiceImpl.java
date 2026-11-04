@@ -3,6 +3,7 @@ package com.sendera.service.impl;
 import com.sendera.dto.ActividadDto;
 import com.sendera.exception.RecursoNoEncontradoException;
 import com.sendera.model.Actividad;
+import com.sendera.model.RangoDuracion;
 import com.sendera.repository.ActividadRepository;
 import com.sendera.service.ActividadService;
 import lombok.RequiredArgsConstructor;
@@ -19,10 +20,12 @@ public class ActividadServiceImpl implements ActividadService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ActividadDto> listar(Long destinoId) {
-        List<Actividad> actividades = destinoId == null
-                ? actividadRepository.findTodas()
-                : actividadRepository.findPorDestino(destinoId);
+    public List<ActividadDto> listar(Long destinoId, String duracion) {
+        RangoDuracion rango = RangoDuracion.desdeTexto(duracion);
+        List<Actividad> actividades = actividadRepository.buscar(
+                destinoId,
+                rango == null ? null : rango.getMinMinutos(),
+                rango == null ? null : rango.getMaxMinutos());
         return actividades.stream().map(ActividadServiceImpl::convertirADto).toList();
     }
 

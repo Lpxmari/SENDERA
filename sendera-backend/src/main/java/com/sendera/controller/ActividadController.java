@@ -20,8 +20,9 @@ public class ActividadController {
     private final ActividadService actividadService;
 
     @GetMapping
-    public ResponseEntity<List<ActividadDto>> listarActividades(@RequestParam(required = false) Long destinoId) {
-        return ResponseEntity.ok(actividadService.listar(destinoId));
+    public ResponseEntity<List<ActividadDto>> listarActividades(@RequestParam(required = false) Long destinoId,
+                                                                @RequestParam(required = false) String duracion) {
+        return ResponseEntity.ok(actividadService.listar(destinoId, duracion));
     }
 
     @GetMapping("/{id}")

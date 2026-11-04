@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import AgregarActividad from '../components/itinerario/AgregarActividad';
 import FilaActividad from '../components/itinerario/FilaActividad';
@@ -6,7 +6,7 @@ import IconoAdmin from '../components/admin/IconoAdmin';
 import { fetchActividades } from '../services/actividadService';
 import { obtenerMensajeError } from '../services/apiClient';
 import { actualizarViaje, crearViaje, fetchViaje } from '../services/viajeService';
-import { Actividad, ActividadEnViaje, GuardarViajeRequest } from '../types/viaje';
+import { Actividad, ActividadEnViaje, DuracionActividad, GuardarViajeRequest } from '../types/viaje';
 import { describirSolape, detectarSolapes, diasDelViaje, formatearDia, hoyIso, ordenarPorHora } from '../utils/itinerario';
 import '../itinerario.css';
 
@@ -29,6 +29,11 @@ const CrearItinerario = () => {
     const [actividades, setActividades] = useState<ActividadEnViaje[]>([]);
     const [catalogo, setCatalogo] = useState<Actividad[]>([]);
     const [inicioOriginal, setInicioOriginal] = useState<string | null>(null);
+    // Filtro de duración compartido por todos los días; el servidor devuelve el catálogo ya filtrado (RNF-26).
+    const [duracion, setDuracion] = useState<DuracionActividad | undefined>(undefined);
+    const [filtrando, setFiltrando] = useState(false);
+    const [errorFiltro, setErrorFiltro] = useState<string | null>(null);
+    const ultimaConsulta = useRef(0);
 
     const [cargando, setCargando] = useState(true);
     const [errorCarga, setErrorCarga] = useState<string | null>(null);
@@ -119,6 +124,24 @@ const CrearItinerario = () => {
                 horaInicio,
             },
         ]);
+
+    const handleCambiarDuracion = async (nueva: DuracionActividad | undefined) => {
+        const consulta = ++ultimaConsulta.current;
+        setDuracion(nueva);
+        setErrorFiltro(null);
+        setFiltrando(true);
+        try {
+            const filtrado = await fetchActividades(undefined, nueva);
+            if (consulta === ultimaConsulta.current) setCatalogo(filtrado);
+        } catch (error) {
+            // Se conserva el catálogo anterior para no dejar el selector vacío por un fallo de red.
+            if (consulta === ultimaConsulta.current) {
+                setErrorFiltro(obtenerMensajeError(error, 'No se pudo aplicar el filtro de duración. Intenta de nuevo.'));
+            }
+        } finally {
+            if (consulta === ultimaConsulta.current) setFiltrando(false);
+        }
+    };
 
     const cambiarHora = (clave: string, horaInicio: string) =>
         setActividades((actuales) => actuales.map((a) => (a.clave === clave ? { ...a, horaInicio } : a)));
@@ -289,6 +312,10 @@ const CrearItinerario = () => {
                                 catalogo={catalogo}
                                 nombreDia={nombreDia}
                                 deshabilitado={actividades.length >= MAX_ACTIVIDADES}
+                                duracion={duracion}
+                                onCambiarDuracion={(valor) => void handleCambiarDuracion(valor)}
+                                filtrando={filtrando}
+                                errorFiltro={errorFiltro}
                                 onAgregar={(actividad, hora) => agregar(dia, actividad, hora)}
                             />
                         </section>

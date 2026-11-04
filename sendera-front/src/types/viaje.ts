@@ -75,3 +75,6 @@ export interface GuardarViajeRequest {
     /** El orden de la lista define la posición de cada actividad dentro de su día. */
     actividades: ViajeActividadEntrada[];
 }
+
+/** Rangos de duración de GET /actividades?duracion= (RNF-26): 1–60, 61–180 y 181 minutos o más. */
+export type DuracionActividad = 'HASTA_60_MIN' | 'DE_61_A_180_MIN' | 'MAS_DE_180_MIN';
