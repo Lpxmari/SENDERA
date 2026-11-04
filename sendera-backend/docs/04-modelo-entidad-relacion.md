@@ -118,3 +118,35 @@ Las de §4.2, además de: ¿una reserva descuenta un cupo por persona o por rese
 - `usuarios.activo BOOLEAN NOT NULL DEFAULT TRUE`: `false` retira el acceso sin borrar la cuenta ni sus reservas.
 - `auditoria_admin(id, admin_id NULL FK→usuarios ON DELETE SET NULL, accion, recurso, recurso_id NULL, detalle NULL, creada_en)`:
   registro de acciones administrativas. No almacena contraseñas, tokens ni datos personales.
+
+
+### 4.8 Itinerarios personales y actividades (decisión del 2026-10-27, Proceso 3)
+**Estado:** decidido por la persona responsable del proyecto el 2026-10-27; **pendiente de ratificación del equipo**.
+Responde a las preguntas abiertas de §4.2 y §4.5.7 sobre actividades, propiedad del itinerario y qué se reserva.
+
+Decisiones:
+- Lo que se **reserva** es una **actividad en una fecha y hora, para N personas**.
+- El itinerario personal es una entidad distinta de los paquetes de la agencia (`itinerarios`, sin cambios): se llama **`viajes`**.
+- Un conflicto de horario **bloquea** el guardado (409).
+
+Tablas nuevas (ya en `docs/schema.sql`):
+
+| Tabla | Columnas | Restricciones |
+|---|---|---|
+| `actividades` | destino_id, nombre, descripcion, duracion_minutos, dificultad, precio_por_persona, accesibilidad | FK a `destinos` (RESTRICT); duración 1–1440; dificultad BAJA/MODERADA/ALTA; precio >= 0. La ubicación es la del destino |
+| `viajes` | usuario_id, nombre, fecha_inicio, fecha_fin, creado_en | FK a `usuarios` (RESTRICT); `fecha_fin >= fecha_inicio` |
+| `viaje_actividades` | viaje_id, actividad_id, fecha, hora_inicio, orden | FK a `viajes` (CASCADE) y `actividades` (RESTRICT); orden >= 1 |
+
+Reglas de negocio (se validan en el servicio, no solo en la interfaz):
+- El propietario del viaje sale del claim `uid` del JWT. Quien no es propietario recibe 404 (no se revela si existe). Los administradores no ven los viajes ajenos.
+- `fecha_inicio` no puede ser anterior a **hoy** (zona `America/Bogota`) al crear o al cambiarla; un viaje ya iniciado puede editarse sin mover su fecha de inicio.
+- Cada actividad debe caer dentro de `[fecha_inicio, fecha_fin]` y terminar antes de la medianoche.
+- Dos actividades del mismo día **no pueden solaparse**: `[hora, hora + duración)`; que una termine justo cuando empieza la otra no es solape.
+- **La hora define el orden.** `orden` es la posición cronológica dentro del día (1, 2, 3…); la asigna el servidor según `hora_inicio`, sin importar el orden en que llegue la lista. No hay empates porque dos actividades a la misma hora se solapan.
+- «Cambiar orden» en la pantalla intercambia la hora de inicio de la actividad con la de su vecina del día (la anterior o la siguiente); nunca deja la lista fuera de orden cronológico. Si el intercambio provoca un solape, se avisa y se bloquea el guardado como siempre.
+- Guardar un viaje **reemplaza** su lista de actividades completa (`PUT`), como hace el botón único «Guardar itinerario».
+- Eliminar un viaje (`DELETE /viajes/{id}`, botón «Eliminar itinerario» del mockup de detalle) borra el viaje y, por `ON DELETE CASCADE`, sus filas de `viaje_actividades`; el catálogo `actividades` no se toca. Mismo criterio de propiedad: 404 si es ajeno, también para administradores. La pantalla pide confirmación antes de eliminar. (Antes se había decidido no implementar el borrado; los mockups de detalle lo incluyen.)
+
+Pendiente para la entrega de reservas (mockup 3, **PROPUESTA**, aún no implementada): `reservas.actividad_id` (FK), `reservas.numero_personas`, `reservas.hora_inicio`; monto = `precio_por_persona * numero_personas`, calculado por el servidor; código de reserva derivado del id (`SD-` + id con 6 dígitos), sin columna propia; se mantiene `estado_reserva` (PENDIENTE hasta que exista pasarela de pago); decidir si se descuentan cupos de actividades (hoy no existen) y cómo convive con las reservas de paquetes.
+
+Nota de consistencia: este documento (§4.6) menciona `src/main/resources/schema.sql`, pero ese archivo no existe; la referencia vigente es `docs/schema.sql`.
