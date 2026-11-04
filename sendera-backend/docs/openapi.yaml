@@ -167,6 +167,33 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorInterno'
 
+  /destinos/{id}/itinerarios:
+    get:
+      summary: Listar los itinerarios disponibles de un destino
+      description: >-
+        Devuelve solo los itinerarios reservables: con cupos disponibles (mayor que 0) y cuya fecha de fin
+        es hoy o posterior, ordenados por fecha de inicio. El `id` de cada uno es el `itinerarioId` que
+        espera `POST /reservas`. Si no hay ninguno devuelve un arreglo vacío.
+      operationId: listarItinerariosDeDestino
+      security: []
+      tags:
+        - Destinos
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Itinerarios disponibles del destino (puede ser vacío).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ItinerarioDisponible'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
   /destinos/{destinoId}/resenas:
     get:
       summary: Listar reseñas de un destino
@@ -998,6 +1025,32 @@ components:
           type: string
           format: binary
           description: Opcional. JPEG, PNG o WebP; máximo 5 MB.
+
+    ItinerarioDisponible:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 5
+        nombre:
+          type: string
+          example: Ruta del Café y las Palmas
+        fechaInicio:
+          type: string
+          format: date
+          example: "2026-11-18"
+        fechaFin:
+          type: string
+          format: date
+          example: "2026-11-19"
+        precioBase:
+          type: number
+          format: double
+          example: 195000.00
+        cuposDisponibles:
+          type: integer
+          example: 8
 
     Reserva:
       type: object

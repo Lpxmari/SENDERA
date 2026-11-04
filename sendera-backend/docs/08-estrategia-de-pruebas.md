@@ -27,6 +27,17 @@ Verificar que los requisitos funcionales y no funcionales se cumplen, con atenci
 - Consultas no permiten inyección SQL.
 - Configuración CORS no abre el acceso a cualquier origen en producción.
 
+## 8.4.1 Casos de prueba de reservas (RF-011 / RF-012)
+Los casos de esta sección aún no tienen identificadores CP- oficiales; se enlazan por el nombre de la prueba.
+
+| Caso | Qué verifica | Prueba |
+|------|--------------|--------|
+| Reservar el viaje correcto | El formulario envía el `itinerarioId` elegido en la lista de `GET /destinos/{id}/itinerarios`, nunca el id del destino. | `FormularioReserva.test.tsx` |
+| Fechas acotadas | El input de fecha usa `min = max(hoy, fechaInicio)` y `max = fechaFin` del itinerario elegido; al cambiar de viaje se limpia una fecha fuera de rango. | `FormularioReserva.test.tsx` |
+| Sin itinerarios | Mensaje claro y envío deshabilitado; también ante un error de carga. | `FormularioReserva.test.tsx` |
+| Solo itinerarios reservables | El endpoint devuelve únicamente los que tienen cupos > 0 y `fechaFin` ≥ hoy, ordenados por inicio, y 404 si el destino no existe. | `ItinerarioDisponibleIntegracionTest`, `DestinoServiceImplTest`, `SeguridadApiTest` |
+| Fecha de la reserva | Obligatoria, no pasada (400) y dentro del itinerario (409). | `ReservaApiTest`, `ReservaServiceImplTest` |
+
 ## 8.5 Pruebas del contrato OpenAPI
 - Verificar que las rutas, parámetros, esquemas de solicitud/respuesta y códigos HTTP implementados coincidan con `docs/openapi.yaml`.
 - Probar que los errores respeten el esquema `ApiError`.

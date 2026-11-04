@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -21,4 +22,8 @@ public interface ItinerarioRepository extends JpaRepository<Itinerario, Long> {
     Optional<Itinerario> buscarParaReservar(@Param("id") Long id);
 
     boolean existsByDestinoId(Long destinoId);
+
+    /** Itinerarios reservables: con cupos y que no han terminado, del más próximo al más lejano. */
+    List<Itinerario> findByDestinoIdAndCuposDisponiblesGreaterThanAndFechaFinGreaterThanEqualOrderByFechaInicioAsc(
+            Long destinoId, Integer cuposMinimos, LocalDate fechaFinDesde);
 }

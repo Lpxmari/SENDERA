@@ -1,4 +1,5 @@
 import { CrearDestinoDto, Destino, FiltroDestinoParams } from '../types/destino';
+import { ItinerarioDisponible } from '../types/itinerario';
 import apiClient from './apiClient';
 
 /** Los errores se propagan sin silenciarlos; la capa de UI decide cómo mostrarlos (ver obtenerMensajeError). */
@@ -20,6 +21,12 @@ export const listarDestinos = async (filtros?: FiltroDestinoParams): Promise<Des
 
 export const obtenerDestinoPorId = async (id: number): Promise<Destino> => {
     const { data } = await apiClient.get<Destino>(`/destinos/${id}`);
+    return data;
+};
+
+/** Itinerarios reservables (con cupos y que no han terminado); su id es el itinerarioId de POST /reservas. */
+export const listarItinerariosDeDestino = async (destinoId: number): Promise<ItinerarioDisponible[]> => {
+    const { data } = await apiClient.get<ItinerarioDisponible[]>(`/destinos/${destinoId}/itinerarios`);
     return data;
 };
 

@@ -89,6 +89,20 @@ class SeguridadApiTest {
     }
 
     @Test
+    void listarItinerariosDeUnDestinoEsPublico() throws Exception {
+        mockMvc.perform(get("/destinos/1/itinerarios")).andExpect(status().isOk());
+        verify(destinoService).listarItinerariosDisponibles(1L);
+    }
+
+    @Test
+    void itinerariosDeDestinoInexistenteDevuelve404() throws Exception {
+        when(destinoService.listarItinerariosDisponibles(99L))
+                .thenThrow(new com.sendera.exception.RecursoNoEncontradoException("Destino no encontrado con id: 99"));
+
+        mockMvc.perform(get("/destinos/99/itinerarios")).andExpect(status().isNotFound());
+    }
+
+    @Test
     void listarResenasEsPublico() throws Exception {
         mockMvc.perform(get("/destinos/1/resenas")).andExpect(status().isOk());
     }

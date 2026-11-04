@@ -1,52 +1,145 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { FormEvent, useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { listarItinerariosDeDestino } from '../services/destinoService';
 import { crearReserva } from '../services/reservaService';
 import { obtenerMensajeError } from '../services/apiClient';
+import { ItinerarioDisponible } from '../types/itinerario';
 import { CrearReservaRequest } from '../types/reserva';
+import { fechaMinimaReserva, formatearFecha, formatearRangoFechas } from '../utils/fechasItinerario';
+import { formatearPrecio } from '../utils/formatearPrecio';
 
+/** Reserva de un viaje: primero se elige uno de los itinerarios del destino y luego el día dentro de sus fechas. */
 const FormularioReserva = () => {
     const { destinoId } = useParams<{ destinoId: string }>();
     const navigate = useNavigate();
+    const [itinerarios, setItinerarios] = useState<ItinerarioDisponible[] | null>(null);
+    const [errorCarga, setErrorCarga] = useState<string | null>(null);
+    const [itinerarioId, setItinerarioId] = useState<number | null>(null);
     const [fechaReserva, setFechaReserva] = useState('');
     const [error, setError] = useState<string | null>(null);
+    const [enviando, setEnviando] = useState(false);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    useEffect(() => {
+        let activo = true;
+        listarItinerariosDeDestino(Number(destinoId))
+            .then((lista) => {
+                if (!activo) return;
+                setItinerarios(lista);
+                if (lista.length === 1) setItinerarioId(lista[0].id);
+            })
+            .catch((err: unknown) => {
+                if (activo) setErrorCarga(obtenerMensajeError(err, 'No pudimos cargar las fechas disponibles.'));
+            });
+        return () => {
+            activo = false;
+        };
+    }, [destinoId]);
+
+    const elegido = itinerarios?.find((i) => i.id === itinerarioId) ?? null;
+    const minimo = elegido ? fechaMinimaReserva(elegido.fechaInicio) : undefined;
+    const maximo = elegido?.fechaFin;
+
+    const handleElegirItinerario = (itinerario: ItinerarioDisponible) => {
+        setItinerarioId(itinerario.id);
+        const nuevoMinimo = fechaMinimaReserva(itinerario.fechaInicio);
+        if (fechaReserva && (fechaReserva < nuevoMinimo || fechaReserva > itinerario.fechaFin)) setFechaReserva('');
+    };
+
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
+        if (itinerarioId === null) return;
+        setError(null);
+        setEnviando(true);
         try {
-            // PENDIENTE: la API aún no ofrece itinerarios por destino, así que el id del destino se envía como
-            // itinerarioId. Es incorrecto semánticamente y debe resolverse con un endpoint de itinerarios.
-            const nuevaReserva: CrearReservaRequest = {
-                itinerarioId: Number(destinoId),
-                fechaReserva: fechaReserva,
-            };
-
+            const nuevaReserva: CrearReservaRequest = { itinerarioId, fechaReserva };
             await crearReserva(nuevaReserva);
             navigate('/confirmacion'); // Redirección tras un 201 Created
         } catch (err) {
             setError(obtenerMensajeError(err, 'No se pudo crear la reserva. Intenta de nuevo.'));
+        } finally {
+            setEnviando(false);
         }
     };
 
+    const sinItinerarios = itinerarios !== null && itinerarios.length === 0;
+    const puedeEnviar = elegido !== null && fechaReserva !== '' && !enviando;
+
     return (
-        <div style={{ maxWidth: '400px', margin: '20px auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
-            <h2>Crear Reserva</h2>
-            {error && <p style={{ color: 'red', fontSize: '14px' }}>{error}</p>}
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    Fecha de Reserva:
+        <main className="reserva">
+            <h1>Crear reserva</h1>
+
+            {errorCarga && (
+                <p role="alert" className="reserva__aviso reserva__aviso--error">
+                    {errorCarga}
+                </p>
+            )}
+            {itinerarios === null && !errorCarga && <p role="status">Cargando fechas disponibles…</p>}
+            {sinItinerarios && (
+                <p role="status" className="reserva__aviso">
+                    Este destino no tiene fechas disponibles por ahora. Vuelve a consultar más adelante.
+                </p>
+            )}
+
+            <form onSubmit={handleSubmit} className="reserva__formulario">
+                {itinerarios !== null && itinerarios.length > 0 && (
+                    <fieldset className="reserva__opciones">
+                        <legend>Elige tu viaje</legend>
+                        {itinerarios.map((itinerario) => (
+                            <label
+                                key={itinerario.id}
+                                className={`reserva__opcion ${itinerario.id === itinerarioId ? 'reserva__opcion--elegida' : ''}`}
+                            >
+                                <input
+                                    type="radio"
+                                    name="itinerario"
+                                    checked={itinerario.id === itinerarioId}
+                                    onChange={() => handleElegirItinerario(itinerario)}
+                                />
+                                <span className="reserva__opcion-nombre">{itinerario.nombre}</span>
+                                <span>{formatearRangoFechas(itinerario.fechaInicio, itinerario.fechaFin)}</span>
+                                <span className="reserva__opcion-precio">{formatearPrecio(itinerario.precioBase)}</span>
+                                <span>
+                                    {itinerario.cuposDisponibles === 1
+                                        ? 'Queda 1 cupo'
+                                        : `Quedan ${itinerario.cuposDisponibles} cupos`}
+                                </span>
+                                {itinerario.id === itinerarioId && (
+                                    <strong className="reserva__opcion-marca">✓ Elegido</strong>
+                                )}
+                            </label>
+                        ))}
+                    </fieldset>
+                )}
+
+                <label className="reserva__campo">
+                    Día de tu reserva
                     <input
                         type="date"
                         value={fechaReserva}
+                        min={minimo}
+                        max={maximo}
+                        disabled={!elegido}
                         onChange={(e) => setFechaReserva(e.target.value)}
                         required
-                        style={{ padding: '8px', borderRadius: '4px', border: '1px solid #ccc' }}
                     />
+                    <small>
+                        {elegido
+                            ? `Elige un día entre el ${formatearFecha(minimo!)} y el ${formatearFecha(maximo!)}.`
+                            : 'Primero elige tu viaje.'}
+                    </small>
                 </label>
-                <button type="submit" style={{ padding: '10px', backgroundColor: '#008CBA', color: 'white', cursor: 'pointer', border: 'none', borderRadius: '4px' }}>
-                    Confirmar Reserva
+
+                {error && (
+                    <p role="alert" className="reserva__aviso reserva__aviso--error">
+                        {error}
+                    </p>
+                )}
+
+                <button type="submit" className="boton boton--verde reserva__enviar" disabled={!puedeEnviar}>
+                    {enviando ? 'Reservando…' : 'Confirmar reserva'}
                 </button>
             </form>
-        </div>
+        </main>
     );
 };
 

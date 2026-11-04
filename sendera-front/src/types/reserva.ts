@@ -11,5 +11,5 @@ export interface Reserva {
 /** Cuerpo de POST /reservas según docs/openapi.yaml (CrearReservaDto). */
 export interface CrearReservaRequest {
     itinerarioId: number;
-    fechaReserva?: string;
+    fechaReserva: string;
 }

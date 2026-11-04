@@ -4,6 +4,7 @@ import com.sendera.exception.RecursoNoEncontradoException;
 import com.sendera.dto.CrearDestinoDto;
 import com.sendera.dto.DestinoDto;
 import com.sendera.dto.FiltroDestinoDto;
+import com.sendera.dto.ItinerarioDto;
 import com.sendera.exception.DestinoConItinerariosException;
 import com.sendera.exception.FiltroInvalidoException;
 import com.sendera.model.Destino;
@@ -19,6 +20,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +59,25 @@ public class DestinoServiceImpl implements DestinoService {
     @Transactional(readOnly = true)
     public DestinoDto obtenerDestinoPorId(Long id) {
         return convertirADto(buscarEntidad(id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ItinerarioDto> listarItinerariosDisponibles(Long destinoId) {
+        buscarEntidad(destinoId);
+        return itinerarioRepository
+                .findByDestinoIdAndCuposDisponiblesGreaterThanAndFechaFinGreaterThanEqualOrderByFechaInicioAsc(
+                        destinoId, 0, LocalDate.now())
+                .stream()
+                .map(i -> ItinerarioDto.builder()
+                        .id(i.getId())
+                        .nombre(i.getNombre())
+                        .fechaInicio(i.getFechaInicio())
+                        .fechaFin(i.getFechaFin())
+                        .precioBase(i.getPrecioBase())
+                        .cuposDisponibles(i.getCuposDisponibles())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     @Override

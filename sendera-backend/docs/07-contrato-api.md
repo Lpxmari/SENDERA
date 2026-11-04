@@ -37,6 +37,7 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 | PUT | `/api/v1/auth/me` | Autenticado; actualiza nombre, apellidos y correo (la contraseña actual es obligatoria si el correo cambia) y devuelve un token nuevo | 200, 400, 401, 409 |
 | GET | `/api/v1/destinos` (filtros: `q`, `precioMin`, `precioMax`, `duracionMin`, `duracionMax`, `dificultad`, `accesibilidad`) | Público | 200, 400 |
 | GET | `/api/v1/destinos/{id}` | Público | 200, 404 |
+| GET | `/api/v1/destinos/{id}/itinerarios` | Público; itinerarios reservables (cupos > 0 y `fechaFin` ≥ hoy); su `id` es el `itinerarioId` de `POST /reservas` | 200, 404 |
 | POST / PUT / DELETE | `/api/v1/destinos`, `/api/v1/destinos/{id}` | `ROLE_ADMIN` | 201 / 200 / 204, 400, 401, 403, 404, 409 |
 | GET / POST | `/api/v1/reservas` | Autenticado | 200 / 201, 400, 401, 404, 409 |
 | GET | `/api/v1/reservas/{id}` | Autenticado | 200, 401, 404 |
