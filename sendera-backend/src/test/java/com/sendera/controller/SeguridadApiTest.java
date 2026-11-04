@@ -207,7 +207,7 @@ class SeguridadApiTest {
     @Test
     void crearReservaSinItinerarioDevuelve400() throws Exception {
         mockMvc.perform(post("/reservas").header("Authorization", "Bearer " + token("ROLE_CLIENTE"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"fechaReserva\":\"2999-01-01\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Selecciona un itinerario para reservar."));
     }

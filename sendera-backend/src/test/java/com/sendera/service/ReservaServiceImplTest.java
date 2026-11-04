@@ -22,11 +22,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -52,12 +53,14 @@ class ReservaServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        itinerario = Itinerario.builder().id(7L).precioBase(new BigDecimal("435000.00")).cuposDisponibles(2).build();
+        itinerario = Itinerario.builder().id(7L).precioBase(new BigDecimal("435000.00")).cuposDisponibles(2)
+                .fechaInicio(LocalDate.of(2026, 10, 10)).fechaFin(LocalDate.of(2026, 10, 15)).build();
     }
 
     private CrearReservaDto dto() {
         CrearReservaDto dto = new CrearReservaDto();
         dto.setItinerarioId(7L);
+        dto.setFechaReserva(LocalDate.of(2026, 10, 12));
         return dto;
     }
 
@@ -75,8 +78,37 @@ class ReservaServiceImplTest {
         assertEquals(propietario, guardada.getValue().getUsuario());
         assertEquals(new BigDecimal("435000.00"), resultado.getMontoTotal());
         assertEquals("PENDIENTE", resultado.getEstadoReserva());
-        assertNotNull(resultado.getFechaReserva());
+        assertEquals(LocalDate.of(2026, 10, 12), resultado.getFechaReserva());
         assertEquals(1, itinerario.getCuposDisponibles());
+    }
+
+    @Test
+    void crearConFechaAntesDelInicioOPosteriorAlFinLanzaConflictoSinDescontarCupo() {
+        when(itinerarioRepository.buscarParaReservar(7L)).thenReturn(Optional.of(itinerario));
+
+        for (LocalDate fuera : new LocalDate[]{LocalDate.of(2026, 10, 9), LocalDate.of(2026, 10, 16)}) {
+            CrearReservaDto dto = dto();
+            dto.setFechaReserva(fuera);
+            ReservaNoPermitidaException error = assertThrows(ReservaNoPermitidaException.class,
+                    () -> reservaService.crear(dto, CLIENTE));
+            assertEquals("La fecha elegida está fuera del viaje. Elige un día entre el 10/10/2026 y el 15/10/2026.",
+                    error.getMessage());
+        }
+        assertEquals(2, itinerario.getCuposDisponibles());
+        verify(reservaRepository, never()).save(any());
+    }
+
+    @Test
+    void crearAceptaLosDiasExtremosDelItinerario() {
+        when(itinerarioRepository.buscarParaReservar(7L)).thenReturn(Optional.of(itinerario));
+        when(usuarioRepository.getReferenceById(5L)).thenReturn(Usuario.builder().id(5L).build());
+        when(reservaRepository.save(any(Reserva.class))).thenAnswer(i -> i.getArgument(0));
+
+        for (LocalDate limite : new LocalDate[]{LocalDate.of(2026, 10, 10), LocalDate.of(2026, 10, 15)}) {
+            CrearReservaDto dto = dto();
+            dto.setFechaReserva(limite);
+            assertEquals(limite, reservaService.crear(dto, CLIENTE).getFechaReserva());
+        }
     }
 
     @Test

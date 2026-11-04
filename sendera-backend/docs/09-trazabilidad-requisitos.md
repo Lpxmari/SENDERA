@@ -14,7 +14,7 @@ Completar la matriz durante el desarrollo. Los nombres de clases/endpoints son c
 | RF-008 | Filtros | service/repository | Parámetros de `GET /destinos` | `DestinoServiceImplTest` (casos límite pendientes) | En desarrollo |
 | RF-009/010 | Itinerarios | — | Sin endpoints (existe la entidad `Itinerario`) | — | Pendiente |
 | RF-011 | Disponibilidad | service | Se valida el cupo al reservar | `ReservaServiceImplTest` | En desarrollo |
-| RF-012 | Reservas | controller/service/repository | `/api/v1/reservas` | `ReservaServiceImplTest` (monto, cupos, doble cancelación, propiedad), `ReservaPropiedadIntegracionTest` | Probado (sin pruebas contra MySQL) |
+| RF-012 | Reservas | controller/service/repository | `/api/v1/reservas` | `ReservaServiceImplTest` (monto, cupos, doble cancelación, propiedad, fecha dentro del itinerario), `ReservaApiTest` (fecha obligatoria, pasada → 400, fuera del viaje → 409), `ReservaPropiedadIntegracionTest` | Probado (sin pruebas contra MySQL) |
 | RF-014 | Pago, si aplica | integration/service | Proveedor externo | — | Pendiente |
 | RF-013 | Gestión administrativa (etapas 1 y 2) | `/admin/usuarios`, `/admin/reservas`, `/admin/resenas`, destinos, auditoría | Usuarios (rol, activar/desactivar, salvaguardas); reservas (listar con filtros, confirmar, cancelar con devolución de cupo); moderación de reseñas; auditoría de todas las acciones | `AdminUsuariosApiTest`, `AdminReservasResenasApiTest`, `UsuarioAdminServiceImplTest`, `UsuarioAdminIntegracionTest`, `ReservaAdminIntegracionTest`, `ResenaAdminIntegracionTest`, `DestinoServiceImplTest` |
 | RNF-01 | Rendimiento | API/consultas | Catálogo | Prueba de carga con umbral aprobado | Pendiente |

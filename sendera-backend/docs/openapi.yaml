@@ -277,7 +277,10 @@ paths:
 
     post:
       summary: Crear una nueva reserva de itinerario
-      description: El propietario (JWT), el monto y el estado inicial (PENDIENTE) los define el servidor; se descuenta un cupo del itinerario.
+      description: >-
+        El propietario (JWT), el monto y el estado inicial (PENDIENTE) los define el servidor; se descuenta un cupo
+        del itinerario. 400 si falta `fechaReserva` o es anterior a hoy; 409 si la fecha queda fuera del itinerario
+        o si no hay cupos.
       operationId: crearReserva
       tags:
         - Reservas
@@ -1031,6 +1034,7 @@ components:
       description: El monto y el estado no se envían; los define el servidor.
       required:
         - itinerarioId
+        - fechaReserva
       properties:
         itinerarioId:
           type: integer
@@ -1039,7 +1043,9 @@ components:
         fechaReserva:
           type: string
           format: date
-          description: Opcional; por defecto, la fecha actual del servidor.
+          description: >-
+            Obligatoria. No puede ser anterior a hoy (400) y debe estar entre la fecha de inicio y la de fin
+            del itinerario, ambas inclusive (409).
           example: "2026-10-15"
 
     Usuario:

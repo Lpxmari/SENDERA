@@ -64,6 +64,7 @@ class ReservaPropiedadIntegracionTest {
     private ReservaDto reservaDe(UsuarioActual usuario) {
         CrearReservaDto dto = new CrearReservaDto();
         dto.setItinerarioId(itinerarioId);
+        dto.setFechaReserva(LocalDate.of(2026, 11, 18));
         return reservaService.crear(dto, usuario);
     }
 
