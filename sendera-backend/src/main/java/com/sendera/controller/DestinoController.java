@@ -3,6 +3,7 @@ package com.sendera.controller;
 import com.sendera.dto.CrearDestinoDto;
 import com.sendera.dto.DestinoDto;
 import com.sendera.dto.FiltroDestinoDto;
+import com.sendera.dto.ItinerarioDto;
 import com.sendera.service.DestinoService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,16 +30,12 @@ public class DestinoController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) BigDecimal precioMin,
             @RequestParam(required = false) BigDecimal precioMax,
-            @RequestParam(required = false) Integer duracionMin,
-            @RequestParam(required = false) Integer duracionMax,
             @RequestParam(required = false) String dificultad,
             @RequestParam(required = false) Boolean accesibilidad) {
         FiltroDestinoDto filtro = FiltroDestinoDto.builder()
                 .q(q)
                 .precioMin(precioMin)
                 .precioMax(precioMax)
-                .duracionMin(duracionMin)
-                .duracionMax(duracionMax)
                 .dificultad(dificultad)
                 .accesibilidad(accesibilidad)
                 .build();
@@ -48,6 +45,11 @@ public class DestinoController {
     @GetMapping("/{id}")
     public ResponseEntity<DestinoDto> obtenerDestinoPorId(@PathVariable Long id) {
         return ResponseEntity.ok(destinoService.obtenerDestinoPorId(id));
+    }
+
+    @GetMapping("/{id}/itinerarios")
+    public ResponseEntity<List<ItinerarioDto>> listarItinerariosDeDestino(@PathVariable Long id) {
+        return ResponseEntity.ok(destinoService.listarItinerariosDisponibles(id));
     }
 
     @PostMapping

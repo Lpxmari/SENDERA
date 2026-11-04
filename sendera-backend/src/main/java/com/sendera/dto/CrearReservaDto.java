@@ -1,5 +1,6 @@
 package com.sendera.dto;
 
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -12,5 +13,7 @@ public class CrearReservaDto {
     @NotNull(message = "Selecciona un itinerario para reservar.")
     private Long itinerarioId;
 
+    @NotNull(message = "Elige la fecha de tu reserva.")
+    @FutureOrPresent(message = "La fecha de la reserva no puede ser anterior a hoy.")
     private LocalDate fechaReserva;
 }

@@ -20,8 +20,6 @@ export interface FiltroDestinoParams {
     q?: string;
     precioMin?: number;
     precioMax?: number;
-    duracionMin?: number;
-    duracionMax?: number;
     dificultad?: DificultadEnum | '';
     accesibilidad?: boolean;
 }

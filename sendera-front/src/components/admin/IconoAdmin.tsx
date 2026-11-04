@@ -23,6 +23,10 @@ const TRAZOS = {
     guardar: 'M6 4h12v17l-6-4-6 4V4z',
     campana: 'M6 9a6 6 0 1 1 12 0c0 6 2 7 2 7H4s2-1 2-7zM10 20a2 2 0 0 0 4 0',
     sitio: 'M3 12l9-8 9 8M5 10v10h5v-6h4v6h5V10',
+    ordenar: 'M8 9l4-4 4 4M8 15l4 4 4-4',
+    reloj: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+    alerta: 'M12 3l10 18H2L12 3zM12 10v4M12 17.5v.5',
+    ruta: 'M6 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM18 8a2 2 0 1 0 0-4 2 2 0 0 0 0 4zM8 18h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7',
 } as const;
 
 export type NombreIconoAdmin = keyof typeof TRAZOS;

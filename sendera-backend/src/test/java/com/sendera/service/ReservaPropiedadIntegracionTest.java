@@ -64,6 +64,7 @@ class ReservaPropiedadIntegracionTest {
     private ReservaDto reservaDe(UsuarioActual usuario) {
         CrearReservaDto dto = new CrearReservaDto();
         dto.setItinerarioId(itinerarioId);
+        dto.setFechaReserva(LocalDate.of(2026, 11, 18));
         return reservaService.crear(dto, usuario);
     }
 
@@ -95,6 +96,24 @@ class ReservaPropiedadIntegracionTest {
         assertEquals(2, reservaService.listar(ana).size());
         assertEquals(1, reservaService.listar(luis).size());
         assertEquals(3, reservaService.listar(admin).size());
+    }
+
+    @Test
+    void listarYConsultarIncluyenDestinoEItinerario() {
+        Long id = reservaDe(ana).getId();
+        em.flush();
+        em.clear(); // fuerza la lectura desde la base: los datos deben venir cargados por el EntityGraph
+
+        ReservaDto listada = reservaService.listar(ana).get(0);
+        ReservaDto consultada = reservaService.obtenerPorId(id, ana);
+
+        for (ReservaDto dto : List.of(listada, consultada)) {
+            assertEquals("Valle", dto.getDestinoNombre());
+            assertEquals("Cocora", dto.getItinerarioNombre());
+            assertEquals(itinerarioId, dto.getItinerarioId());
+        }
+        assertEquals(1, reservaService.listar(admin).size());
+        assertEquals("Valle", reservaService.listar(admin).get(0).getDestinoNombre());
     }
 
     @Test

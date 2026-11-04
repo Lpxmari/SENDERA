@@ -89,6 +89,71 @@ class SeguridadApiTest {
     }
 
     @Test
+    void duracionMinYDuracionMaxYaNoFiltranDestinos() throws Exception {
+        // RNF-26: la duración es atributo de las actividades; los parámetros antiguos se ignoran, no dan 400.
+        mockMvc.perform(get("/destinos").param("duracionMin", "3").param("duracionMax", "5"))
+                .andExpect(status().isOk());
+        org.mockito.ArgumentCaptor<com.sendera.dto.FiltroDestinoDto> captor =
+                org.mockito.ArgumentCaptor.forClass(com.sendera.dto.FiltroDestinoDto.class);
+        verify(destinoService).listarDestinos(captor.capture());
+        org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getQ());
+        org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getPrecioMin());
+    }
+
+    @Test
+    void listarItinerariosDeUnDestinoEsPublico() throws Exception {
+        mockMvc.perform(get("/destinos/1/itinerarios")).andExpect(status().isOk());
+        verify(destinoService).listarItinerariosDisponibles(1L);
+    }
+
+    @Test
+    void itinerariosDeDestinoInexistenteDevuelve404() throws Exception {
+        when(destinoService.listarItinerariosDisponibles(99L))
+                .thenThrow(new com.sendera.exception.RecursoNoEncontradoException("Destino no encontrado con id: 99"));
+
+        mockMvc.perform(get("/destinos/99/itinerarios")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void losFiltrosDeDestinosLleganCompletosAlServicio() throws Exception {
+        // CP-005 / RNF-26: precio, dificultad y accesibilidad viajan juntos y sin alterarse hasta el servicio.
+        mockMvc.perform(get("/destinos").param("precioMin", "0").param("precioMax", "500000")
+                        .param("dificultad", "baja").param("accesibilidad", "true"))
+                .andExpect(status().isOk());
+        org.mockito.ArgumentCaptor<com.sendera.dto.FiltroDestinoDto> captor =
+                org.mockito.ArgumentCaptor.forClass(com.sendera.dto.FiltroDestinoDto.class);
+        verify(destinoService).listarDestinos(captor.capture());
+        com.sendera.dto.FiltroDestinoDto filtro = captor.getValue();
+        org.junit.jupiter.api.Assertions.assertEquals(0, filtro.getPrecioMin().compareTo(java.math.BigDecimal.ZERO));
+        org.junit.jupiter.api.Assertions.assertEquals(0, filtro.getPrecioMax().compareTo(new java.math.BigDecimal("500000")));
+        org.junit.jupiter.api.Assertions.assertEquals("baja", filtro.getDificultad());
+        org.junit.jupiter.api.Assertions.assertEquals(Boolean.TRUE, filtro.getAccesibilidad());
+    }
+
+    @Test
+    void filtrosInvalidosDeDestinosDevuelven400ConMensajeClaro() throws Exception {
+        // CP-005 / RNF-13: la excepción de filtro inválido se traduce en 400 con el formato uniforme de error.
+        when(destinoService.listarDestinos(org.mockito.ArgumentMatchers.argThat(f -> f != null && "EXTREMA".equals(f.getDificultad()))))
+                .thenThrow(new com.sendera.exception.FiltroInvalidoException("La dificultad debe ser BAJA, MODERADA o ALTA."));
+        when(destinoService.listarDestinos(org.mockito.ArgumentMatchers.argThat(f -> f != null && f.getPrecioMin() != null
+                && f.getPrecioMin().signum() < 0)))
+                .thenThrow(new com.sendera.exception.FiltroInvalidoException("Los precios no pueden ser negativos."));
+
+        mockMvc.perform(get("/destinos").param("dificultad", "EXTREMA"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("La dificultad debe ser BAJA, MODERADA o ALTA."));
+        mockMvc.perform(get("/destinos").param("precioMin", "-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Los precios no pueden ser negativos."));
+    }
+
+    @Test
+    void unPrecioQueNoEsNumeroEnLosFiltrosDeDestinosDevuelve400() throws Exception {
+        mockMvc.perform(get("/destinos").param("precioMin", "abc")).andExpect(status().isBadRequest());
+        mockMvc.perform(get("/destinos").param("accesibilidad", "quizas")).andExpect(status().isBadRequest());
+    }
+
+    @Test
     void listarResenasEsPublico() throws Exception {
         mockMvc.perform(get("/destinos/1/resenas")).andExpect(status().isOk());
     }
@@ -122,6 +187,33 @@ class SeguridadApiTest {
 
         verify(resenaService).crear(eq(1L), any(CrearResenaDto.class), isNull(),
                 eq(new UsuarioActual(1L, false)));
+    }
+
+    @Test
+    void publicarResenaSinReservaConfirmadaDevuelve403ConMensajeClaro() throws Exception {
+        when(resenaService.crear(anyLong(), any(CrearResenaDto.class), isNull(), any()))
+                .thenThrow(new com.sendera.exception.ResenaNoPermitidaException());
+
+        mockMvc.perform(multipart("/destinos/1/resenas")
+                        .header("Authorization", "Bearer " + token("ROLE_CLIENTE"))
+                        .param("comentario", "Un lugar hermoso")
+                        .param("calificacion", "5"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message")
+                        .value("Solo puedes opinar sobre destinos que ya reservaste y cuya reserva fue confirmada."));
+    }
+
+    @Test
+    void publicarResenaDuplicadaDevuelve409() throws Exception {
+        when(resenaService.crear(anyLong(), any(CrearResenaDto.class), isNull(), any()))
+                .thenThrow(new com.sendera.exception.ResenaDuplicadaException());
+
+        mockMvc.perform(multipart("/destinos/1/resenas")
+                        .header("Authorization", "Bearer " + token("ROLE_CLIENTE"))
+                        .param("comentario", "Un lugar hermoso")
+                        .param("calificacion", "5"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Ya publicaste una reseña de este destino."));
     }
 
     @Test
@@ -207,7 +299,7 @@ class SeguridadApiTest {
     @Test
     void crearReservaSinItinerarioDevuelve400() throws Exception {
         mockMvc.perform(post("/reservas").header("Authorization", "Bearer " + token("ROLE_CLIENTE"))
-                        .contentType(MediaType.APPLICATION_JSON).content("{}"))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"fechaReserva\":\"2999-01-01\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("Selecciona un itinerario para reservar."));
     }
