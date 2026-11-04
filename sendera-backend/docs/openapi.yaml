@@ -16,7 +16,10 @@ paths:
     get:
       summary: Obtener lista de destinos turísticos
       operationId: listarDestinos
-      description: Consulta pública. Todos los filtros son opcionales y se combinan con AND.
+      description: >-
+        Consulta pública. Todos los filtros son opcionales y se combinan con AND. Los filtros de destinos son
+        precio, dificultad y accesibilidad (RF-008, RNF-26). La duración no es un filtro de destinos: es un atributo
+        de las actividades y se filtra en GET /actividades.
       tags:
         - Destinos
       security: []
@@ -27,15 +30,19 @@ paths:
           schema: { type: string }
         - name: precioMin
           in: query
+          description: Filtro de precio (RNF-26). Precio base mínimo.
           schema: { type: number, minimum: 0 }
         - name: precioMax
           in: query
+          description: Filtro de precio (RNF-26). Precio base máximo.
           schema: { type: number, minimum: 0 }
         - name: dificultad
           in: query
+          description: Filtro de nivel de dificultad (RNF-26).
           schema: { $ref: '#/components/schemas/Dificultad' }
         - name: accesibilidad
           in: query
+          description: Filtro de accesibilidad (RNF-26).
           schema: { type: boolean }
       responses:
         '200':
@@ -407,7 +414,7 @@ paths:
   /actividades:
     get:
       summary: Listar actividades turísticas
-      description: Catálogo público de solo lectura. Se puede filtrar por destino y por duración (atributo de la actividad, no del alojamiento). La ubicación es la del destino.
+      description: Catálogo público de solo lectura. Se puede filtrar por destino y por duración (atributo de la actividad, no del alojamiento; RF-008 y RNF-26). La ubicación es la del destino.
       operationId: listarActividades
       security: []
       tags:
@@ -424,7 +431,7 @@ paths:
           in: query
           required: false
           description: >-
-            Rango de duración según duracionMinutos, con límites inclusivos. HASTA_60_MIN = 1 a 60 min;
+            Rango de duración según duracionMinutos, en minutos y con límites inclusivos (RNF-26). HASTA_60_MIN = 1 a 60 min;
             DE_61_A_180_MIN = 61 a 180 min; MAS_DE_180_MIN = 181 min o más. Se combina con destinoId.
             Un valor desconocido responde 400.
           schema:

@@ -27,8 +27,27 @@ Verificar que los requisitos funcionales y no funcionales se cumplen, con atenci
 - Consultas no permiten inyección SQL.
 - Configuración CORS no abre el acceso a cualquier origen en producción.
 
-## 8.4.1 Casos de prueba de reservas (RF-011 / RF-012)
-Los casos de esta sección aún no tienen identificadores CP- oficiales; se enlazan por el nombre de la prueba.
+## 8.4.0 Equivalencia con los casos de prueba oficiales (CP)
+Identificadores del documento oficial «Diseño, Reutilización y Pruebas del Software» (sección 5.2). Los ids de requisitos RNF que cita ese documento son los del plan de calidad oficial, no los provisionales de `03-requisitos-no-funcionales.md`.
+
+| CP oficial | Título | Requisitos | Casos de este documento |
+|---|---|---|---|
+| CP-001 | Registro de usuario con validación de datos | RF-001 | Sin caso detallado en este documento |
+| CP-002 | Inicio de sesión: credenciales válidas, incorrectas y cuenta desactivada | RF-002, RF-005 | Sin caso detallado en este documento |
+| CP-003 | Recuperación de contraseña con código de 6 dígitos | RF-003, RF-015 | Sin caso detallado en este documento |
+| CP-004 | Control de acceso por rol a funciones administrativas | RF-005, RF-013 | Sin caso detallado en este documento (ver §8.4, casos de seguridad mínimos) |
+| CP-005 | Búsqueda de destinos con filtros combinados y valores límite | RF-006, RF-008 | §8.4.2 (todos los casos) |
+| CP-006 | Consulta del detalle de un destino | RF-006, RF-007 | Sin caso detallado en este documento |
+| CP-007 | Crear, editar y retirar destinos (administrador) | RF-013, RF-006 | Sin caso detallado en este documento |
+| CP-008 | Crear una reserva sobre un itinerario con cupos | RF-011, RF-012 | §8.4.1 (todos los casos) |
+| CP-009 | Cancelar una reserva propia y proteger las ajenas | RF-012 | Sin caso detallado en este documento |
+| CP-010 | Cambio de estado de reservas por el administrador | RF-012, RF-013 | Sin caso detallado en este documento |
+| CP-011 | Itinerario personalizado con detección de conflictos de horario | RF-009, RF-010 | Sin caso detallado en este documento |
+
+«Sin caso detallado» significa solo que esta estrategia no lo desarrolla en una tabla; no afirma que no existan pruebas automatizadas. Los casos de las secciones siguientes no equivalen a ningún otro CP; si aparece un caso sin equivalente oficial, se registra aquí en lugar de inventarle un id.
+
+## 8.4.1 Casos de prueba de reservas (RF-011 / RF-012) — equivale a CP-008
+Los casos de esta sección corresponden al CP-008 oficial; se enlazan por el nombre de la prueba.
 
 | Caso | Qué verifica | Prueba |
 |------|--------------|--------|
@@ -38,8 +57,42 @@ Los casos de esta sección aún no tienen identificadores CP- oficiales; se enla
 | Solo itinerarios reservables | El endpoint devuelve únicamente los que tienen cupos > 0 y `fechaFin` ≥ hoy, ordenados por inicio, y 404 si el destino no existe. | `ItinerarioDisponibleIntegracionTest`, `DestinoServiceImplTest`, `SeguridadApiTest` |
 | Fecha de la reserva | Obligatoria, no pasada (400) y dentro del itinerario (409). | `ReservaApiTest`, `ReservaServiceImplTest` |
 
-## 8.4.2 Casos de prueba de duración de actividades (RNF-26 / RF-008, PROPUESTA)
-Se enlazan por el nombre de la prueba; el requisito RNF-26 está pendiente de aprobación del equipo.
+## 8.4.2 Búsqueda y filtros: destinos y duración de actividades (RNF-26 / RF-008) — equivale a CP-005
+
+### CP-005 — Búsqueda de destinos con filtros combinados y valores límite
+| Campo | Valor |
+|---|---|
+| Proceso | Gestión de destinos y actividades turísticas |
+| Requisitos | RF-006, RF-008 · RNF-26, RNF-01, RNF-13 |
+| Tipo / prioridad | Funcional / validación de datos · Alta |
+| Tester / fecha del reporte | Jeffry Smith Ceballos Bejarano · 18/10/2026 |
+| Estado | **Pendiente de ejecución** con la nueva implementación |
+
+**Destinos** (`GET /destinos`): filtros de precio, dificultad y accesibilidad, solos y combinados.
+
+| Clase | Entrada | Resultado esperado |
+|---|---|---|
+| Válida | `dificultad` = `BAJA`, `baja` y `ALTA` | 200; solo destinos de esa dificultad |
+| Válida | `accesibilidad` = `true` y `false` | 200; solo destinos con ese valor |
+| Válida | `precioMin` = 0 con `precioMax` = 500000 | 200; solo destinos dentro del rango |
+| Válida | Sin filtros | 200; todos los destinos |
+| Inválida | `dificultad` = `EXTREMA` | 400 con mensaje claro |
+| Inválida | `precioMin` = -1 | 400 con mensaje claro |
+| Inválida | `precioMin` = 600000 con `precioMax` = 500000 | 400 con mensaje claro |
+
+**Actividades** (`GET /actividades?duracion=`): filtro por rangos hasta 60 min, 61–180 min y más de 180 min, con valores límite de 60, 61, 180 y 181 minutos; un rango inválido responde 400.
+
+**Resultado esperado general:** solo aparecen los resultados que cumplen todos los filtros; tiempo de respuesta ≤ 2 s (RNF-01); mensajes de error claros (RNF-13).
+
+**Cobertura automatizada actual:**
+- Destinos, clases válidas e inválidas: `DestinoFiltrosCp005Test` (servicio, 14 pruebas: `baja` normalizada a `BAJA`, `ALTA`, accesibilidad `true`/`false`, `precioMin` 0 con `precioMax` 500000, mínimo igual al máximo, sin filtros, filtros combinados; y rechazo de `EXTREMA`, `precioMin` -1, `precioMax` negativo y mínimo 600000 con máximo 500000, con su mensaje y sin consultar la base).
+- Destinos, contrato HTTP: `SeguridadApiTest` (los filtros llegan completos al servicio; filtro inválido → 400 con mensaje uniforme; precio o accesibilidad no válidos → 400).
+- Destinos, filtrado real en base (H2): `DestinoSpecificationsIntegracionTest`.
+- Actividades: rangos de duración, límites, traducción y 400 de `duracion` (tabla siguiente).
+- **Sin cubrir:** la medición del tiempo de respuesta ≤ 2 s (RNF-01) no existe. El estado del CP-005 sigue siendo «pendiente de ejecución» por el equipo de pruebas con la nueva implementación.
+
+### Casos de duración de actividades
+Requisitos aprobados por el equipo. Se enlazan por el nombre de la prueba.
 
 | Caso | Qué verifica | Prueba |
 |------|--------------|--------|
