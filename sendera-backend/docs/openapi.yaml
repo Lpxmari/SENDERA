@@ -284,7 +284,10 @@ paths:
   /reservas:
     get:
       summary: Obtener lista de reservas
-      description: Devuelve solo las reservas del usuario autenticado (claim uid del JWT); ROLE_ADMIN ve todas.
+      description: >-
+        Devuelve solo las reservas del usuario autenticado (claim uid del JWT); ROLE_ADMIN ve todas. Cada reserva
+        incluye el destino y el itinerario (`destinoId`, `destinoNombre`, `itinerarioNombre`) y su estado; el
+        historial de viajes del perfil se arma con esta ruta.
       operationId: listarReservas
       tags:
         - Reservas
@@ -1081,6 +1084,18 @@ components:
           type: string
           enum: [PENDIENTE, CONFIRMADA, CANCELADA]
           example: "CONFIRMADA"
+        destinoId:
+          type: integer
+          format: int64
+          description: Destino del itinerario reservado (para enlazar al detalle).
+          example: 3
+        destinoNombre:
+          type: string
+          description: Nombre del destino, para mostrar el historial sin consultas adicionales.
+          example: "Hotel Boutique Casa Aurora"
+        itinerarioNombre:
+          type: string
+          example: "Fin de semana colonial"
 
     CrearReservaDto:
       type: object

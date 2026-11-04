@@ -160,13 +160,29 @@ class ReservaServiceImplTest {
     @Test
     void clienteSoloListaSusReservasYAdminListaTodas() {
         when(reservaRepository.findByUsuarioIdOrderByIdAsc(5L)).thenReturn(List.of());
-        when(reservaRepository.findAll()).thenReturn(List.of());
+        when(reservaRepository.findAllByOrderByIdAsc()).thenReturn(List.of());
 
         reservaService.listar(CLIENTE);
-        verify(reservaRepository, never()).findAll();
+        verify(reservaRepository, never()).findAllByOrderByIdAsc();
 
         reservaService.listar(ADMIN);
-        verify(reservaRepository).findAll();
+        verify(reservaRepository).findAllByOrderByIdAsc();
+    }
+
+    @Test
+    void listarIncluyeDestinoEItinerarioParaElHistorial() {
+        itinerario.setNombre("Fin de semana colonial");
+        itinerario.setDestino(com.sendera.model.Destino.builder().id(3L).nombre("Hotel Boutique Casa Aurora").build());
+        Reserva reserva = Reserva.builder().id(1L).itinerario(itinerario).fechaReserva(LocalDate.of(2026, 10, 12))
+                .montoTotal(new BigDecimal("435000.00")).estadoReserva(EstadoReserva.CONFIRMADA).build();
+        when(reservaRepository.findByUsuarioIdOrderByIdAsc(5L)).thenReturn(List.of(reserva));
+
+        ReservaDto dto = reservaService.listar(CLIENTE).get(0);
+
+        assertEquals(3L, dto.getDestinoId());
+        assertEquals("Hotel Boutique Casa Aurora", dto.getDestinoNombre());
+        assertEquals("Fin de semana colonial", dto.getItinerarioNombre());
+        assertEquals("CONFIRMADA", dto.getEstadoReserva());
     }
 
     @Test

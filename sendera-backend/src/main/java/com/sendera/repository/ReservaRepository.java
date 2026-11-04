@@ -16,8 +16,14 @@ import java.util.Optional;
 
 public interface ReservaRepository extends JpaRepository<Reserva, Long> {
 
+    /** Las listas cargan itinerario y destino en la misma consulta: el DTO los necesita y así se evita el N+1. */
+    @EntityGraph(attributePaths = {"itinerario", "itinerario.destino"})
     List<Reserva> findByUsuarioIdOrderByIdAsc(Long usuarioId);
 
+    @EntityGraph(attributePaths = {"itinerario", "itinerario.destino"})
+    List<Reserva> findAllByOrderByIdAsc();
+
+    @EntityGraph(attributePaths = {"itinerario", "itinerario.destino"})
     Optional<Reserva> findByIdAndUsuarioId(Long id, Long usuarioId);
 
     /**

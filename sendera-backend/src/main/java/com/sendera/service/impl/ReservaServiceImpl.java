@@ -4,6 +4,7 @@ import com.sendera.dto.CrearReservaDto;
 import com.sendera.dto.ReservaDto;
 import com.sendera.exception.RecursoNoEncontradoException;
 import com.sendera.exception.ReservaNoPermitidaException;
+import com.sendera.model.Destino;
 import com.sendera.model.EstadoReserva;
 import com.sendera.model.Itinerario;
 import com.sendera.model.Reserva;
@@ -35,7 +36,7 @@ public class ReservaServiceImpl implements ReservaService {
     @Transactional(readOnly = true)
     public List<ReservaDto> listar(UsuarioActual solicitante) {
         List<Reserva> reservas = solicitante.admin()
-                ? reservaRepository.findAll()
+                ? reservaRepository.findAllByOrderByIdAsc()
                 : reservaRepository.findByUsuarioIdOrderByIdAsc(solicitante.id());
         return reservas.stream().map(this::convertirADto).collect(Collectors.toList());
     }
@@ -105,12 +106,17 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     private ReservaDto convertirADto(Reserva reserva) {
+        Itinerario itinerario = reserva.getItinerario();
+        Destino destino = itinerario != null ? itinerario.getDestino() : null;
         return ReservaDto.builder()
                 .id(reserva.getId())
-                .itinerarioId(reserva.getItinerario() != null ? reserva.getItinerario().getId() : null)
+                .itinerarioId(itinerario != null ? itinerario.getId() : null)
                 .fechaReserva(reserva.getFechaReserva())
                 .montoTotal(reserva.getMontoTotal())
                 .estadoReserva(reserva.getEstadoReserva() != null ? reserva.getEstadoReserva().name() : null)
+                .itinerarioNombre(itinerario != null ? itinerario.getNombre() : null)
+                .destinoId(destino != null ? destino.getId() : null)
+                .destinoNombre(destino != null ? destino.getNombre() : null)
                 .build();
     }
 }

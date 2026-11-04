@@ -1,4 +1,4 @@
-import { OpinionViajero, PerfilViajero, ViajeHistorial } from '../types/perfil';
+import { OpinionViajero, PerfilViajero } from '../types/perfil';
 
 /** DATOS SIMULADOS del perfil: se eliminan cuando exista el endpoint de perfil en docs/openapi.yaml. */
 export const perfilSimulado = (base: Pick<PerfilViajero, 'nombre' | 'apellidos' | 'correo'>): PerfilViajero => ({
@@ -17,16 +17,4 @@ export const opinionesSimuladas: OpinionViajero[] = [
     { id: 1, texto: 'Una experiencia muy agradable' },
     { id: 2, texto: 'Fue fácil organizar mi viaje' },
     { id: 3, texto: 'Encontré un lugar perfecto para descansar' },
-];
-
-export const historialSimulado: ViajeHistorial[] = [
-    { id: 1, destino: 'Finca Hotel Los Arrayanes', fechaReserva: '2026-08-12', montoTotal: 450000, estadoReserva: 'CONFIRMADA' },
-    {
-        id: 2,
-        destino: 'Hotel Boutique Casa Aurora',
-        fechaReserva: '2026-05-03',
-        montoTotal: 980000,
-        estadoReserva: 'CONFIRMADA',
-    },
-    { id: 3, destino: 'Cabañas Playa Dorada', fechaReserva: '2026-02-20', montoTotal: 620000, estadoReserva: 'CANCELADA' },
 ];

@@ -13,4 +13,7 @@ public class ReservaDto {
     private LocalDate fechaReserva;
     private BigDecimal montoTotal;
     private String estadoReserva;
+    private Long destinoId;
+    private String destinoNombre;
+    private String itinerarioNombre;
 }

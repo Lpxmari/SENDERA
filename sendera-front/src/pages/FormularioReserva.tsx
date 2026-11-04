@@ -52,8 +52,8 @@ const FormularioReserva = () => {
         setEnviando(true);
         try {
             const nuevaReserva: CrearReservaRequest = { itinerarioId, fechaReserva };
-            await crearReserva(nuevaReserva);
-            navigate('/confirmacion'); // Redirección tras un 201 Created
+            const reserva = await crearReserva(nuevaReserva);
+            navigate('/confirmacion', { state: { reserva } }); // Redirección tras un 201 Created
         } catch (err) {
             setError(obtenerMensajeError(err, 'No se pudo crear la reserva. Intenta de nuevo.'));
         } finally {

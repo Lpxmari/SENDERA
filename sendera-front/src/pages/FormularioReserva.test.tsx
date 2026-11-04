@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { listarItinerariosDeDestino } from '../services/destinoService';
 import { crearReserva } from '../services/reservaService';
 import { ItinerarioDisponible } from '../types/itinerario';
+import { Reserva } from '../types/reserva';
 import { hoyIso } from '../utils/fechasItinerario';
 import FormularioReserva from './FormularioReserva';
 
@@ -27,12 +28,23 @@ const PLAYA: ItinerarioDisponible = {
     cuposDisponibles: 1,
 };
 
+/** Doble de la pantalla de confirmación: muestra lo que recibe por el estado de navegación. */
+const Confirmacion = () => {
+    const reserva = (useLocation().state as { reserva?: Reserva } | null)?.reserva;
+    return (
+        <div>
+            <p>Reserva confirmada</p>
+            <p>{reserva?.estadoReserva}</p>
+        </div>
+    );
+};
+
 const renderizar = () =>
     render(
         <MemoryRouter initialEntries={['/reservar/7']}>
             <Routes>
                 <Route path="/reservar/:destinoId" element={<FormularioReserva />} />
-                <Route path="/confirmacion" element={<p>Reserva confirmada</p>} />
+                <Route path="/confirmacion" element={<Confirmacion />} />
             </Routes>
         </MemoryRouter>,
     );
@@ -127,6 +139,7 @@ describe('FormularioReserva', () => {
             expect(crearReserva).toHaveBeenCalledWith({ itinerarioId: 21, fechaReserva: '2999-11-18' }),
         );
         expect(await screen.findByText('Reserva confirmada')).toBeInTheDocument();
+        expect(screen.getByText('PENDIENTE')).toBeInTheDocument(); // la reserva creada viaja a la confirmación
     });
 
     it('con un único itinerario lo deja elegido', async () => {

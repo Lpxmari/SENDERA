@@ -1149,3 +1149,10 @@
 .reserva__aviso--error { background: #fdecea; border-color: #a3231b; color: #7a1a14; }
 .reserva__enviar { min-height: 48px; font-size: 17px; }
 .reserva__enviar:disabled { opacity: 0.55; cursor: not-allowed; }
+.reserva--confirmacion { text-align: left; }
+.reserva__resumen { display: grid; gap: 10px; margin: 0 0 16px; padding: 16px; border: 1px solid #d9d5c1; border-radius: 12px; background: #fff; }
+.reserva__resumen div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; }
+.reserva__resumen dt { font-weight: 700; }
+.reserva__resumen dd { margin: 0; }
+.reserva__acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.reserva__acciones .boton { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; text-decoration: none; font-size: 17px; }

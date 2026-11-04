@@ -43,6 +43,8 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 | GET | `/api/v1/reservas/{id}` | Autenticado | 200, 401, 404 |
 | PATCH | `/api/v1/reservas/{id}/cancelar` | Autenticado | 200, 401, 404, 409 |
 
+**Datos de cada reserva:** además de `id`, `itinerarioId`, `fechaReserva`, `montoTotal` y `estadoReserva`, la respuesta incluye `destinoId`, `destinoNombre` e `itinerarioNombre`, que usa el historial de viajes del perfil (RF-012).
+
 **Fecha de la reserva (`POST /reservas`):** `fechaReserva` es obligatoria y no puede ser anterior a hoy (400); debe caer entre `fechaInicio` y `fechaFin` del itinerario, ambas inclusive (409, con el rango válido en el mensaje).
 
 **Propiedad de las reservas:** cada reserva pertenece al usuario del JWT. `GET /reservas` devuelve solo las propias (el administrador ve todas) y consultar o cancelar una reserva ajena responde 404, para no revelar que existe.

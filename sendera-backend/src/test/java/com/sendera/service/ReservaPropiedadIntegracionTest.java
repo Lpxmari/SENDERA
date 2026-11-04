@@ -99,6 +99,24 @@ class ReservaPropiedadIntegracionTest {
     }
 
     @Test
+    void listarYConsultarIncluyenDestinoEItinerario() {
+        Long id = reservaDe(ana).getId();
+        em.flush();
+        em.clear(); // fuerza la lectura desde la base: los datos deben venir cargados por el EntityGraph
+
+        ReservaDto listada = reservaService.listar(ana).get(0);
+        ReservaDto consultada = reservaService.obtenerPorId(id, ana);
+
+        for (ReservaDto dto : List.of(listada, consultada)) {
+            assertEquals("Valle", dto.getDestinoNombre());
+            assertEquals("Cocora", dto.getItinerarioNombre());
+            assertEquals(itinerarioId, dto.getItinerarioId());
+        }
+        assertEquals(1, reservaService.listar(admin).size());
+        assertEquals("Valle", reservaService.listar(admin).get(0).getDestinoNombre());
+    }
+
+    @Test
     void adminPuedeConsultarReservaDeOtroUsuario() {
         Long id = reservaDe(ana).getId();
 
