@@ -1,4 +1,6 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
+import EstadoReserva from '../components/EstadoReserva';
 import DatoPerfil from '../components/perfil/DatoPerfil';
 import TarjetaPerfil from '../components/perfil/TarjetaPerfil';
 import { useAuth } from '../context/AuthContext';
@@ -94,6 +96,25 @@ const Perfil = () => {
             activo = false;
         };
     }, [usuario]);
+
+    // El enlace "Mis reservas" (p. ej. desde la confirmación de una reserva) abre el historial directamente.
+    const abrirReservas = new URLSearchParams(useLocation().search).get('seccion') === 'reservas';
+    useEffect(() => {
+        if (!abrirReservas) return;
+        let activo = true;
+        fetchHistorialViajes()
+            .then((viajes) => {
+                if (!activo) return;
+                setHistorial(viajes);
+                setVerHistorial(true);
+            })
+            .catch((error: unknown) => {
+                if (activo) setErrorCarga(obtenerMensajeError(error, 'No pudimos cargar tu historial de viajes.'));
+            });
+        return () => {
+            activo = false;
+        };
+    }, [abrirReservas]);
 
     useEffect(
         () => () => {
@@ -278,11 +299,7 @@ const Perfil = () => {
                                     <strong>{viaje.destino}</strong>
                                     <span>{formatearFecha(viaje.fechaReserva)}</span>
                                     <span>{formatearPrecio(viaje.montoTotal)}</span>
-                                    <span
-                                        className={`perfil-estado perfil-estado--${viaje.estadoReserva.toLowerCase()}`}
-                                    >
-                                        {viaje.estadoReserva}
-                                    </span>
+                                    <EstadoReserva estado={viaje.estadoReserva} />
                                 </li>
                             ))}
                         </ul>

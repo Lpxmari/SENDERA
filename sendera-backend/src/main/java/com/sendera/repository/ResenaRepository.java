@@ -30,6 +30,8 @@ public interface ResenaRepository extends JpaRepository<Resena, Long> {
 
     Optional<Resena> findByIdAndDestinoId(Long id, Long destinoId);
 
+    boolean existsByUsuarioIdAndDestinoId(Long usuarioId, Long destinoId);
+
     /** Listado de moderación. {@code patron} en minúsculas, con comodines y '!' como escape; no carga la imagen. */
     @Query(value = """
             select r.id as id,

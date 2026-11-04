@@ -1,12 +1,14 @@
 import { AuthResponse, Usuario } from '../types/auth';
 import { OpinionViajero, PerfilEditable, PerfilViajero, ViajeHistorial } from '../types/perfil';
-import { historialSimulado, opinionesSimuladas, perfilSimulado } from '../utils/datosPerfil';
+import { opinionesSimuladas, perfilSimulado } from '../utils/datosPerfil';
 import { actualizarCuenta } from './authService';
+import { listarMisReservas } from './reservaService';
 
 /*
  * Nombre, apellidos y correo son REALES: se leen de la sesión y se guardan con PUT /auth/me.
- * El resto (identificación, fecha de nacimiento, país, destinos favoritos, intereses, foto, opiniones e historial)
+ * El resto (identificación, fecha de nacimiento, país, destinos favoritos, intereses, foto y opiniones)
  * sigue SIMULADO en memoria hasta que el MER y docs/openapi.yaml definan esos campos; se pierde al recargar.
+ * El historial de viajes ya es REAL: se arma con GET /reservas.
  */
 const perfilesGuardados = new Map<number, PerfilViajero>();
 
@@ -57,7 +59,19 @@ export const actualizarPerfil = async (
 
 export const fetchOpiniones = async (): Promise<OpinionViajero[]> => opinionesSimuladas;
 
-export const fetchHistorialViajes = async (): Promise<ViajeHistorial[]> => historialSimulado;
+/** Historial real: las reservas del usuario (GET /reservas), de la más reciente a la más antigua. */
+export const fetchHistorialViajes = async (): Promise<ViajeHistorial[]> => {
+    const reservas = await listarMisReservas();
+    return reservas
+        .map((reserva) => ({
+            id: reserva.id,
+            destino: reserva.destinoNombre ?? 'Destino sin nombre',
+            fechaReserva: reserva.fechaReserva,
+            montoTotal: reserva.montoTotal,
+            estadoReserva: reserva.estadoReserva,
+        }))
+        .sort((a, b) => b.fechaReserva.localeCompare(a.fechaReserva) || b.id - a.id);
+};
 
 /** Solo para pruebas: reinicia el perfil simulado. */
 export const reiniciarPerfilSimulado = (): void => {

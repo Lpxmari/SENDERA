@@ -19,6 +19,15 @@
 | RNF-13 | Fiabilidad | Manejar fallos y timeouts de servicios externos sin filtrar información sensible. |
 | RNF-14 | Compatibilidad | Interfaz web adaptable a los tamaños de pantalla que el equipo incluya en sus pruebas. |
 
+## PROPUESTA — RNF-26 (pendiente de aprobación del equipo)
+> Esta sección es una propuesta; no es un requisito aprobado. Esta tabla llega solo hasta RNF-14: RNF-15 a RNF-25 no están registrados aquí, así que RNF-26 se trata como requisito nuevo propuesto y su numeración debe confirmarse con el plan de calidad oficial.
+
+| ID | Categoría | Texto propuesto |
+|---|---|---|
+| RNF-26 | Usabilidad / datos | La duración se modela como atributo de las actividades, en minutos, y no del alojamiento. El sistema permitirá filtrar actividades por rangos de duración y la interfaz mostrará la duración en horas y minutos legibles. |
+
+Rangos propuestos (límites inclusivos): hasta 60 min, 61–180 min y más de 180 min. Impacto: `GET /destinos` deja de aceptar `duracionMin`/`duracionMax`; `GET /actividades` acepta `duracion`. Trazabilidad: `09-trazabilidad-requisitos.md` (RF-007, RF-008) y pruebas en `08-estrategia-de-pruebas.md` §8.4.2.
+
 ## Completar antes de implementar
 1. Copiar todos los RNF identificados en el plan de calidad oficial, conservando sus IDs y redacción.
 2. Para cada RNF, documentar método de medición, ambiente, carga, umbral y evidencia.

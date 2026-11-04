@@ -6,10 +6,13 @@ export interface Reserva {
     fechaReserva: string; // Formato ISO: YYYY-MM-DD
     montoTotal: number;
     estadoReserva: EstadoReserva;
+    destinoId?: number;
+    destinoNombre?: string;
+    itinerarioNombre?: string;
 }
 
 /** Cuerpo de POST /reservas según docs/openapi.yaml (CrearReservaDto). */
 export interface CrearReservaRequest {
     itinerarioId: number;
-    fechaReserva?: string;
+    fechaReserva: string;
 }

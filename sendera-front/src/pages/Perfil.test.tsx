@@ -3,6 +3,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '../context/AuthContext';
 import { actualizarCuenta } from '../services/authService';
+import { listarMisReservas } from '../services/reservaService';
+import { Reserva } from '../types/reserva';
 import { reiniciarPerfilSimulado } from '../services/perfilService';
 import { guardarSesion, leerSesion } from '../services/sesion';
 import { ActualizarCuentaRequest, Usuario } from '../types/auth';
@@ -13,15 +15,38 @@ vi.mock('../services/authService', async (original) => ({
     actualizarCuenta: vi.fn(),
 }));
 
+vi.mock('../services/reservaService', () => ({ listarMisReservas: vi.fn(), crearReserva: vi.fn() }));
+
+const reserva = (
+    id: number,
+    destinoNombre: string,
+    fechaReserva: string,
+    montoTotal: number,
+    estadoReserva: Reserva['estadoReserva'],
+): Reserva => ({
+    id,
+    itinerarioId: id + 10,
+    fechaReserva,
+    montoTotal,
+    estadoReserva,
+    destinoNombre,
+});
+
+const RESERVAS: Reserva[] = [
+    reserva(1, 'Hotel Boutique Casa Aurora', '2026-05-03', 980000, 'CONFIRMADA'),
+    reserva(2, 'Finca Hotel Los Arrayanes', '2026-08-12', 450000, 'PENDIENTE'),
+    reserva(3, 'Cabañas Playa Dorada', '2026-02-20', 620000, 'CANCELADA'),
+];
+
 const escribir = (etiqueta: string, valor: string) =>
     fireEvent.change(screen.getByLabelText(etiqueta), { target: { value: valor } });
 
 const ANA: Usuario = { id: 1, nombre: 'Ana', apellidos: 'Perlata Cardenas', correo: 'ana@correo.com' };
 
-const renderizar = (usuario: Usuario = ANA) => {
+const renderizar = (usuario: Usuario = ANA, ruta = '/perfil') => {
     guardarSesion({ token: 'token-antiguo', usuario });
     return render(
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[ruta]}>
             <AuthProvider>
                 <Perfil />
             </AuthProvider>
@@ -39,6 +64,7 @@ describe('Perfil', () => {
     beforeEach(() => {
         reiniciarPerfilSimulado();
         vi.mocked(actualizarCuenta).mockImplementation(async (cuerpo) => respuestaBackend(cuerpo));
+        vi.mocked(listarMisReservas).mockResolvedValue(RESERVAS);
     });
 
     it('muestra los datos de la persona y las opiniones', async () => {
@@ -152,13 +178,63 @@ describe('Perfil', () => {
         expect(leerSesion()?.usuario.correo).toBe('ana@correo.com');
     });
 
-    it('despliega el historial de viajes', async () => {
+    it('despliega el historial con las reservas reales, de la más reciente a la más antigua', async () => {
         renderizar();
 
         fireEvent.click(await screen.findByRole('button', { name: 'Consultar Historial de Viajes' }));
 
         const historial = await screen.findByRole('region', { name: 'Historial de viajes' });
+        const viajes = within(historial).getAllByRole('listitem');
+        expect(viajes).toHaveLength(3);
+        expect(listarMisReservas).toHaveBeenCalledTimes(1);
+        expect(viajes[0]).toHaveTextContent('Finca Hotel Los Arrayanes');
+        expect(viajes[1]).toHaveTextContent('Hotel Boutique Casa Aurora');
+        expect(viajes[2]).toHaveTextContent('Cabañas Playa Dorada');
+        expect(viajes[1]).toHaveTextContent('980.000');
+    });
+
+    it('muestra el estado de cada reserva con texto, no solo con color', async () => {
+        renderizar();
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Consultar Historial de Viajes' }));
+
+        const historial = await screen.findByRole('region', { name: 'Historial de viajes' });
+        expect(within(historial).getByText(/Pendiente de confirmación/)).toBeInTheDocument();
+        expect(within(historial).getByText(/Confirmada/)).toBeInTheDocument();
+        expect(within(historial).getByText(/Cancelada/)).toBeInTheDocument();
+    });
+
+    it('sin reservas muestra un mensaje de lista vacía', async () => {
+        vi.mocked(listarMisReservas).mockResolvedValue([]);
+        renderizar();
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Consultar Historial de Viajes' }));
+
+        expect(await screen.findByText('Aún no tienes viajes reservados.')).toBeInTheDocument();
+    });
+
+    it('si falla la carga del historial muestra un error y no un historial inventado', async () => {
+        vi.mocked(listarMisReservas).mockRejectedValue(new Error('red'));
+        renderizar();
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Consultar Historial de Viajes' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('No pudimos cargar tu historial de viajes.');
+        expect(screen.queryByRole('region', { name: 'Historial de viajes' })).not.toBeInTheDocument();
+    });
+
+    it('con ?seccion=reservas abre el historial sin pulsar el botón', async () => {
+        renderizar(ANA, '/perfil?seccion=reservas');
+
+        const historial = await screen.findByRole('region', { name: 'Historial de viajes' });
         expect(within(historial).getAllByRole('listitem')).toHaveLength(3);
+    });
+
+    it('sin ?seccion=reservas no consulta las reservas hasta que se pide', async () => {
+        renderizar();
+
+        await screen.findByText(/Hola, Ana/);
+        expect(listarMisReservas).not.toHaveBeenCalled();
     });
 
     it('muestra el perfil de la persona con sesión y no el de otra que entró antes', async () => {

@@ -4,6 +4,7 @@ import com.sendera.dto.CrearReservaDto;
 import com.sendera.dto.ReservaDto;
 import com.sendera.exception.RecursoNoEncontradoException;
 import com.sendera.exception.ReservaNoPermitidaException;
+import com.sendera.model.Destino;
 import com.sendera.model.EstadoReserva;
 import com.sendera.model.Itinerario;
 import com.sendera.model.Reserva;
@@ -17,12 +18,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ReservaServiceImpl implements ReservaService {
+
+    private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final ReservaRepository reservaRepository;
     private final ItinerarioRepository itinerarioRepository;
@@ -32,7 +36,7 @@ public class ReservaServiceImpl implements ReservaService {
     @Transactional(readOnly = true)
     public List<ReservaDto> listar(UsuarioActual solicitante) {
         List<Reserva> reservas = solicitante.admin()
-                ? reservaRepository.findAll()
+                ? reservaRepository.findAllByOrderByIdAsc()
                 : reservaRepository.findByUsuarioIdOrderByIdAsc(solicitante.id());
         return reservas.stream().map(this::convertirADto).collect(Collectors.toList());
     }
@@ -50,6 +54,8 @@ public class ReservaServiceImpl implements ReservaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException(
                         "Itinerario no encontrado con id: " + dto.getItinerarioId()));
 
+        validarFechaDentroDelItinerario(dto.getFechaReserva(), itinerario);
+
         if (itinerario.getCuposDisponibles() == null || itinerario.getCuposDisponibles() < 1) {
             throw new ReservaNoPermitidaException("El itinerario seleccionado no tiene cupos disponibles.");
         }
@@ -59,7 +65,7 @@ public class ReservaServiceImpl implements ReservaService {
                 // El propietario sale del JWT, nunca del cuerpo de la petición
                 .usuario(usuarioRepository.getReferenceById(solicitante.id()))
                 .itinerario(itinerario)
-                .fechaReserva(dto.getFechaReserva() != null ? dto.getFechaReserva() : LocalDate.now())
+                .fechaReserva(dto.getFechaReserva())
                 // El monto sale del itinerario, nunca del cliente
                 .montoTotal(itinerario.getPrecioBase())
                 .estadoReserva(EstadoReserva.PENDIENTE)
@@ -82,6 +88,15 @@ public class ReservaServiceImpl implements ReservaService {
         return convertirADto(reservaRepository.save(reserva));
     }
 
+    /** La fecha elegida debe caer dentro del viaje (inclusive); se valida antes de descontar el cupo. */
+    private void validarFechaDentroDelItinerario(LocalDate fecha, Itinerario itinerario) {
+        if (fecha.isBefore(itinerario.getFechaInicio()) || fecha.isAfter(itinerario.getFechaFin())) {
+            throw new ReservaNoPermitidaException("La fecha elegida está fuera del viaje. Elige un día entre el "
+                    + FORMATO_FECHA.format(itinerario.getFechaInicio()) + " y el "
+                    + FORMATO_FECHA.format(itinerario.getFechaFin()) + ".");
+        }
+    }
+
     /** Propietario o administrador; para cualquier otra persona la reserva "no existe" (404). */
     private Reserva buscarAutorizada(Long id, UsuarioActual solicitante) {
         return (solicitante.admin()
@@ -91,12 +106,17 @@ public class ReservaServiceImpl implements ReservaService {
     }
 
     private ReservaDto convertirADto(Reserva reserva) {
+        Itinerario itinerario = reserva.getItinerario();
+        Destino destino = itinerario != null ? itinerario.getDestino() : null;
         return ReservaDto.builder()
                 .id(reserva.getId())
-                .itinerarioId(reserva.getItinerario() != null ? reserva.getItinerario().getId() : null)
+                .itinerarioId(itinerario != null ? itinerario.getId() : null)
                 .fechaReserva(reserva.getFechaReserva())
                 .montoTotal(reserva.getMontoTotal())
                 .estadoReserva(reserva.getEstadoReserva() != null ? reserva.getEstadoReserva().name() : null)
+                .itinerarioNombre(itinerario != null ? itinerario.getNombre() : null)
+                .destinoId(destino != null ? destino.getId() : null)
+                .destinoNombre(destino != null ? destino.getNombre() : null)
                 .build();
     }
 }

@@ -87,6 +87,35 @@ class DestinoServiceImplTest {
     }
 
     @Test
+    void listarItinerariosDisponibles_ConvierteADtoConLosCamposDelContrato() {
+        when(destinoRepository.findById(1L)).thenReturn(java.util.Optional.of(destinoEjemplo));
+        com.sendera.model.Itinerario itinerario = com.sendera.model.Itinerario.builder().id(5L).nombre("Ruta del Café")
+                .fechaInicio(java.time.LocalDate.of(2026, 11, 18)).fechaFin(java.time.LocalDate.of(2026, 11, 19))
+                .precioBase(new BigDecimal("195000.00")).cuposDisponibles(8).build();
+        when(itinerarioRepository.findByDestinoIdAndCuposDisponiblesGreaterThanAndFechaFinGreaterThanEqualOrderByFechaInicioAsc(
+                eq(1L), eq(0), any(java.time.LocalDate.class))).thenReturn(List.of(itinerario));
+
+        List<com.sendera.dto.ItinerarioDto> resultado = destinoService.listarItinerariosDisponibles(1L);
+
+        assertEquals(1, resultado.size());
+        assertEquals(5L, resultado.get(0).getId());
+        assertEquals("Ruta del Café", resultado.get(0).getNombre());
+        assertEquals(java.time.LocalDate.of(2026, 11, 18), resultado.get(0).getFechaInicio());
+        assertEquals(java.time.LocalDate.of(2026, 11, 19), resultado.get(0).getFechaFin());
+        assertEquals(new BigDecimal("195000.00"), resultado.get(0).getPrecioBase());
+        assertEquals(8, resultado.get(0).getCuposDisponibles());
+    }
+
+    @Test
+    void listarItinerariosDisponibles_DestinoInexistenteLanzaNoEncontrado() {
+        when(destinoRepository.findById(99L)).thenReturn(java.util.Optional.empty());
+
+        assertThrows(com.sendera.exception.RecursoNoEncontradoException.class,
+                () -> destinoService.listarItinerariosDisponibles(99L));
+        verifyNoInteractions(itinerarioRepository);
+    }
+
+    @Test
     void eliminarDestino_DeberiaAuditarSoloSiSeElimina() {
         when(destinoRepository.findById(1L)).thenReturn(java.util.Optional.of(destinoEjemplo));
         when(itinerarioRepository.existsByDestinoId(1L)).thenReturn(false);

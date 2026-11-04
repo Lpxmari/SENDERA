@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { obtenerMensajeError } from '../services/apiClient';
 import { fetchDestinos } from '../services/destinoService';
 import { Destino } from '../types/destino';
@@ -20,7 +20,14 @@ const Home = () => {
     const [errorRestaurantes, setErrorRestaurantes] = useState<string | null>(null);
     const [servicio, setServicio] = useState<TipoServicio>('alojamiento');
     const [searchParams] = useSearchParams();
+    const { hash } = useLocation();
     const busqueda = (searchParams.get('destino') ?? '').trim().toLowerCase();
+
+    // Al llegar desde otra pantalla con un enlace como "/#destinos-populares", el router no baja solo a la sección.
+    // Se espera a que termine la carga porque el contenido cambia la altura de la página.
+    useEffect(() => {
+        if (!loading && hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+    }, [loading, hash]);
 
     useEffect(() => {
         const cargarDestinos = async () => {

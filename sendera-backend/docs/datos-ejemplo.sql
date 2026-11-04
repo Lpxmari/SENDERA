@@ -1,7 +1,8 @@
 -- Datos de ejemplo de SENDERA (solo desarrollo). Ejecutar DESPUÉS de docs/schema.sql.
 -- Seguro de repetir, salvo los dos UPDATE de cupos, que siempre dejan 11 y 9.
--- Usuarios de prueba: admin@sendera.com y cliente@sendera.com, contraseña de ambos: Sendera2026
--- (no usar estas credenciales fuera de desarrollo).
+-- Usuarios de prueba: admin@sendera.com y cliente@sendera.com.
+-- La contraseña de prueba se entrega por un canal privado del equipo; no se documenta en el repositorio.
+-- En producción NO cargar estos usuarios, o cambiar su contraseña de inmediato.
 
 USE sendera;
 
@@ -58,7 +59,7 @@ ON DUPLICATE KEY UPDATE id = id;
 UPDATE itinerarios SET cupos_disponibles = 11 WHERE id = 1;
 UPDATE itinerarios SET cupos_disponibles = 9  WHERE id = 2;
 
--- 4) Usuarios de prueba (hash BCrypt de "Sendera2026", generado con BCryptPasswordEncoder)
+-- 4) Usuarios de prueba (hash BCrypt de la contraseña de prueba entregada por canal privado)
 INSERT INTO usuarios (nombre, apellidos, correo, contrasena_hash, rol) VALUES
   ('Admin',   'Sendera', 'admin@sendera.com',   '$2a$10$V3A9kjYDmfrKFY20nk7f7.tNc1zCMr/Vmd2TU206ryWlH9/Ffgo6e', 'ROLE_ADMIN'),
   ('Cliente', 'Prueba',  'cliente@sendera.com', '$2a$10$V3A9kjYDmfrKFY20nk7f7.tNc1zCMr/Vmd2TU206ryWlH9/Ffgo6e', 'ROLE_CLIENTE')

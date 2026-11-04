@@ -18,6 +18,4 @@ public class FiltroDestinoDto {
     private BigDecimal precioMax;
     private String dificultad;
     private Boolean accesibilidad;
-    private Integer duracionMin;
-    private Integer duracionMax;
 }
