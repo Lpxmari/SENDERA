@@ -50,6 +50,20 @@ Copia `.env.example` como `.env`, define `DB_PASSWORD` y `JWT_SECRET` (mínimo 3
 
 En Windows PowerShell usa `.\gradlew.bat bootRun --args='--spring.profiles.active=dev'`.
 
+`JWT_SECRET` es obligatorio también en el perfil `dev`: no existe un valor de respaldo y, sin él, la aplicación no arranca. Genera tu propia clave aleatoria de 32 o más caracteres y guárdala solo en tu `.env` local (ignorado por Git); nunca la subas al repositorio ni la compartas.
+
+```bash
+# Git Bash / Linux / macOS
+openssl rand -base64 48
+```
+
+```powershell
+# Windows PowerShell
+$b = New-Object byte[] 48; [Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($b); [Convert]::ToBase64String($b)
+```
+
+Copia el resultado en `.env` como `JWT_SECRET=<la clave generada>`.
+
 El contrato HTTP vigente está en `docs/openapi.yaml`. El modelo de datos aprobado está documentado en `docs/04-modelo-entidad-relacion.md`.
 
 ### Reseñas de destinos
