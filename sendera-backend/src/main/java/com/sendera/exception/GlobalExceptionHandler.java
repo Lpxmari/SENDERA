@@ -78,6 +78,16 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(ResenaNoPermitidaException.class)
+    public ResponseEntity<ApiErrorDto> handleResenaNoPermitida(ResenaNoPermitidaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.FORBIDDEN, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ResenaDuplicadaException.class)
+    public ResponseEntity<ApiErrorDto> handleResenaDuplicada(ResenaDuplicadaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiErrorDto> handleTipoIncorrecto(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         return construir(HttpStatus.BAD_REQUEST, "El valor del parámetro '" + ex.getName() + "' no es válido.", request);

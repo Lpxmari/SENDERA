@@ -50,4 +50,8 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
                               @Param("hasta") LocalDate hasta, @Param("patron") String patron, Pageable pageable);
 
     long countByEstadoReserva(EstadoReserva estado);
+
+    /** ¿La persona tiene una reserva en ese estado de algún itinerario del destino? (regla para reseñar). */
+    boolean existsByUsuarioIdAndItinerarioDestinoIdAndEstadoReserva(Long usuarioId, Long destinoId,
+                                                                    EstadoReserva estado);
 }

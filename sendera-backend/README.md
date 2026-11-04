@@ -69,6 +69,7 @@ El contrato HTTP vigente está en `docs/openapi.yaml`. El modelo de datos aproba
 ### Reseñas de destinos
 - Las reseñas están asociadas al destino y al usuario cuyo `uid` está firmado en el JWT; el cliente no puede enviar ni elegir otro usuario.
 - `GET /api/v1/destinos/{destinoId}/resenas` es público. `POST` sobre la misma ruta requiere autenticación y recibe `multipart/form-data` con `comentario`, `calificacion` (1–5) y una `imagen` opcional.
+- Solo puede reseñar un destino quien tiene una reserva `CONFIRMADA` de un itinerario de ese destino (si no, 403; también vale para administradores). Cada persona publica una única reseña por destino (si ya existe, 409); la base lo garantiza con `UNIQUE (usuario_id, destino_id)`. En una base existente, aplica `docs/actualizar-resenas-unicas.sql`.
 - Se aceptan imágenes JPEG, PNG y WebP de hasta 5 MB. El archivo binario se guarda en `resenas.imagen` (LONGBLOB); el listado solo devuelve una ruta de imagen y no transfiere el BLOB hasta solicitarla.
 - `GET /api/v1/destinos/{destinoId}/resenas/{resenaId}/imagen` devuelve el archivo binario para mostrarlo directamente. Los avatares no forman parte de esta funcionalidad.
 

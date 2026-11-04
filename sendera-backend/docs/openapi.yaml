@@ -222,7 +222,11 @@ paths:
 
     post:
       summary: Publicar una reseña para un destino
-      description: Requiere JWT. El usuario se obtiene del claim uid; nunca del formulario. La imagen es opcional (JPEG, PNG o WebP, hasta 5 MB) y queda almacenada como LONGBLOB.
+      description: >-
+        Requiere JWT. El usuario se obtiene del claim uid; nunca del formulario. La imagen es opcional (JPEG, PNG o
+        WebP, hasta 5 MB) y queda almacenada como LONGBLOB. Reglas de negocio, que valen también para
+        ROLE_ADMIN: solo puede reseñar quien tiene una reserva CONFIRMADA de un itinerario de ese destino (403) y
+        cada persona puede publicar una única reseña por destino (409).
       operationId: crearResena
       tags:
         - Reseñas
@@ -243,8 +247,23 @@ paths:
           $ref: '#/components/responses/PeticionInvalida'
         '401':
           $ref: '#/components/responses/NoAutorizado'
+        '403':
+          description: >-
+            La persona no tiene una reserva CONFIRMADA de este destino. Mensaje: "Solo puedes opinar sobre
+            destinos que ya reservaste y cuya reserva fue confirmada."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '404':
           $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          description: >-
+            La persona ya publicó una reseña de este destino. Mensaje: "Ya publicaste una reseña de este destino."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '413':
           description: La imagen supera el tamaño máximo permitido de 5 MB.
 

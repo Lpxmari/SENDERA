@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS resenas (
     CONSTRAINT chk_resenas_calificacion CHECK (calificacion BETWEEN 1 AND 5),
     INDEX idx_resenas_destino_creada (destino_id, creada_en),
     INDEX idx_resenas_usuario_id (usuario_id),
+    CONSTRAINT uq_resenas_usuario_destino UNIQUE (usuario_id, destino_id),
     CONSTRAINT fk_resenas_destino
         FOREIGN KEY (destino_id) REFERENCES destinos (id)
         ON DELETE CASCADE ON UPDATE CASCADE,

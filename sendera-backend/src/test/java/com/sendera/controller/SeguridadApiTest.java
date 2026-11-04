@@ -139,6 +139,33 @@ class SeguridadApiTest {
     }
 
     @Test
+    void publicarResenaSinReservaConfirmadaDevuelve403ConMensajeClaro() throws Exception {
+        when(resenaService.crear(anyLong(), any(CrearResenaDto.class), isNull(), any()))
+                .thenThrow(new com.sendera.exception.ResenaNoPermitidaException());
+
+        mockMvc.perform(multipart("/destinos/1/resenas")
+                        .header("Authorization", "Bearer " + token("ROLE_CLIENTE"))
+                        .param("comentario", "Un lugar hermoso")
+                        .param("calificacion", "5"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message")
+                        .value("Solo puedes opinar sobre destinos que ya reservaste y cuya reserva fue confirmada."));
+    }
+
+    @Test
+    void publicarResenaDuplicadaDevuelve409() throws Exception {
+        when(resenaService.crear(anyLong(), any(CrearResenaDto.class), isNull(), any()))
+                .thenThrow(new com.sendera.exception.ResenaDuplicadaException());
+
+        mockMvc.perform(multipart("/destinos/1/resenas")
+                        .header("Authorization", "Bearer " + token("ROLE_CLIENTE"))
+                        .param("comentario", "Un lugar hermoso")
+                        .param("calificacion", "5"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("Ya publicaste una reseña de este destino."));
+    }
+
+    @Test
     void consultaPublicaIgnoraTokenVencido() throws Exception {
         String vencido = tokenConEmisor("sendera", Instant.now().minusSeconds(60));
         mockMvc.perform(get("/destinos").header("Authorization", "Bearer " + vencido))

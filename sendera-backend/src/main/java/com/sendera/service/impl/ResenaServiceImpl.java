@@ -4,15 +4,20 @@ import com.sendera.dto.CrearResenaDto;
 import com.sendera.dto.ResenaDto;
 import com.sendera.exception.ArchivoImagenInvalidoException;
 import com.sendera.exception.RecursoNoEncontradoException;
+import com.sendera.exception.ResenaDuplicadaException;
+import com.sendera.exception.ResenaNoPermitidaException;
+import com.sendera.model.EstadoReserva;
 import com.sendera.model.Resena;
 import com.sendera.model.Usuario;
 import com.sendera.repository.DestinoRepository;
 import com.sendera.repository.ResenaRepository;
+import com.sendera.repository.ReservaRepository;
 import com.sendera.repository.ResenaResumen;
 import com.sendera.repository.UsuarioRepository;
 import com.sendera.security.UsuarioActual;
 import com.sendera.service.ResenaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,6 +41,7 @@ public class ResenaServiceImpl implements ResenaService {
     private final ResenaRepository resenaRepository;
     private final DestinoRepository destinoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ReservaRepository reservaRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -53,6 +59,8 @@ public class ResenaServiceImpl implements ResenaService {
         verificarDestino(destinoId);
         Usuario usuario = usuarioRepository.findById(solicitante.id())
                 .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado."));
+        // Las reglas de negocio se comprueban antes de leer o validar la imagen.
+        validarPuedeResenar(solicitante.id(), destinoId);
 
         Resena.ResenaBuilder resena = Resena.builder()
                 .destino(destinoRepository.getReferenceById(destinoId))
@@ -63,7 +71,23 @@ public class ResenaServiceImpl implements ResenaService {
         if (archivo != null && !archivo.isEmpty()) {
             validarYAdjuntarImagen(resena, archivo);
         }
-        return convertirADto(resenaRepository.save(resena.build()));
+        try {
+            return convertirADto(resenaRepository.saveAndFlush(resena.build()));
+        } catch (DataIntegrityViolationException ex) {
+            // Dos envíos simultáneos pueden pasar la verificación a la vez; la restricción única de la base los frena.
+            throw new ResenaDuplicadaException();
+        }
+    }
+
+    /** Solo quien tiene una reserva CONFIRMADA de ese destino puede opinar (403), y una sola vez (409). */
+    private void validarPuedeResenar(Long usuarioId, Long destinoId) {
+        if (!reservaRepository.existsByUsuarioIdAndItinerarioDestinoIdAndEstadoReserva(
+                usuarioId, destinoId, EstadoReserva.CONFIRMADA)) {
+            throw new ResenaNoPermitidaException();
+        }
+        if (resenaRepository.existsByUsuarioIdAndDestinoId(usuarioId, destinoId)) {
+            throw new ResenaDuplicadaException();
+        }
     }
 
     @Override
