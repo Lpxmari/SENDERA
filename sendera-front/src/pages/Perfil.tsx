@@ -1,5 +1,5 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import EstadoReserva from '../components/EstadoReserva';
 import DatoPerfil from '../components/perfil/DatoPerfil';
 import TarjetaPerfil from '../components/perfil/TarjetaPerfil';
@@ -266,15 +266,20 @@ const Perfil = () => {
                     <p className="perfil-resumen__usuario">{perfil.nombreUsuario}</p>
                     <p className="perfil-resumen__nivel">{perfil.nivelViajero}</p>
                 </div>
-                <button
-                    type="button"
-                    className="boton boton--verde perfil-resumen__historial"
-                    onClick={handleHistorial}
-                    aria-expanded={verHistorial}
-                    aria-controls="perfil-historial"
-                >
-                    Consultar Historial de Viajes
-                </button>
+                <div className="perfil-resumen__acciones">
+                    <Link to="/itinerarios" className="boton boton--naranja perfil-resumen__historial">
+                        Mis itinerarios
+                    </Link>
+                    <button
+                        type="button"
+                        className="boton boton--verde perfil-resumen__historial"
+                        onClick={handleHistorial}
+                        aria-expanded={verHistorial}
+                        aria-controls="perfil-historial"
+                    >
+                        Consultar Historial de Viajes
+                    </button>
+                </div>
             </section>
             {errorFoto && (
                 <p className="perfil-error" role="alert">
