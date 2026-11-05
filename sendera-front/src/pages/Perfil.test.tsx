@@ -77,6 +77,13 @@ describe('Perfil', () => {
         expect(screen.getAllByRole('blockquote')).toHaveLength(3);
     });
 
+    it('ofrece un enlace a «Mis itinerarios»', async () => {
+        renderizar();
+
+        const enlace = await screen.findByRole('link', { name: 'Mis itinerarios' });
+        expect(enlace).toHaveAttribute('href', '/itinerarios');
+    });
+
     it('guarda el nombre en el backend y actualiza la sesión', async () => {
         renderizar();
 

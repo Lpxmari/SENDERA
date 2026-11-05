@@ -5,8 +5,11 @@ import { AuthProvider } from '../context/AuthContext';
 import { guardarSesion } from '../services/sesion';
 import Encabezado from './Encabezado';
 
-const renderizar = (variante?: 'completo' | 'itinerarios' | 'detalle') => {
-    guardarSesion({ token: 'token', usuario: { id: 1, nombre: 'Ana', apellidos: 'Pérez', correo: 'ana@correo.com' } });
+const renderizar = (variante?: 'completo' | 'itinerarios' | 'detalle', rol?: 'ROLE_ADMIN') => {
+    guardarSesion({
+        token: 'token',
+        usuario: { id: 1, nombre: 'Ana', apellidos: 'Pérez', correo: 'ana@correo.com', rol },
+    });
     return render(
         <MemoryRouter>
             <AuthProvider>
@@ -27,6 +30,32 @@ describe('Encabezado', () => {
 
         expect(screen.getByRole('search')).toBeInTheDocument();
         expect(screen.queryByRole('link', { name: 'Mi Perfil' })).not.toBeInTheDocument();
+    });
+
+    it('un cliente con sesión ve el enlace a Mis itinerarios', () => {
+        renderizar();
+
+        expect(screen.getByRole('link', { name: 'Mis itinerarios' })).toHaveAttribute('href', '/itinerarios');
+    });
+
+    it('un administrador no ve el enlace a Mis itinerarios', () => {
+        renderizar('completo', 'ROLE_ADMIN');
+
+        expect(screen.queryByRole('link', { name: 'Mis itinerarios' })).not.toBeInTheDocument();
+    });
+
+    it('sin sesión no ve el enlace a Mis itinerarios', () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        render(
+            <MemoryRouter>
+                <AuthProvider>
+                    <Encabezado />
+                </AuthProvider>
+            </MemoryRouter>,
+        );
+
+        expect(screen.queryByRole('link', { name: 'Mis itinerarios' })).not.toBeInTheDocument();
     });
 
     it('en las pantallas de itinerarios no tiene buscador y ofrece Mi Perfil, Destinos e Inicio', () => {

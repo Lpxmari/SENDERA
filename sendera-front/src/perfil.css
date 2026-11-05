@@ -32,7 +32,8 @@
 .perfil-resumen__texto { flex: 1; }
 .perfil-resumen__usuario { margin: 0; font-size: 17px; }
 .perfil-resumen__nivel { margin: 2px 0 0; color: var(--verde); font-size: 17px; }
-.perfil-resumen__historial { padding: 14px 22px; font-size: 15px; }
+.perfil-resumen__acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+.perfil-resumen__historial { padding: 14px 22px; font-size: 15px; text-align: center; }
 
 .perfil-avatar {
     position: relative;

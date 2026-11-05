@@ -105,6 +105,8 @@ const Encabezado = ({ variante = 'completo' }: EncabezadoProps) => {
                     {variante === 'itinerarios' && <a href="/#destinos-populares">Destinos</a>}
                     {variante === 'completo' && enInicio && <a href="#destinos-populares">Destinos</a>}
                     <Link to="/">Inicio</Link>
+                    {/* Los itinerarios personales son solo para clientes; en sus propias pantallas ya se está dentro. */}
+                    {variante === 'completo' && autenticado && !esAdmin && <Link to="/itinerarios">Mis itinerarios</Link>}
                     {autenticado ? (
                         <>
                             {usuario && (
