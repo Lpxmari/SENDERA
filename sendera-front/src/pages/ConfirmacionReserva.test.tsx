@@ -33,6 +33,13 @@ describe('ConfirmacionReserva', () => {
         expect(screen.getByText(/Pendiente de confirmación/)).toBeInTheDocument();
     });
 
+    it('una reserva pendiente ofrece pagarla con Mercado Pago', () => {
+        renderizar({ reserva: RESERVA });
+
+        expect(screen.getByRole('button', { name: 'Pagar con Mercado Pago' })).toBeInTheDocument();
+        expect(screen.getByText(/Págala con Mercado Pago para confirmarla/)).toBeInTheDocument();
+    });
+
     it('enlaza a "Mis reservas" en el perfil', () => {
         renderizar({ reserva: RESERVA });
 

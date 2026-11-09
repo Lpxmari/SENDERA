@@ -58,7 +58,8 @@ El administrador podrá gestionar usuarios, destinos, actividades y reservas den
 
 ## RF-014 — Integración de pagos
 Si el pago electrónico se confirma dentro del alcance, el backend coordinará el pago mediante una pasarela externa.  
-**Aceptación:** SENDERA no almacena números completos de tarjeta ni códigos de seguridad; se validan callbacks/webhooks según el proveedor.
+**Aceptación:** SENDERA no almacena números completos de tarjeta ni códigos de seguridad; se validan callbacks/webhooks según el proveedor.  
+**Implementación:** Mercado Pago Checkout Pro (redirección), en modo de prueba mientras se usen credenciales de prueba. El monto sale de la reserva; un pago aprobado por el monto exacto en COP confirma la reserva (PENDIENTE → CONFIRMADA). El estado se consulta siempre a la API de Mercado Pago (webhook firmado con `x-signature` o verificación desde la página de retorno), nunca desde la URL de retorno.
 
 ## RF-015 — Notificaciones
 El sistema podrá enviar notificaciones de eventos relevantes, como recuperación de contraseña o cambios de reserva, mediante un servicio dedicado.  

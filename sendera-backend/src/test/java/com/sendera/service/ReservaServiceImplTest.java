@@ -9,6 +9,7 @@ import com.sendera.model.Itinerario;
 import com.sendera.model.Reserva;
 import com.sendera.model.Usuario;
 import com.sendera.repository.ItinerarioRepository;
+import com.sendera.repository.PagoRepository;
 import com.sendera.repository.ReservaRepository;
 import com.sendera.repository.UsuarioRepository;
 import com.sendera.security.UsuarioActual;
@@ -46,6 +47,8 @@ class ReservaServiceImplTest {
     ItinerarioRepository itinerarioRepository;
     @Mock
     UsuarioRepository usuarioRepository;
+    @Mock
+    PagoRepository pagoRepository;
     @InjectMocks
     ReservaServiceImpl reservaService;
 

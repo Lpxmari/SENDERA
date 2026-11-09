@@ -42,6 +42,17 @@ app:
     expiracion-horas: ${JWT_EXPIRACION_HORAS:24}
   recuperacion:
     expiracion-minutos: ${RECUPERACION_EXPIRACION_MINUTOS:15}
+  pagos:
+    # Mercado Pago Checkout Pro. Sin access-token la app arranca igual y el pago en línea responde 503.
+    # Para pruebas (sandbox) usa el Access Token de prueba de "Tus integraciones"; nunca lo subas al repositorio.
+    mercadopago:
+      access-token: ${MERCADOPAGO_ACCESS_TOKEN:}
+      # Clave secreta de "Webhooks > Configurar notificaciones"; si se define, se exige la firma x-signature.
+      webhook-secret: ${MERCADOPAGO_WEBHOOK_SECRET:}
+      # Opcional: URL HTTPS pública del webhook por preferencia. Los pagos de prueba solo notifican a la URL
+      # configurada en "Tus integraciones", así que normalmente se deja vacía.
+      notification-url: ${MERCADOPAGO_NOTIFICATION_URL:}
+      api-url: ${MERCADOPAGO_API_URL:https://api.mercadopago.com}
   mail:
     remitente: ${MAIL_REMITENTE:no-reply@sendera.com}
     nombre-remitente: ${MAIL_NOMBRE_REMITENTE:Sendera}

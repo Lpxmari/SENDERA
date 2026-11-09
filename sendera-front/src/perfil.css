@@ -181,12 +181,23 @@
 
 .perfil-historial li {
     display: grid;
-    grid-template-columns: 2fr 1fr 1fr auto;
+    /* Columnas fijas: cada fila es su propia grilla y las acciones son opcionales; así todas quedan alineadas */
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) 12rem 7.5rem 7rem;
+    align-items: center;
     gap: 12px;
     padding: 10px 0;
     border-top: 1px solid var(--borde);
     font-size: 15px;
 }
+
+.perfil-historial__verificar {
+    grid-column: 5;
+    color: var(--verde-oscuro);
+    font-weight: 600;
+    text-decoration: underline;
+    padding: 10px 0;
+}
+.perfil-historial .pago__boton { grid-column: 6; }
 
 .perfil-estado { font-weight: 600; font-size: 13px; }
 .perfil-estado--confirmada { color: var(--verde-oscuro); }
@@ -218,4 +229,6 @@
     .perfil-tarjetas,
     .perfil-opiniones { grid-template-columns: 1fr; }
     .perfil-historial li { grid-template-columns: 1fr 1fr; }
+    .perfil-historial__verificar,
+    .perfil-historial .pago__boton { grid-column: auto; }
 }

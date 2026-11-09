@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import BotonPagar from '../components/BotonPagar';
 import EstadoReserva from '../components/EstadoReserva';
 import DatoPerfil from '../components/perfil/DatoPerfil';
 import TarjetaPerfil from '../components/perfil/TarjetaPerfil';
@@ -305,6 +306,23 @@ const Perfil = () => {
                                     <span>{formatearFecha(viaje.fechaReserva)}</span>
                                     <span>{formatearPrecio(viaje.montoTotal)}</span>
                                     <EstadoReserva estado={viaje.estadoReserva} />
+                                    {viaje.estadoReserva === 'PENDIENTE' && viaje.estadoPago && (
+                                        <Link
+                                            to={`/pago/resultado?reserva=${viaje.id}`}
+                                            className="perfil-historial__verificar"
+                                            aria-label={`Verificar el pago de la reserva de ${viaje.destino}`}
+                                        >
+                                            Verificar pago
+                                        </Link>
+                                    )}
+                                    {viaje.estadoReserva === 'PENDIENTE' && viaje.estadoPago !== 'APROBADO' && (
+                                        <BotonPagar
+                                            reservaId={viaje.id}
+                                            texto="Pagar"
+                                            textoAbriendo="Abriendo…"
+                                            etiqueta={`Pagar la reserva de ${viaje.destino}`}
+                                        />
+                                    )}
                                 </li>
                             ))}
                         </ul>
