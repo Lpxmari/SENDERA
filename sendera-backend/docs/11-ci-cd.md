@@ -5,21 +5,44 @@ Los workflows viven en la **raíz del repositorio** (`.github/workflows/`), porq
 ## Flujo
 
 ```
-Pull request a main ──► CI: backend + frontend           (nunca despliega)
-Push/merge a main   ──► CI: backend + frontend ──► CD: desplegar ──► prueba de humo
+feature-* ──► dev ──► main        (solo main despliega)
+
+Push o pull request a dev ──► CI: secretos + backend + frontend           (nunca despliega)
+Pull request a main       ──► CI: secretos + backend + frontend           (nunca despliega)
+Push/merge a main         ──► CI: secretos + backend + frontend ──► CD: desplegar ──► prueba de humo
 ```
+
+El CI se ejecuta en `push` y `pull_request` hacia `main` y `dev` (y a mano con `workflow_dispatch`). El CD conserva su condición (`github.event_name == 'push' && github.ref == 'refs/heads/main'`), así que **nunca corre en `dev` ni en pull requests**.
 
 ### CI (`.github/workflows/ci.yaml`)
 | Trabajo | Qué ejecuta |
 |---|---|
+| **0. Escaneo de secretos** (gitleaks) | Revisa **todo el historial** de git (`fetch-depth: 0`) con `gitleaks/gitleaks-action@v2` en busca de credenciales filtradas (tokens, claves de API, contraseñas). Si encuentra alguna, el trabajo falla y bloquea el CD. Ver «Escaneo de secretos». |
 | **1. Backend** (`sendera-backend`, Java 21) | `./gradlew check`: compila, corre las pruebas (H2, perfil `test`, sin MySQL), genera el informe JaCoCo y exige **70 % de cobertura de líneas**. Después `bootJar` para comprobar que el jar se arma. Sube los informes como artefacto. |
 | **1b. SonarQube** (opcional) | Solo si existe el secreto `SONAR_TOKEN` y el PR no viene de un fork. Usa el XML de JaCoCo. |
 | **2. Frontend** (`sendera-front`, Node 22) | `npm ci` (según `package-lock.json`), `tsc --noEmit`, `oxlint`, Vitest y `vite build`. Sube `dist` como artefacto. |
 
 Una ejecución nueva sobre la misma rama cancela la anterior en los pull requests.
 
+### Escaneo de secretos (gitleaks)
+**Propósito:** que ninguna credencial llegue o permanezca en el repositorio sin que nadie lo note (hallazgos NC-03a y OM-05 de la auditoría externa). Corre en cada push y pull request a `main` y `dev`, y el CD depende de este trabajo (`needs: [secretos, backend, frontend]`).
+
+- Usa las reglas por defecto de gitleaks. El repositorio es de una cuenta personal, así que no requiere `GITLEAKS_LICENSE`; solo `GITHUB_TOKEN`, que GitHub entrega al workflow.
+- El workflow mantiene `permissions: contents: read`. Si algún día se quiere que gitleaks comente en los pull requests, agrega `pull-requests: write` solo en el trabajo `secretos`.
+- Si el trabajo falla, **trátalo primero como una filtración real**: revoca o cambia la credencial y límpiala del código. Quitarla de un commit nuevo no la borra del historial.
+- Para ejecutarlo en local sobre todo el historial (con Docker):
+  ```bash
+  docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source /repo --log-opts="--all" --redact -v
+  ```
+
+**Falsos positivos y `.gitleaksignore`:** si el hallazgo no es un secreto (por ejemplo, un valor de ejemplo) o es una credencial ya invalidada, agrega su *fingerprint* (línea `Fingerprint:` del informe, con la forma `commit:archivo:regla:línea`) a `.gitleaksignore` en la raíz del repositorio, **una por línea**, con un comentario `#` encima que explique por qué es seguro ignorarla y desde cuándo. Revisa cada cambio de ese archivo en el pull request: no ignores nada que siga siendo válido. Ejemplo:
+```
+# Contraseña de cuenta de prueba cambiada el 10/11/2026; ya no es válida.
+<commit>:<archivo>:<regla>:<línea>
+```
+
 ### CD (`.github/workflows/cd.yaml`)
-Se invoca desde el CI (`workflow_call`) **solo** tras un push a `main` con backend y frontend en verde. Se usa `workflow_call` y no `workflow_run` para no ejecutar código de forks con acceso a secretos.
+Se invoca desde el CI (`workflow_call`) **solo** tras un push a `main` con secretos, backend y frontend en verde. Se usa `workflow_call` y no `workflow_run` para no ejecutar código de forks con acceso a secretos.
 
 Hay un solo ambiente (`production`) y los cuatro pasos corren en orden; si uno falla, los siguientes no se ejecutan:
 
@@ -61,7 +84,7 @@ Crea también el entorno **production** (Settings → Environments) y, si quiere
 - Genera un dominio público (Settings → Networking). Ese dominio va en `FRONTEND_URL` de GitHub y en `CORS_ORIGINS` y `FRONTEND_URL` del **backend** (sin comodines).
 - El token de proyecto (`RAILWAY_TOKEN`) sirve para ambos servicios porque están en el mismo ambiente.
 
-**Protección de la rama:** en Settings → Branches exige que los trabajos `1. Backend` y `2. Frontend` pasen antes de fusionar a `main`.
+**Protección de la rama:** en Settings → Branches (para `main` y, si quieres, `dev`) exige que los trabajos `0. Escaneo de secretos (gitleaks)`, `1. Backend` y `2. Frontend` pasen antes de fusionar a `main`.
 
 ## Qué cambió en el proyecto para soportarlo
 - `build.gradle`: plugin JaCoCo, umbral de cobertura (`check`), `bootJar` → `build/libs/app.jar`, dependencia `spring-boot-starter-actuator`.
