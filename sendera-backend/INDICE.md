@@ -39,6 +39,7 @@ Este paquete reúne el contexto del proyecto, requisitos iniciales, convenciones
 - `docs/09-trazabilidad-requisitos.md`
 - `docs/10-plan-implementacion.md`
 - `docs/11-ci-cd.md`
+- `docs/12-respaldo-y-recuperacion.md`
 - `docs/adr/ADR-001-arquitectura-por-capas.md`
 - `docs/adr/ADR-002-seguridad-jwt.md`
 - `docs/adr/ADR-003-persistencia-relacional.md`
