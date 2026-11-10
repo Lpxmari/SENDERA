@@ -1,4 +1,4 @@
-import { CrearReservaRequest, Reserva } from '../types/reserva';
+import { CrearReservaRequest, PreferenciaPago, Reserva } from '../types/reserva';
 import apiClient from './apiClient';
 
 /** Reservas del usuario autenticado (el backend filtra por el JWT). */
@@ -11,4 +11,16 @@ export const listarMisReservas = async (): Promise<Reserva[]> => {
 export const crearReserva = async (reservaData: CrearReservaRequest): Promise<Reserva> => {
     const { data } = await apiClient.post<Reserva>('/reservas', reservaData);
     return data; // 201 Created
+};
+
+/** Crea el pago de Mercado Pago de una reserva propia; el monto lo fija el backend. */
+export const iniciarPago = async (reservaId: number): Promise<PreferenciaPago> => {
+    const { data } = await apiClient.post<PreferenciaPago>(`/reservas/${reservaId}/pago`);
+    return data;
+};
+
+/** El backend consulta el pago en Mercado Pago (nunca se confía en la URL de retorno) y devuelve la reserva. */
+export const verificarPago = async (reservaId: number): Promise<Reserva> => {
+    const { data } = await apiClient.post<Reserva>(`/reservas/${reservaId}/pago/verificar`);
+    return data;
 };

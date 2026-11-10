@@ -11,6 +11,7 @@ import ResultadosBusqueda from './pages/ResultadosBusqueda';
 import DetalleDestino from './pages/DetalleDestino';
 import FormularioReserva from './pages/FormularioReserva';
 import ConfirmacionReserva from './pages/ConfirmacionReserva';
+import ResultadoPago from './pages/ResultadoPago';
 import Perfil from './pages/Perfil';
 import CrearItinerario from './pages/CrearItinerario';
 import DetalleItinerario from './pages/DetalleItinerario';
@@ -72,6 +73,8 @@ function App() {
                                 <Route path="/perfil" element={<Perfil />} />
                             </Route>
                             <Route path="/confirmacion" element={<ConfirmacionReserva />} />
+                            {/* Retorno desde Mercado Pago (back_urls del backend) */}
+                            <Route path="/pago/resultado" element={<ResultadoPago />} />
                         </Route>
                     </Route>
 

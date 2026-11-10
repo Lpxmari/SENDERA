@@ -62,6 +62,8 @@ public class SecurityConfig {
             "/auth/cambiar-contrasena"
     };
 
+    private static final String WEBHOOK_PAGOS = "/pagos/webhook";
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper,
                                                    ObjectProvider<CuentaActivaVerificador> verificadorCuenta,
@@ -81,6 +83,8 @@ public class SecurityConfig {
                         // Chequeo de salud del despliegue: solo health, sin detalles (ver application.yaml)
                         .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
                         .requestMatchers(AUTH_PUBLICAS).permitAll()
+                        // Webhook de Mercado Pago: lo llama la pasarela sin JWT; se autentica con la firma x-signature
+                        .requestMatchers(HttpMethod.POST, WEBHOOK_PAGOS).permitAll()
                         // Consulta de destinos abierta; crear/modificar/eliminar solo administradores
                         .requestMatchers(HttpMethod.GET, "/destinos", "/destinos/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actividades", "/actividades/**").permitAll()
@@ -172,6 +176,7 @@ public class SecurityConfig {
         matchers.add(new AntPathRequestMatcher("/actividades/**", HttpMethod.GET.name()));
         matchers.add(new AntPathRequestMatcher("/actuator/health/**", HttpMethod.GET.name()));
         matchers.add(new AntPathRequestMatcher("/actuator/health", HttpMethod.GET.name()));
+        matchers.add(new AntPathRequestMatcher(WEBHOOK_PAGOS, HttpMethod.POST.name()));
         return new OrRequestMatcher(matchers);
     }
 

@@ -5,10 +5,13 @@ import com.sendera.dto.ReservaDto;
 import com.sendera.exception.RecursoNoEncontradoException;
 import com.sendera.exception.ReservaNoPermitidaException;
 import com.sendera.model.Destino;
+import com.sendera.model.EstadoPago;
 import com.sendera.model.EstadoReserva;
 import com.sendera.model.Itinerario;
+import com.sendera.model.Pago;
 import com.sendera.model.Reserva;
 import com.sendera.repository.ItinerarioRepository;
+import com.sendera.repository.PagoRepository;
 import com.sendera.repository.ReservaRepository;
 import com.sendera.repository.UsuarioRepository;
 import com.sendera.security.UsuarioActual;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +35,7 @@ public class ReservaServiceImpl implements ReservaService {
     private final ReservaRepository reservaRepository;
     private final ItinerarioRepository itinerarioRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PagoRepository pagoRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -38,13 +43,20 @@ public class ReservaServiceImpl implements ReservaService {
         List<Reserva> reservas = solicitante.admin()
                 ? reservaRepository.findAllByOrderByIdAsc()
                 : reservaRepository.findByUsuarioIdOrderByIdAsc(solicitante.id());
-        return reservas.stream().map(this::convertirADto).collect(Collectors.toList());
+        // Estados de pago en una sola consulta, para no consultar un pago por cada reserva
+        Map<Long, EstadoPago> estadosPago = reservas.isEmpty() ? Map.of()
+                : pagoRepository.findByReservaIdIn(reservas.stream().map(Reserva::getId).toList()).stream()
+                        .collect(Collectors.toMap(pago -> pago.getReserva().getId(), Pago::getEstadoPago));
+        return reservas.stream()
+                .map(reserva -> convertirADto(reserva, estadosPago.get(reserva.getId())))
+                .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public ReservaDto obtenerPorId(Long id, UsuarioActual solicitante) {
-        return convertirADto(buscarAutorizada(id, solicitante));
+        Reserva reserva = buscarAutorizada(id, solicitante);
+        return convertirADto(reserva, estadoPagoDe(reserva));
     }
 
     @Override
@@ -71,7 +83,7 @@ public class ReservaServiceImpl implements ReservaService {
                 .estadoReserva(EstadoReserva.PENDIENTE)
                 .build();
 
-        return convertirADto(reservaRepository.save(reserva));
+        return convertirADto(reservaRepository.save(reserva), null);
     }
 
     @Override
@@ -85,7 +97,11 @@ public class ReservaServiceImpl implements ReservaService {
         reserva.setEstadoReserva(EstadoReserva.CANCELADA);
         Itinerario itinerario = reserva.getItinerario();
         itinerario.setCuposDisponibles(itinerario.getCuposDisponibles() + 1);
-        return convertirADto(reservaRepository.save(reserva));
+        return convertirADto(reservaRepository.save(reserva), estadoPagoDe(reserva));
+    }
+
+    private EstadoPago estadoPagoDe(Reserva reserva) {
+        return pagoRepository.findByReservaId(reserva.getId()).map(Pago::getEstadoPago).orElse(null);
     }
 
     /** La fecha elegida debe caer dentro del viaje (inclusive); se valida antes de descontar el cupo. */
@@ -105,7 +121,7 @@ public class ReservaServiceImpl implements ReservaService {
                 .orElseThrow(() -> new RecursoNoEncontradoException("Reserva no encontrada con id: " + id));
     }
 
-    private ReservaDto convertirADto(Reserva reserva) {
+    private ReservaDto convertirADto(Reserva reserva, EstadoPago estadoPago) {
         Itinerario itinerario = reserva.getItinerario();
         Destino destino = itinerario != null ? itinerario.getDestino() : null;
         return ReservaDto.builder()
@@ -114,6 +130,7 @@ public class ReservaServiceImpl implements ReservaService {
                 .fechaReserva(reserva.getFechaReserva())
                 .montoTotal(reserva.getMontoTotal())
                 .estadoReserva(reserva.getEstadoReserva() != null ? reserva.getEstadoReserva().name() : null)
+                .estadoPago(estadoPago != null ? estadoPago.name() : null)
                 .itinerarioNombre(itinerario != null ? itinerario.getNombre() : null)
                 .destinoId(destino != null ? destino.getId() : null)
                 .destinoNombre(destino != null ? destino.getNombre() : null)
