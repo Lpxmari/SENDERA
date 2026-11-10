@@ -1,0 +1,12 @@
+# Falsos positivos de gitleaks (regla generic-api-key) en sendera-backend/.env.example.
+# Son valores de ejemplo, no credenciales: texto de relleno o una línea vacía.
+# Agregar aquí solo fingerprints verificados; cada uno con su motivo.
+
+# MAIL_PASSWORD comentado con el texto de ejemplo "contrasena-de-aplicacion-de-16-letras-sin-espacios".
+75cfa0033e85923fffd42a0c3a8cb0dea21bbeb6:sendera-backend/.env.example:generic-api-key:26
+
+# JWT_SECRET con el texto de ejemplo "cambiar-por-una-clave-larga-y-aleatoria-de-32-o-mas-caracteres".
+87545d5d9780fc26950e8ed4d8a4c5fc4b496d26:sendera-backend/.env.example:generic-api-key:9
+
+# "# JWT_SECRET=" vacío; el patrón abarcó también la línea siguiente (JWT_EXPIRACION_HORAS=24).
+f36e3491b77bdea0d0a6ee05404fed0f2960e525:sendera-backend/.env.example:generic-api-key:8

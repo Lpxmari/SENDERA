@@ -4,9 +4,9 @@ name: CI
 # Debe vivir en la raíz del repositorio: GitHub solo lee .github/workflows/ de la raíz.
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
   workflow_dispatch:
 
 # Una ejecución nueva sobre la misma rama cancela la anterior (ahorra minutos en los PR).
@@ -18,6 +18,22 @@ permissions:
   contents: read
 
 jobs:
+  secretos:
+    name: 0. Escaneo de secretos (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar código (historial completo)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # Repositorio de cuenta personal: no requiere GITLEAKS_LICENSE.
+      # Falsos positivos: ver sendera-backend/docs/11-ci-cd.md y .gitleaksignore.
+      - name: Escanear credenciales filtradas
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   backend:
     name: 1. Backend (build, tests y cobertura)
     runs-on: ubuntu-latest
@@ -121,10 +137,10 @@ jobs:
           path: sendera-front/dist
           retention-days: 14
 
-  # El CD solo corre al integrar en main (merge de PR); los pull requests nunca llegan aquí.
+  # El CD solo corre al integrar en main (merge de PR); los pull requests y dev nunca llegan aquí.
   cd:
     name: CD
-    needs: [backend, frontend]
+    needs: [secretos, backend, frontend]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     uses: ./.github/workflows/cd.yaml
     secrets: inherit
