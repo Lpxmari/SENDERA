@@ -7,7 +7,10 @@ import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.sendera.security.CuentaActivaVerificador;
+import com.sendera.security.LimiteLoginFilter;
+import com.sendera.security.LimiteLoginService;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -33,11 +36,13 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationFilter;
 import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
@@ -64,9 +69,19 @@ public class SecurityConfig {
 
     private static final String WEBHOOK_PAGOS = "/pagos/webhook";
 
+    /** Límite de intentos de POST /auth/login (ver docs/06-seguridad-y-autorizacion.md). */
+    @Bean
+    public LimiteLoginService limiteLoginService(
+            @Value("${app.seguridad.login.intentos-por-minuto:5}") int intentosPorMinuto,
+            @Value("${app.seguridad.login.intentos-por-ip-por-minuto:20}") int intentosPorIpPorMinuto) {
+        return new LimiteLoginService(intentosPorMinuto, intentosPorIpPorMinuto);
+    }
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper,
                                                    ObjectProvider<CuentaActivaVerificador> verificadorCuenta,
+                                                   LimiteLoginService limiteLogin,
+                                                   @Qualifier("handlerExceptionResolver") HandlerExceptionResolver resolvedorExcepciones,
                                                    @Value("${app.cors.allowed-origins}") List<String> origenesPermitidos) throws Exception {
         // Una cabecera Authorization vencida no debe bloquear rutas públicas (login, destinos).
         RequestMatcher publicas = rutasPublicas();
@@ -77,6 +92,9 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource(origenesPermitidos)))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // Va después de CORS (el 429 lleva las cabeceras CORS) y antes de cualquier autenticación o controlador.
+                .addFilterBefore(new LimiteLoginFilter(limiteLogin, resolvedorExcepciones, objectMapper),
+                        BearerTokenAuthenticationFilter.class)
                 .authorizeHttpRequests(requests -> requests
                         .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -111,6 +129,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(origenes);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        // Permite al frontend leer cuánto esperar tras un 429.
+        config.setExposedHeaders(List.of("Retry-After"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

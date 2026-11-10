@@ -3,6 +3,7 @@ package com.sendera.exception;
 import com.sendera.dto.ApiErrorDto;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -46,6 +47,15 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(CredencialesInvalidasException.class)
     public ResponseEntity<ApiErrorDto> handleCredencialesInvalidas(CredencialesInvalidasException ex, HttpServletRequest request) {
         return construir(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
+    /** 429 con {@code Retry-After} (segundos) para que el cliente sepa cuándo reintentar. */
+    @ExceptionHandler(LimiteIntentosExcedidoException.class)
+    public ResponseEntity<ApiErrorDto> handleLimiteIntentos(LimiteIntentosExcedidoException ex, HttpServletRequest request) {
+        ResponseEntity<ApiErrorDto> respuesta = construir(HttpStatus.TOO_MANY_REQUESTS, ex.getMessage(), request);
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.getSegundosEspera()))
+                .body(respuesta.getBody());
     }
 
     @ExceptionHandler(TokenRecuperacionInvalidoException.class)
