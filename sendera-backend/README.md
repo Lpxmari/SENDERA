@@ -73,6 +73,15 @@ El contrato HTTP vigente está en `docs/openapi.yaml`. El modelo de datos aproba
 - Se aceptan imágenes JPEG, PNG y WebP de hasta 5 MB. El archivo binario se guarda en `resenas.imagen` (LONGBLOB); el listado solo devuelve una ruta de imagen y no transfiere el BLOB hasta solicitarla.
 - `GET /api/v1/destinos/{destinoId}/resenas/{resenaId}/imagen` devuelve el archivo binario para mostrarlo directamente. Los avatares no forman parte de esta funcionalidad.
 
+### Pagos con Mercado Pago (RF-014)
+- Checkout Pro por redirección: `POST /api/v1/reservas/{id}/pago` crea la preferencia (monto de la reserva, referencia `SD-` + id con 6 dígitos) y el frontend lleva al comprador a `urlPago`. Los datos de la tarjeta se escriben en Mercado Pago, nunca en SENDERA.
+- Mercado Pago vuelve a `{FRONTEND_URL}/pago/resultado?reserva={id}`; esa página llama a `POST /reservas/{id}/pago/verificar`, que consulta el pago en la API de Mercado Pago. Un pago aprobado por el monto exacto en COP pasa la reserva de PENDIENTE a CONFIRMADA.
+- `POST /api/v1/pagos/webhook` es público y recibe las notificaciones; si `MERCADOPAGO_WEBHOOK_SECRET` está definido exige la firma `x-signature`.
+- Variables: `MERCADOPAGO_ACCESS_TOKEN` (obligatoria para pagar; sin ella el pago responde 503) y `MERCADOPAGO_WEBHOOK_SECRET` (recomendada en el despliegue). Ver `.env.example`.
+- **Modo de prueba (sandbox):** usa el Access Token de *Tus integraciones > tu aplicación > Credenciales de prueba*. Paga desde una ventana de incógnito, iniciando sesión en Mercado Pago con el **comprador de prueba** de *Cuentas de prueba*, y con una tarjeta de prueba (p. ej. Mastercard `5254 1336 7440 3564`, CVV `123`, vence `11/30`) con titular `APRO` (aprobado) u `OTHE` (rechazado) y documento `123456789`.
+- En local, Mercado Pago no acepta volver automáticamente a `localhost` ni puede llamar al webhook: tras pagar, regresa a SENDERA y en *Mi perfil > Consultar Historial de Viajes* pulsa **Verificar pago**; la verificación consulta el estado directamente en Mercado Pago.
+- En una base existente, aplica `docs/actualizar-pagos.sql` antes de desplegar.
+
 ### Base de datos
 - En el primer arranque, MySQL crea la base `sendera` si no existe y Spring ejecuta `src/main/resources/schema.sql` antes de que Hibernate valide las entidades (`ddl-auto: validate`). No se necesita ejecutar el script a mano.
 - `docs/schema.sql` es la referencia para Workbench y debe mantenerse sincronizada con la copia de `src/main/resources/schema.sql`. Esta última no contiene `CREATE DATABASE` ni `USE sendera`, porque la URL JDBC selecciona la base.

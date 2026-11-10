@@ -78,6 +78,21 @@ public class GlobalExceptionHandler {
         return construir(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
 
+    @ExceptionHandler(PagoNoDisponibleException.class)
+    public ResponseEntity<ApiErrorDto> handlePagoNoDisponible(PagoNoDisponibleException ex, HttpServletRequest request) {
+        return construir(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(PasarelaPagoException.class)
+    public ResponseEntity<ApiErrorDto> handlePasarelaPago(PasarelaPagoException ex, HttpServletRequest request) {
+        return construir(HttpStatus.BAD_GATEWAY, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(FirmaWebhookInvalidaException.class)
+    public ResponseEntity<ApiErrorDto> handleFirmaWebhook(FirmaWebhookInvalidaException ex, HttpServletRequest request) {
+        return construir(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
+    }
+
     @ExceptionHandler(ResenaNoPermitidaException.class)
     public ResponseEntity<ApiErrorDto> handleResenaNoPermitida(ResenaNoPermitidaException ex, HttpServletRequest request) {
         return construir(HttpStatus.FORBIDDEN, ex.getMessage(), request);

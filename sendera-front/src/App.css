@@ -1173,4 +1173,13 @@
 .reserva__resumen dt { font-weight: 700; }
 .reserva__resumen dd { margin: 0; }
 .reserva__acciones { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+
+/* Pago con Mercado Pago */
+.pago { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+.pago__boton { min-height: 48px; padding: 12px 22px; font-size: 17px; }
+.pago__boton:disabled { opacity: 0.6; cursor: progress; }
+/* En el historial el botón ocupa su columna y el aviso de error baja a una fila completa */
+.perfil-historial .pago { display: contents; }
+.perfil-historial .pago .reserva__aviso { grid-column: 1 / -1; margin: 0; }
+.perfil-historial .pago__boton { min-height: 44px; padding: 8px 18px; font-size: 15px; }
 .reserva__acciones .boton { display: inline-flex; align-items: center; justify-content: center; min-height: 48px; padding: 0 22px; text-decoration: none; font-size: 17px; }

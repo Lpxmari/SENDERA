@@ -69,6 +69,7 @@ export const fetchHistorialViajes = async (): Promise<ViajeHistorial[]> => {
             fechaReserva: reserva.fechaReserva,
             montoTotal: reserva.montoTotal,
             estadoReserva: reserva.estadoReserva,
+            estadoPago: reserva.estadoPago ?? null,
         }))
         .sort((a, b) => b.fechaReserva.localeCompare(a.fechaReserva) || b.id - a.id);
 };

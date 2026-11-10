@@ -15,7 +15,11 @@ vi.mock('../services/authService', async (original) => ({
     actualizarCuenta: vi.fn(),
 }));
 
-vi.mock('../services/reservaService', () => ({ listarMisReservas: vi.fn(), crearReserva: vi.fn() }));
+vi.mock('../services/reservaService', () => ({
+    listarMisReservas: vi.fn(),
+    crearReserva: vi.fn(),
+    iniciarPago: vi.fn(),
+}));
 
 const reserva = (
     id: number,
@@ -209,6 +213,33 @@ describe('Perfil', () => {
         expect(within(historial).getByText(/Pendiente de confirmación/)).toBeInTheDocument();
         expect(within(historial).getByText(/Confirmada/)).toBeInTheDocument();
         expect(within(historial).getByText(/Cancelada/)).toBeInTheDocument();
+    });
+
+    it('ofrece pagar solo las reservas pendientes', async () => {
+        renderizar();
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Consultar Historial de Viajes' }));
+
+        const historial = await screen.findByRole('region', { name: 'Historial de viajes' });
+        const botones = within(historial).getAllByRole('button', { name: /^Pagar la reserva/ });
+        expect(botones).toHaveLength(1);
+        expect(botones[0]).toHaveAccessibleName('Pagar la reserva de Finca Hotel Los Arrayanes');
+        // Sin un pago iniciado no hay nada que verificar
+        expect(within(historial).queryByRole('link', { name: /Verificar el pago/ })).not.toBeInTheDocument();
+    });
+
+    it('con un pago iniciado enlaza a verificarlo', async () => {
+        vi.mocked(listarMisReservas).mockResolvedValue([{ ...RESERVAS[1], estadoPago: 'RECHAZADO' }]);
+        renderizar();
+
+        fireEvent.click(await screen.findByRole('button', { name: 'Consultar Historial de Viajes' }));
+
+        const historial = await screen.findByRole('region', { name: 'Historial de viajes' });
+        expect(
+            within(historial).getByRole('link', {
+                name: 'Verificar el pago de la reserva de Finca Hotel Los Arrayanes',
+            }),
+        ).toHaveAttribute('href', '/pago/resultado?reserva=2');
     });
 
     it('sin reservas muestra un mensaje de lista vacía', async () => {

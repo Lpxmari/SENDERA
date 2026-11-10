@@ -13,6 +13,8 @@ public class ReservaDto {
     private LocalDate fechaReserva;
     private BigDecimal montoTotal;
     private String estadoReserva;
+    /** Estado del pago en Mercado Pago; null si todavía no se ha iniciado un pago. */
+    private String estadoPago;
     private Long destinoId;
     private String destinoNombre;
     private String itinerarioNombre;

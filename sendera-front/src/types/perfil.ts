@@ -1,4 +1,4 @@
-import { EstadoReserva } from './reserva';
+import { EstadoPago, EstadoReserva } from './reserva';
 
 /**
  * Perfil del viajero. PROPUESTA de contrato: aún no existe en docs/openapi.yaml ni en el MER,
@@ -32,4 +32,5 @@ export interface ViajeHistorial {
     fechaReserva: string; // ISO: YYYY-MM-DD
     montoTotal: number;
     estadoReserva: EstadoReserva;
+    estadoPago?: EstadoPago | null;
 }

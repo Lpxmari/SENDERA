@@ -411,6 +411,118 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorInterno'
 
+  /reservas/{id}/pago:
+    post:
+      summary: Iniciar el pago de una reserva con Mercado Pago (RF-014)
+      description: >-
+        Crea una preferencia de Checkout Pro con el monto de la reserva (lo fija el servidor) y la referencia externa
+        `SD-` + id con 6 dígitos. El frontend redirige al comprador a `urlPago`; los datos de la tarjeta se escriben en
+        Mercado Pago, nunca en SENDERA. Al terminar, Mercado Pago vuelve a `{FRONTEND_URL}/pago/resultado?reserva={id}`.
+        Solo el titular puede pagar (reserva ajena: 404). 409 si la reserva está cancelada, confirmada o ya pagada;
+        503 si el pago en línea no está configurado; 502 si Mercado Pago no responde.
+      operationId: iniciarPagoReserva
+      tags:
+        - Pagos
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Preferencia creada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenciaPago'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '409':
+          $ref: '#/components/responses/Conflicto'
+        '502':
+          $ref: '#/components/responses/PasarelaNoResponde'
+        '503':
+          $ref: '#/components/responses/PagoNoDisponible'
+
+  /reservas/{id}/pago/verificar:
+    post:
+      summary: Consultar en Mercado Pago el pago de una reserva y actualizarla
+      description: >-
+        El servidor busca en Mercado Pago los pagos con la referencia de la reserva y aplica el vigente (un pago
+        aprobado por el monto exacto en COP confirma la reserva). No usa los parámetros de la URL de retorno. Sirve
+        cuando el webhook no puede llegar (p. ej. en local). Propietario o ROLE_ADMIN; reserva ajena: 404.
+      operationId: verificarPagoReserva
+      tags:
+        - Pagos
+      parameters:
+        - $ref: '#/components/parameters/IdRecurso'
+      responses:
+        '200':
+          description: Reserva con su estado de reserva y de pago actualizados.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reserva'
+        '401':
+          $ref: '#/components/responses/NoAutorizado'
+        '404':
+          $ref: '#/components/responses/RecursoNoEncontrado'
+        '502':
+          $ref: '#/components/responses/PasarelaNoResponde'
+
+  /pagos/webhook:
+    post:
+      summary: Webhook de notificaciones de Mercado Pago
+      description: >-
+        Público (sin JWT): lo llama Mercado Pago. Si `MERCADOPAGO_WEBHOOK_SECRET` está definido, exige una cabecera
+        `x-signature` válida (HMAC-SHA256 de `id:{data.id};request-id:{x-request-id};ts:{ts};`). El cuerpo solo
+        indica qué pago cambió: su estado se consulta a la API de Mercado Pago. Notificaciones de otros tipos o de
+        pagos ajenos responden 200 y se ignoran.
+      operationId: recibirNotificacionPago
+      security: []
+      tags:
+        - Pagos
+      parameters:
+        - name: data.id
+          in: query
+          required: false
+          schema:
+            type: string
+          example: "123456789"
+        - name: type
+          in: query
+          required: false
+          schema:
+            type: string
+          example: payment
+        - name: x-signature
+          in: header
+          required: false
+          schema:
+            type: string
+          example: "ts=1742505638683,v1=ced36ab6d33566bb1e16c125819b8d840d6b8ef136b0b9127c76064466f5229b"
+        - name: x-request-id
+          in: header
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificacionMercadoPago'
+      responses:
+        '200':
+          description: Notificación recibida.
+        '401':
+          description: Firma ausente o inválida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
+        '502':
+          $ref: '#/components/responses/PasarelaNoResponde'
+
   /actividades:
     get:
       summary: Listar actividades turísticas
@@ -1298,6 +1410,12 @@ components:
           type: string
           enum: [PENDIENTE, CONFIRMADA, CANCELADA]
           example: "CONFIRMADA"
+        estadoPago:
+          type: string
+          nullable: true
+          enum: [PENDIENTE, APROBADO, RECHAZADO, REEMBOLSADO]
+          description: Estado del pago en Mercado Pago; null si aún no se ha iniciado un pago.
+          example: "APROBADO"
         destinoId:
           type: integer
           format: int64
@@ -1310,6 +1428,37 @@ components:
         itinerarioNombre:
           type: string
           example: "Fin de semana colonial"
+
+    PreferenciaPago:
+      type: object
+      required:
+        - preferenciaId
+        - urlPago
+      properties:
+        preferenciaId:
+          type: string
+          example: "787997534-6dad21a1-6145-4f0d-ac21-66bf7a5e7a58"
+        urlPago:
+          type: string
+          format: uri
+          description: Checkout Pro de Mercado Pago al que se redirige al comprador.
+          example: "https://www.mercadopago.com.co/checkout/v1/redirect?pref_id=787997534-6dad21a1-6145-4f0d-ac21-66bf7a5e7a58"
+
+    NotificacionMercadoPago:
+      type: object
+      properties:
+        type:
+          type: string
+          example: payment
+        action:
+          type: string
+          example: payment.updated
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              example: "123456789"
 
     CrearReservaDto:
       type: object
@@ -1805,6 +1954,20 @@ components:
 
     Conflicto:
       description: Conflicto con el estado actual, por ejemplo correo ya registrado, destino con itinerarios, sin cupos o reserva ya cancelada (409 Conflict)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    PasarelaNoResponde:
+      description: Mercado Pago no respondió o rechazó la operación (502 Bad Gateway)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    PagoNoDisponible:
+      description: El pago en línea no está configurado en este entorno (503 Service Unavailable)
       content:
         application/json:
           schema:
