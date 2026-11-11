@@ -18,7 +18,32 @@ CREATE TABLE IF NOT EXISTS usuarios (
     rol VARCHAR(20) NOT NULL DEFAULT 'ROLE_CLIENTE',
     activo BOOLEAN NOT NULL DEFAULT TRUE,
     fecha_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    -- Perfil del viajero (NC-01); opcional para las cuentas existentes. En una base existente: docs/actualizar-perfil-viajero.sql
+    numero_identificacion VARCHAR(15) NULL,
+    fecha_nacimiento DATE NULL,
+    pais_residencia VARCHAR(80) NULL,
     UNIQUE KEY uq_usuarios_correo (correo)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Destinos favoritos e intereses del perfil (NC-01): texto libre, en el orden que elige la persona.
+CREATE TABLE IF NOT EXISTS usuario_destinos_favoritos (
+    usuario_id BIGINT NOT NULL,
+    orden INT NOT NULL,
+    destino VARCHAR(80) NOT NULL,
+    PRIMARY KEY (usuario_id, orden),
+    CONSTRAINT fk_usuario_destinos_favoritos_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS usuario_intereses (
+    usuario_id BIGINT NOT NULL,
+    orden INT NOT NULL,
+    interes VARCHAR(60) NOT NULL,
+    PRIMARY KEY (usuario_id, orden),
+    CONSTRAINT fk_usuario_intereses_usuario
+        FOREIGN KEY (usuario_id) REFERENCES usuarios (id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Registro de acciones administrativas (RF-013). No guarda contrasenas, tokens ni datos personales sensibles:

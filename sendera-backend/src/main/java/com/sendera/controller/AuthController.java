@@ -54,7 +54,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UsuarioDto> perfil(@AuthenticationPrincipal Jwt jwt) {
+    public ResponseEntity<PerfilDto> perfil(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(authService.obtenerPerfil(jwt.getSubject()));
     }
 }

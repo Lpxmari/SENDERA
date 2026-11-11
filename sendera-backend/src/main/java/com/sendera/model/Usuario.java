@@ -3,7 +3,10 @@ package com.sendera.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "usuarios")
@@ -38,6 +41,32 @@ public class Usuario {
     @Column(nullable = false)
     @Builder.Default
     private boolean activo = true;
+
+    // ---- Datos del perfil del viajero (NC-01). Opcionales: las cuentas creadas antes no los tienen ----
+
+    @Column(name = "numero_identificacion", length = 15)
+    private String numeroIdentificacion;
+
+    @Column(name = "fecha_nacimiento")
+    private LocalDate fechaNacimiento;
+
+    @Column(name = "pais_residencia", length = 80)
+    private String paisResidencia;
+
+    /** Texto libre, en el orden elegido por la persona; no son destinos del catálogo. */
+    @ElementCollection
+    @CollectionTable(name = "usuario_destinos_favoritos", joinColumns = @JoinColumn(name = "usuario_id", nullable = false))
+    @OrderColumn(name = "orden")
+    @Column(name = "destino", nullable = false, length = 80)
+    @Builder.Default
+    private List<String> destinosFavoritos = new ArrayList<>();
+
+    @ElementCollection
+    @CollectionTable(name = "usuario_intereses", joinColumns = @JoinColumn(name = "usuario_id", nullable = false))
+    @OrderColumn(name = "orden")
+    @Column(name = "interes", nullable = false, length = 60)
+    @Builder.Default
+    private List<String> intereses = new ArrayList<>();
 
     @PrePersist
     void antesDePersistir() {

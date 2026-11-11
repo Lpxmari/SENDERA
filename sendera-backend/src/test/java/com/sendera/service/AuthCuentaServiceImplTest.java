@@ -3,8 +3,8 @@ package com.sendera.service;
 import com.sendera.dto.ActualizarPerfilDto;
 import com.sendera.dto.AuthRespuestaDto;
 import com.sendera.dto.LoginDto;
+import com.sendera.dto.PerfilDto;
 import com.sendera.dto.RegistroDto;
-import com.sendera.dto.UsuarioDto;
 import com.sendera.exception.ContrasenaActualIncorrectaException;
 import com.sendera.exception.CorreoYaRegistradoException;
 import com.sendera.exception.CredencialesInvalidasException;
@@ -25,6 +25,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -153,10 +155,76 @@ class AuthCuentaServiceImplTest {
     void obtenerPerfilDevuelveLosDatosSinElHash() {
         when(usuarioRepository.findByCorreo("maria@correo.com")).thenReturn(Optional.of(usuario()));
 
-        UsuarioDto dto = service.obtenerPerfil("maria@correo.com");
+        PerfilDto dto = service.obtenerPerfil("maria@correo.com");
 
         assertEquals("María", dto.getNombre());
         assertEquals("ROLE_CLIENTE", dto.getRol());
+        // Una cuenta que aún no completó el perfil: campos vacíos, nunca null en las listas
+        assertNull(dto.getNumeroIdentificacion());
+        assertEquals(List.of(), dto.getDestinosFavoritos());
+        assertEquals(List.of(), dto.getIntereses());
+    }
+
+    @Test
+    void obtenerPerfilIncluyeLosDatosDelViajero() {
+        Usuario usuario = usuario();
+        usuario.setNumeroIdentificacion("1094123456");
+        usuario.setFechaNacimiento(LocalDate.of(1958, 3, 23));
+        usuario.setPaisResidencia("Colombia");
+        usuario.getDestinosFavoritos().addAll(List.of("Cartagena", "Salento"));
+        usuario.getIntereses().add("Naturaleza");
+        when(usuarioRepository.findByCorreo("maria@correo.com")).thenReturn(Optional.of(usuario));
+
+        PerfilDto dto = service.obtenerPerfil("maria@correo.com");
+
+        assertEquals("1094123456", dto.getNumeroIdentificacion());
+        assertEquals(LocalDate.of(1958, 3, 23), dto.getFechaNacimiento());
+        assertEquals("Colombia", dto.getPaisResidencia());
+        assertEquals(List.of("Cartagena", "Salento"), dto.getDestinosFavoritos());
+        assertEquals(List.of("Naturaleza"), dto.getIntereses());
+    }
+
+    @Test
+    void actualizarPerfilGuardaLosDatosDelViajeroLimpiosYSinRepetidos() {
+        Usuario usuario = usuario();
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.saveAndFlush(usuario)).thenReturn(usuario);
+        ActualizarPerfilDto dto = perfil("maria@correo.com", null);
+        dto.setNumeroIdentificacion(" 1094123456 ");
+        dto.setFechaNacimiento(LocalDate.of(1958, 3, 23));
+        dto.setPaisResidencia("  Colombia ");
+        dto.setDestinosFavoritos(List.of(" Salento", "Cartagena ", "salento"));
+        dto.setIntereses(List.of("Naturaleza", "NATURALEZA", " Gastronomía "));
+
+        service.actualizarPerfil(7L, dto);
+
+        assertEquals("1094123456", usuario.getNumeroIdentificacion());
+        assertEquals(LocalDate.of(1958, 3, 23), usuario.getFechaNacimiento());
+        assertEquals("Colombia", usuario.getPaisResidencia());
+        assertEquals(List.of("Salento", "Cartagena"), usuario.getDestinosFavoritos());
+        assertEquals(List.of("Naturaleza", "Gastronomía"), usuario.getIntereses());
+    }
+
+    @Test
+    void losCamposDelViajeroQueNoSeEnvianSeConservanYUnaListaVaciaLaBorra() {
+        Usuario usuario = usuario();
+        usuario.setNumeroIdentificacion("1094123456");
+        usuario.setFechaNacimiento(LocalDate.of(1958, 3, 23));
+        usuario.setPaisResidencia("Colombia");
+        usuario.getDestinosFavoritos().add("Cartagena");
+        usuario.getIntereses().add("Naturaleza");
+        when(usuarioRepository.findById(7L)).thenReturn(Optional.of(usuario));
+        when(usuarioRepository.saveAndFlush(usuario)).thenReturn(usuario);
+        ActualizarPerfilDto dto = perfil("maria@correo.com", null);
+        dto.setIntereses(List.of());
+
+        service.actualizarPerfil(7L, dto);
+
+        assertEquals("1094123456", usuario.getNumeroIdentificacion());
+        assertEquals(LocalDate.of(1958, 3, 23), usuario.getFechaNacimiento());
+        assertEquals("Colombia", usuario.getPaisResidencia());
+        assertEquals(List.of("Cartagena"), usuario.getDestinosFavoritos());
+        assertEquals(List.of(), usuario.getIntereses());
     }
 
     @Test
