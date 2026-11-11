@@ -1121,6 +1121,8 @@ paths:
           $ref: '#/components/responses/PeticionInvalida'
         '401':
           $ref: '#/components/responses/NoAutorizado'
+        '429':
+          $ref: '#/components/responses/DemasiadosIntentos'
         '500':
           $ref: '#/components/responses/ErrorInterno'
 
@@ -1926,6 +1928,23 @@ components:
 
     RecursoNoEncontrado:
       description: Recurso no encontrado (404 Not Found)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+
+    DemasiadosIntentos:
+      description: >
+        Se superó el límite de intentos de inicio de sesión (429 Too Many Requests): 5 por minuto por IP + correo
+        y 20 por minuto por IP (configurables). El mensaje es «Demasiados intentos de inicio de sesión. Espera un
+        minuto e inténtalo de nuevo.»
+      headers:
+        Retry-After:
+          description: Segundos que faltan para poder reintentar.
+          schema:
+            type: integer
+            minimum: 1
+          example: 42
       content:
         application/json:
           schema:

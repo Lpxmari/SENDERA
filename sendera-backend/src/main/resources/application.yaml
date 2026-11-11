@@ -40,6 +40,11 @@ app:
     # Obligatorio, minimo 32 caracteres. Definelo en el entorno (JWT_SECRET); no lo guardes en el repositorio.
     secret: ${JWT_SECRET}
     expiracion-horas: ${JWT_EXPIRACION_HORAS:24}
+  seguridad:
+    login:
+      # Límite de POST /auth/login (RNF de seguridad, OB-02): intentos por minuto por IP + correo y tope por IP.
+      intentos-por-minuto: ${LOGIN_INTENTOS_POR_MINUTO:5}
+      intentos-por-ip-por-minuto: ${LOGIN_INTENTOS_POR_IP_POR_MINUTO:20}
   recuperacion:
     expiracion-minutos: ${RECUPERACION_EXPIRACION_MINUTOS:15}
   pagos:
