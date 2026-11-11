@@ -32,10 +32,11 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 | POST | `/api/v1/auth/registro` | Público | 201, 400, 409 |
 | POST | `/api/v1/auth/login` | Público; limitado a 5 intentos por minuto por IP + correo y 20 por IP (429 con `Retry-After`) | 200, 400, 401, 429 |
 | POST | `/api/v1/auth/recuperar-contrasena` | Público | 204, 400 |
-| POST | `/api/v1/auth/cambiar-contrasena` | Público | 204, 400 |
+| POST | `/api/v1/auth/verificar-codigo` | Público; comprueba el código de 6 números (`correo`, `codigo`) sin cambiar la contraseña | 204, 400 |
+| POST | `/api/v1/auth/cambiar-contrasena` | Público; cuerpo `correo`, `codigo` y `nuevaContrasena` (8 a 64 caracteres, con letras y números) | 204, 400 |
 | GET | `/api/v1/auth/me` | Autenticado | 200, 401 |
 | PUT | `/api/v1/auth/me` | Autenticado; actualiza nombre, apellidos y correo (la contraseña actual es obligatoria si el correo cambia) y devuelve un token nuevo | 200, 400, 401, 409 |
-| GET | `/api/v1/destinos` (filtros: `q`, `precioMin`, `precioMax`, `dificultad`, `accesibilidad`; la duración ya no filtra destinos: es un atributo de las actividades) | Público | 200, 400 |
+| GET | `/api/v1/destinos` (filtros: `q`, `nombre`, `ubicacion`, `precioMin`, `precioMax`, `dificultad`, `accesibilidad`; paginación: `page` y `size`; la duración ya no filtra destinos: es un atributo de las actividades) | Público; respuesta paginada (ver abajo) | 200, 400 |
 | GET | `/api/v1/actividades` (filtros: `destinoId`, `duracion` = `HASTA_60_MIN`, `DE_61_A_180_MIN` o `MAS_DE_180_MIN`) | Público | 200, 400 |
 | GET | `/api/v1/actividades/{id}` | Público | 200, 404 |
 | GET | `/api/v1/destinos/{id}` | Público | 200, 404 |
@@ -45,6 +46,8 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 | GET / POST | `/api/v1/reservas` | Autenticado | 200 / 201, 400, 401, 404, 409 |
 | GET | `/api/v1/reservas/{id}` | Autenticado | 200, 401, 404 |
 | PATCH | `/api/v1/reservas/{id}/cancelar` | Autenticado | 200, 401, 404, 409 |
+
+**Paginación de `GET /destinos` (OB-01):** `page` empieza en 0 (por defecto 0) y `size` es por defecto 12 con máximo 50: un `size` mayor se limita a 50 sin error; un `size` menor que 1 o un `page` negativo responde 400 con un mensaje en español en formato `ApiError`. La respuesta es `{ contenido, pagina, tamano, totalElementos, totalPaginas }` (`PaginaDestino` en `openapi.yaml`); `tamano` es el tamaño ya aplicado. Se resuelve en la consulta (LIMIT/OFFSET y COUNT), conserva todos los filtros y el orden por `id` ascendente. `nombre` y `ubicacion` filtran por texto contenido, sin distinguir mayúsculas. Los listados de administración (`/admin/...`) usan `PaginaDto` con `total`, un esquema distinto que se mantiene.
 
 **Datos de cada reserva:** además de `id`, `itinerarioId`, `fechaReserva`, `montoTotal` y `estadoReserva`, la respuesta incluye `destinoId`, `destinoNombre` e `itinerarioNombre`, que usa el historial de viajes del perfil (RF-012).
 

@@ -1,11 +1,15 @@
-import { CrearDestinoDto, Destino, FiltroDestinoParams } from '../types/destino';
+import { CrearDestinoDto, Destino, FiltroDestinoParams, PaginaDestinos } from '../types/destino';
 import { ItinerarioDisponible } from '../types/itinerario';
 import apiClient from './apiClient';
 
 /** Los errores se propagan sin silenciarlos; la capa de UI decide cómo mostrarlos (ver obtenerMensajeError). */
-export const listarDestinos = async (filtros?: FiltroDestinoParams): Promise<Destino[]> => {
+export const listarDestinos = async (filtros?: FiltroDestinoParams): Promise<PaginaDestinos> => {
     const params: Record<string, string | number | boolean> = {};
     if (filtros?.q) params.q = filtros.q;
+    if (filtros?.nombre) params.nombre = filtros.nombre;
+    if (filtros?.ubicacion) params.ubicacion = filtros.ubicacion;
+    if (filtros?.page !== undefined) params.page = filtros.page;
+    if (filtros?.size !== undefined) params.size = filtros.size;
     if (filtros?.precioMin !== undefined) params.precioMin = filtros.precioMin;
     if (filtros?.precioMax !== undefined) params.precioMax = filtros.precioMax;
     if (filtros?.dificultad) params.dificultad = filtros.dificultad;
@@ -13,8 +17,27 @@ export const listarDestinos = async (filtros?: FiltroDestinoParams): Promise<Des
         params.accesibilidad = filtros.accesibilidad;
     }
 
-    const { data } = await apiClient.get<Destino[]>('/destinos', { params });
+    const { data } = await apiClient.get<PaginaDestinos>('/destinos', { params });
     return data;
+};
+
+const TAMANO_MAXIMO_PAGINA = 50;
+
+/**
+ * Recorre todas las páginas (de 50 en 50). Solo para listas desplegables del panel de administración que necesitan
+ * todos los destinos; las pantallas públicas deben pedir una página.
+ */
+export const listarTodosLosDestinos = async (): Promise<Destino[]> => {
+    const destinos: Destino[] = [];
+    let pagina = 0;
+    let totalPaginas = 1;
+    while (pagina < totalPaginas) {
+        const respuesta = await listarDestinos({ page: pagina, size: TAMANO_MAXIMO_PAGINA });
+        destinos.push(...respuesta.contenido);
+        totalPaginas = respuesta.totalPaginas;
+        pagina += 1;
+    }
+    return destinos;
 };
 
 export const obtenerDestinoPorId = async (id: number): Promise<Destino> => {

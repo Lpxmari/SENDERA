@@ -1,18 +1,46 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { obtenerMensajeError } from '../services/apiClient';
+import { useConsultaAdmin } from '../components/admin/useConsultaAdmin';
+import PaginacionResultados from '../components/PaginacionResultados';
 import { fetchDestinos } from '../services/destinoService';
-import { Destino, DificultadEnum } from '../types/destino';
+import { DificultadEnum, FiltroDestinoParams } from '../types/destino';
 import { formatearPrecio } from '../utils/formatearPrecio';
 import {
     Orden,
     calcularNoches,
     datosResultado,
     estrellasFiltro,
+    RangoPresupuesto,
     opcionesOrden,
     rangosPresupuesto,
     serviciosFiltro,
 } from '../utils/datosResultados';
+
+const TAMANO_PAGINA = 12;
+const MENSAJE_CARGA = 'No pudimos cargar los alojamientos. Intenta de nuevo más tarde.';
+
+/**
+ * Filtros que resuelve el backend en la consulta, para que la paginación y los totales sean correctos.
+ * Una sola dificultad viaja al servidor; con varias, el servidor no filtra y se afina en la página (ver `resultados`).
+ * Con varios rangos de presupuesto se envía el límite inferior y el superior de todos ellos y se afina en la página.
+ */
+const filtrosDelServidor = (
+    termino: string,
+    dificultades: DificultadEnum[],
+    soloAccesibles: boolean,
+    rangos: RangoPresupuesto[],
+): FiltroDestinoParams => {
+    const filtros: FiltroDestinoParams = {};
+    if (termino) filtros.q = termino;
+    if (dificultades.length === 1) filtros.dificultad = dificultades[0];
+    if (soloAccesibles) filtros.accesibilidad = true;
+    if (rangos.length > 0) {
+        filtros.precioMin = Math.min(...rangos.map((r) => r.min));
+        const maximo = Math.max(...rangos.map((r) => r.max));
+        if (Number.isFinite(maximo)) filtros.precioMax = maximo;
+    }
+    return filtros;
+};
 
 const alternar = <T,>(lista: T[], valor: T): T[] =>
     lista.includes(valor) ? lista.filter((item) => item !== valor) : [...lista, valor];
@@ -46,14 +74,9 @@ const opcionesDificultad: { id: DificultadEnum; etiqueta: string }[] = [
 const ResultadosBusqueda = () => {
     const [searchParams] = useSearchParams();
     const terminoOriginal = (searchParams.get('destino') ?? '').trim();
-    const busqueda = terminoOriginal.toLowerCase();
     const llegada = searchParams.get('llegada') ?? '';
     const salida = searchParams.get('salida') ?? '';
     const noches = calcularNoches(llegada, salida);
-
-    const [destinos, setDestinos] = useState<Destino[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
 
     // Estados de filtros existentes
     const [presupuesto, setPresupuesto] = useState<string[]>([]);
@@ -67,19 +90,34 @@ const ResultadosBusqueda = () => {
     const [orden, setOrden] = useState<Orden>('recomendados');
     const [guardados, setGuardados] = useState<number[]>([]);
     const [filtrosAbiertos, setFiltrosAbiertos] = useState<boolean>(false);
+    const tituloRef = useRef<HTMLHeadingElement>(null);
 
-    useEffect(() => {
-        const cargarDestinos = async () => {
-            try {
-                setDestinos(await fetchDestinos());
-            } catch (err) {
-                setError(obtenerMensajeError(err, 'No pudimos cargar los alojamientos. Intenta de nuevo más tarde.'));
-            } finally {
-                setLoading(false);
-            }
-        };
-        cargarDestinos();
-    }, []);
+    const rangosActivos = useMemo(() => rangosPresupuesto.filter((r) => presupuesto.includes(r.id)), [presupuesto]);
+    const filtrosServidor = useMemo(
+        () => filtrosDelServidor(terminoOriginal, dificultades, soloAccesibles, rangosActivos),
+        [terminoOriginal, dificultades, soloAccesibles, rangosActivos],
+    );
+
+    // La página elegida es válida solo para los filtros con que se eligió: si cambian, se vuelve a la primera.
+    const claveFiltros = JSON.stringify(filtrosServidor);
+    const [paginaElegida, setPaginaElegida] = useState({ clave: '', numero: 0 });
+    const pagina = paginaElegida.clave === claveFiltros ? paginaElegida.numero : 0;
+
+    const { datos: respuesta, cargando: loading, error } = useConsultaAdmin(
+        `${claveFiltros}|${pagina}`,
+        () => fetchDestinos({ ...filtrosServidor, page: pagina, size: TAMANO_PAGINA }),
+        MENSAJE_CARGA,
+    );
+    const destinos = useMemo(() => respuesta?.contenido ?? [], [respuesta]);
+
+    const handleCambiarPagina = (numero: number) => {
+        setPaginaElegida({ clave: claveFiltros, numero });
+        const titulo = tituloRef.current;
+        if (titulo) {
+            if (typeof titulo.scrollIntoView === 'function') titulo.scrollIntoView({ block: 'start' });
+            titulo.focus({ preventScroll: true });
+        }
+    };
 
     const hayFiltros = presupuesto.length + servicios.length + estrellas.length + dificultades.length > 0 || soloAccesibles;
 
@@ -91,16 +129,15 @@ const ResultadosBusqueda = () => {
         setSoloAccesibles(false);
     };
 
+    // El texto, una dificultad, la accesibilidad y el rango de precio ya vienen filtrados del backend. Aquí se afinan
+    // los filtros que el backend aún no conoce (servicios y categoría son datos de ejemplo) o que admiten varias
+    // opciones, y el orden por precio: todo eso actúa solo sobre la página que se está viendo.
     const resultados = useMemo(() => {
-        const rangosActivos = rangosPresupuesto.filter((r) => presupuesto.includes(r.id));
-
         const filtrados = destinos.filter((destino) => {
-            if (busqueda && !`${destino.nombre} ${destino.ubicacion}`.toLowerCase().includes(busqueda)) return false;
-
-            const datos = datosResultado(destino);
+            const datosEjemplo = datosResultado(destino);
             if (rangosActivos.length > 0 && !rangosActivos.some((r) => destino.precioBase >= r.min && destino.precioBase <= r.max)) return false;
-            if (!servicios.every((servicio) => datos.servicios.includes(servicio))) return false;
-            if (estrellas.length > 0 && !estrellas.includes(datos.estrellas)) return false;
+            if (!servicios.every((servicio) => datosEjemplo.servicios.includes(servicio))) return false;
+            if (estrellas.length > 0 && !estrellas.includes(datosEjemplo.estrellas)) return false;
 
             // --- FILTRADO PROCESO 2 ---
             if (dificultades.length > 0 && !dificultades.includes(destino.dificultad)) return false;
@@ -112,9 +149,11 @@ const ResultadosBusqueda = () => {
         if (orden === 'precio-asc') return [...filtrados].sort((a, b) => a.precioBase - b.precioBase);
         if (orden === 'precio-desc') return [...filtrados].sort((a, b) => b.precioBase - a.precioBase);
         return filtrados;
-    }, [destinos, busqueda, presupuesto, servicios, estrellas, dificultades, soloAccesibles, orden]);
+    }, [destinos, rangosActivos, servicios, estrellas, dificultades, soloAccesibles, orden]);
 
-    const titulo = `${terminoOriginal || 'Todos los destinos'}: ${resultados.length} ${resultados.length === 1 ? 'alojamiento' : 'alojamientos'}`;
+    const totalElementos = respuesta?.totalElementos ?? 0;
+    const titulo = `${terminoOriginal || 'Todos los destinos'}: ${totalElementos} ${totalElementos === 1 ? 'alojamiento' : 'alojamientos'}`;
+    const hayFiltrosEnLaPagina = servicios.length + estrellas.length > 0 || dificultades.length > 1 || rangosActivos.length > 1;
 
     return (
         <div className="resultados">
@@ -225,8 +264,13 @@ const ResultadosBusqueda = () => {
 
                 <div className="resultados__cabecera">
                     <div>
-                        <h1 id="titulo-resultados" className="resultados__titulo">{titulo}</h1>
+                        <h1 id="titulo-resultados" className="resultados__titulo" ref={tituloRef} tabIndex={-1}>{titulo}</h1>
                         <p className="resultados__subtitulo">Opciones seleccionadas para tus fechas</p>
+                        {hayFiltrosEnLaPagina && respuesta && (
+                            <p className="resultados__subtitulo" role="status">
+                                En esta página, {resultados.length} de {destinos.length} cumplen tus filtros de servicios, categoría o presupuesto.
+                            </p>
+                        )}
                     </div>
                     <label className="orden">
                         <span>Ordenar:</span>
@@ -329,6 +373,15 @@ const ResultadosBusqueda = () => {
                         );
                     })}
                 </ul>
+
+                {respuesta && (
+                    <PaginacionResultados
+                        pagina={respuesta.pagina}
+                        totalPaginas={respuesta.totalPaginas}
+                        cargando={loading}
+                        onCambiar={handleCambiarPagina}
+                    />
+                )}
             </section>
         </div>
     );

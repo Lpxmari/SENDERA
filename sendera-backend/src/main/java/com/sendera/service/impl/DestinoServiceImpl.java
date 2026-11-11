@@ -5,6 +5,7 @@ import com.sendera.dto.CrearDestinoDto;
 import com.sendera.dto.DestinoDto;
 import com.sendera.dto.FiltroDestinoDto;
 import com.sendera.dto.ItinerarioDto;
+import com.sendera.dto.PaginaResultadosDto;
 import com.sendera.exception.DestinoConItinerariosException;
 import com.sendera.exception.FiltroInvalidoException;
 import com.sendera.model.Destino;
@@ -15,6 +16,8 @@ import com.sendera.security.UsuarioActual;
 import com.sendera.service.AuditoriaService;
 import com.sendera.service.DestinoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,13 +42,28 @@ public class DestinoServiceImpl implements DestinoService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<DestinoDto> listarDestinos(FiltroDestinoDto filtro) {
+    public PaginaResultadosDto<DestinoDto> listarDestinos(FiltroDestinoDto filtro, int pagina, int tamano) {
         FiltroDestinoDto f = filtro != null ? filtro : new FiltroDestinoDto();
         validarFiltro(f);
+        if (pagina < 0) {
+            throw new FiltroInvalidoException("El número de página debe ser 0 o mayor.");
+        }
+        if (tamano < 1) {
+            throw new FiltroInvalidoException("El tamaño de página debe ser al menos 1.");
+        }
+        int tamanoAplicado = Math.min(tamano, TAMANO_MAXIMO);
 
-        List<Destino> destinos = destinoRepository.findAll(
-                DestinoSpecifications.conFiltros(f), Sort.by(Sort.Direction.ASC, "id"));
-        return destinos.stream().map(this::convertirADto).collect(Collectors.toList());
+        // La paginación se resuelve en la base de datos (LIMIT/OFFSET + COUNT), no en memoria.
+        Page<Destino> resultado = destinoRepository.findAll(
+                DestinoSpecifications.conFiltros(f),
+                PageRequest.of(pagina, tamanoAplicado, Sort.by(Sort.Direction.ASC, "id")));
+        return PaginaResultadosDto.<DestinoDto>builder()
+                .contenido(resultado.getContent().stream().map(this::convertirADto).collect(Collectors.toList()))
+                .pagina(pagina)
+                .tamano(tamanoAplicado)
+                .totalElementos(resultado.getTotalElements())
+                .totalPaginas(resultado.getTotalPages())
+                .build();
     }
 
     @Override

@@ -10,7 +10,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.math.BigDecimal;
@@ -41,13 +42,13 @@ class DestinoFiltrosCp005Test {
     private DestinoServiceImpl destinoService;
 
     private void aceptaElFiltro(FiltroDestinoDto filtro) {
-        when(destinoRepository.findAll(any(Specification.class), any(Sort.class))).thenReturn(List.of());
-        assertEquals(List.of(), destinoService.listarDestinos(filtro));
-        verify(destinoRepository).findAll(any(Specification.class), any(Sort.class));
+        when(destinoRepository.findAll(any(Specification.class), any(Pageable.class))).thenReturn(new PageImpl<>(List.of()));
+        assertEquals(List.of(), destinoService.listarDestinos(filtro, 0, 12).getContenido());
+        verify(destinoRepository).findAll(any(Specification.class), any(Pageable.class));
     }
 
     private FiltroInvalidoException rechazaElFiltro(FiltroDestinoDto filtro) {
-        FiltroInvalidoException error = assertThrows(FiltroInvalidoException.class, () -> destinoService.listarDestinos(filtro));
+        FiltroInvalidoException error = assertThrows(FiltroInvalidoException.class, () -> destinoService.listarDestinos(filtro, 0, 12));
         verifyNoInteractions(destinoRepository);
         return error;
     }

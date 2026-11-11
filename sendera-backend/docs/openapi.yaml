@@ -17,9 +17,10 @@ paths:
       summary: Obtener lista de destinos turísticos
       operationId: listarDestinos
       description: >-
-        Consulta pública. Todos los filtros son opcionales y se combinan con AND. Los filtros de destinos son
-        precio, dificultad y accesibilidad (RF-008, RNF-26). La duración no es un filtro de destinos: es un atributo
-        de las actividades y se filtra en GET /actividades.
+        Consulta pública y paginada (OB-01). Todos los filtros son opcionales y se combinan con AND. Los filtros de
+        destinos son texto, nombre, ubicación, precio, dificultad y accesibilidad (RF-008, RNF-26). La duración no es un
+        filtro de destinos: es un atributo de las actividades y se filtra en GET /actividades.
+        El orden es por id ascendente. La paginación se resuelve en la consulta a la base de datos, no en memoria.
       tags:
         - Destinos
       security: []
@@ -27,6 +28,14 @@ paths:
         - name: q
           in: query
           description: Texto a buscar en nombre, ubicación y descripción.
+          schema: { type: string }
+        - name: nombre
+          in: query
+          description: Texto contenido en el nombre del destino (sin distinguir mayúsculas).
+          schema: { type: string }
+        - name: ubicacion
+          in: query
+          description: Texto contenido en la ubicación del destino (sin distinguir mayúsculas).
           schema: { type: string }
         - name: precioMin
           in: query
@@ -44,17 +53,31 @@ paths:
           in: query
           description: Filtro de accesibilidad (RNF-26).
           schema: { type: boolean }
+        - name: page
+          in: query
+          description: Número de página, empezando en 0. Un valor negativo responde 400.
+          schema: { type: integer, minimum: 0, default: 0 }
+        - name: size
+          in: query
+          description: >-
+            Destinos por página. Un valor mayor que 50 se limita a 50 (no es un error). Un valor menor que 1 responde
+            400.
+          schema: { type: integer, minimum: 1, default: 12 }
       responses:
         '200':
-          description: Lista de destinos obtenida exitosamente.
+          description: Página de destinos obtenida exitosamente.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Destino'
+                $ref: '#/components/schemas/PaginaDestino'
         '400':
-          $ref: '#/components/responses/PeticionInvalida'
+          description: >-
+            Parámetros inválidos: `page` negativo, `size` menor que 1, o un filtro con valor no permitido (dificultad
+            desconocida, precios negativos, precio mínimo mayor que el máximo). Formato `ApiError`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiError'
         '500':
           $ref: '#/components/responses/ErrorInterno'
 
@@ -1148,9 +1171,38 @@ paths:
         '500':
           $ref: '#/components/responses/ErrorInterno'
 
+  /auth/verificar-codigo:
+    post:
+      summary: Comprobar el código de recuperación de 6 números
+      description: >-
+        Segundo paso de la recuperación de contraseña: confirma que el código recibido por correo es válido antes de
+        pedir la contraseña nueva. No modifica la cuenta ni consume el código. Un código vencido, incorrecto o de un
+        correo sin solicitud responde siempre con el mismo 400, para no revelar qué cuentas existen. Tras varios
+        intentos fallidos el código se invalida y hay que solicitar otro.
+      operationId: verificarCodigo
+      tags:
+        - Autenticación
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificarCodigoDto'
+      responses:
+        '204':
+          description: El código es válido.
+        '400':
+          $ref: '#/components/responses/PeticionInvalida'
+        '500':
+          $ref: '#/components/responses/ErrorInterno'
+
   /auth/cambiar-contrasena:
     post:
-      summary: Cambiar la contraseña con el token recibido por correo
+      summary: Cambiar la contraseña con el código recibido por correo
+      description: >-
+        Tercer paso de la recuperación: valida de nuevo el correo y el código y fija la contraseña nueva. El código se
+        elimina al usarse.
       operationId: cambiarContrasena
       tags:
         - Autenticación
@@ -1681,6 +1733,28 @@ components:
           type: string
           format: date-time
 
+    PaginaDestino:
+      type: object
+      required: [contenido, pagina, tamano, totalElementos, totalPaginas]
+      properties:
+        contenido:
+          type: array
+          items:
+            $ref: '#/components/schemas/Destino'
+        pagina:
+          type: integer
+          description: Página actual, empezando en 0.
+        tamano:
+          type: integer
+          description: Tamaño de página aplicado (ya limitado a 50).
+        totalElementos:
+          type: integer
+          format: int64
+          description: Total de destinos que cumplen los filtros, sin contar la paginación.
+        totalPaginas:
+          type: integer
+          description: Cantidad de páginas; 0 si no hay resultados.
+
     PaginaUsuarioAdmin:
       type: object
       properties:
@@ -1878,18 +1952,38 @@ components:
           type: string
           format: email
 
+    VerificarCodigoDto:
+      type: object
+      required: [correo, codigo]
+      properties:
+        correo:
+          type: string
+          format: email
+        codigo:
+          type: string
+          pattern: '^\d{6}$'
+          description: Código de 6 números recibido por correo.
+          example: '482913'
+
     CambiarContrasenaDto:
       type: object
-      required: [token, nuevaContrasena]
+      required: [correo, codigo, nuevaContrasena]
       properties:
-        token:
+        correo:
           type: string
-          description: Token recibido en el enlace del correo.
+          format: email
+        codigo:
+          type: string
+          pattern: '^\d{6}$'
+          description: Código de 6 números recibido por correo.
+          example: '482913'
         nuevaContrasena:
           type: string
           format: password
           minLength: 8
           maxLength: 64
+          pattern: '^(?=.*[A-Za-z])(?=.*\d).+$'
+          description: Entre 8 y 64 caracteres, con letras y números.
 
     ApiError:
       type: object

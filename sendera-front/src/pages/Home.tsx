@@ -12,6 +12,9 @@ import PlanificadorViajes from '../components/PlanificadorViajes';
 
 type TipoServicio = 'alojamiento' | 'restaurantes';
 
+/** 1 destacado + 3 ofertas + 2 populares. */
+const DESTINOS_EN_PORTADA = 6;
+
 const Home = () => {
     const [destinos, setDestinos] = useState<Destino[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -21,7 +24,8 @@ const Home = () => {
     const [servicio, setServicio] = useState<TipoServicio>('alojamiento');
     const [searchParams] = useSearchParams();
     const { hash } = useLocation();
-    const busqueda = (searchParams.get('destino') ?? '').trim().toLowerCase();
+    const terminoBusqueda = (searchParams.get('destino') ?? '').trim();
+    const busqueda = terminoBusqueda.toLowerCase();
 
     // Al llegar desde otra pantalla con un enlace como "/#destinos-populares", el router no baja solo a la sección.
     // Se espera a que termine la carga porque el contenido cambia la altura de la página.
@@ -29,20 +33,25 @@ const Home = () => {
         if (!loading && hash) document.getElementById(hash.slice(1))?.scrollIntoView();
     }, [loading, hash]);
 
+    // Solo la primera página: la portada muestra como máximo un destacado, tres ofertas y dos populares.
     useEffect(() => {
-        const cargarDestinos = async () => {
-            try {
-                const data = await fetchDestinos();
-                setDestinos(data);
-            } catch (err) {
-                setError(obtenerMensajeError(err, 'No pudimos cargar los destinos. Intenta de nuevo más tarde.'));
-            } finally {
-                setLoading(false);
-            }
+        let vigente = true;
+        fetchDestinos({ q: terminoBusqueda, page: 0, size: DESTINOS_EN_PORTADA })
+            .then((pagina) => {
+                if (!vigente) return;
+                setDestinos(pagina.contenido);
+                setError(null);
+            })
+            .catch((err: unknown) => {
+                if (vigente) setError(obtenerMensajeError(err, 'No pudimos cargar los destinos. Intenta de nuevo más tarde.'));
+            })
+            .finally(() => {
+                if (vigente) setLoading(false);
+            });
+        return () => {
+            vigente = false;
         };
-
-        cargarDestinos();
-    }, []);
+    }, [terminoBusqueda]);
 
     useEffect(() => {
         if (servicio !== 'restaurantes' || restaurantes !== null) return;
@@ -61,15 +70,8 @@ const Home = () => {
         [restaurantes, busqueda],
     );
 
-    const resultados = useMemo(
-        () =>
-            busqueda
-                ? destinos.filter((d) =>
-                    `${d.nombre} ${d.ubicacion}`.toLowerCase().includes(busqueda),
-                )
-                : destinos,
-        [destinos, busqueda],
-    );
+    // La búsqueda por texto la resuelve el backend (parámetro q).
+    const resultados = destinos;
 
     const destacado = resultados[0];
     const ofertas = resultados.slice(1, 4);
