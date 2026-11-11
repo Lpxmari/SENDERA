@@ -182,7 +182,7 @@
 .perfil-historial li {
     display: grid;
     /* Columnas fijas: cada fila es su propia grilla y las acciones son opcionales; así todas quedan alineadas */
-    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) 12rem 7.5rem 7rem;
+    grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr) 12rem 7.5rem 10rem;
     align-items: center;
     gap: 12px;
     padding: 10px 0;
@@ -204,11 +204,12 @@
 .perfil .boton--peligro { background: var(--admin-peligro); }
 .perfil .boton--peligro:hover { background: #82190f; }
 .perfil-historial__cancelar {
-    grid-column: 1 / -1;
-    justify-self: start;
+    /* Debajo de «Pagar», en su misma columna y con el mismo tamaño */
+    grid-column: 6;
     min-height: 44px;
-    padding: 12px 20px;
+    padding: 8px 18px;
     font-size: 15px;
+    white-space: nowrap;
 }
 .perfil-historial__cancelar:focus-visible,
 .perfil-historial h2:focus-visible { outline: 3px solid var(--verde); outline-offset: 2px; }
@@ -244,5 +245,6 @@
     .perfil-opiniones { grid-template-columns: 1fr; }
     .perfil-historial li { grid-template-columns: 1fr 1fr; }
     .perfil-historial__verificar,
+    .perfil-historial__cancelar,
     .perfil-historial .pago__boton { grid-column: auto; }
 }
