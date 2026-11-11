@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { obtenerMensajeError } from '../services/apiClient';
 import { getDestinoPorId } from '../services/destinoService';
 import { crearResena, listarResenas, obtenerUrlImagenResena } from '../services/resenaService';
-import { Destino } from '../types/destino';
+import { Destino, DificultadEnum } from '../types/destino';
 import { Resena } from '../types/resena';
 import { formatearPrecio } from '../utils/formatearPrecio';
 import { iniciales } from '../utils/iniciales';
@@ -16,6 +16,12 @@ import {
     estrellasAlojamiento,
     serviciosAlojamiento,
 } from '../utils/datosAlojamiento';
+
+const ETIQUETAS_DIFICULTAD: Record<DificultadEnum, string> = {
+    BAJA: 'Baja',
+    MODERADA: 'Moderada',
+    ALTA: 'Alta',
+};
 
 const MS_POR_DIA = 1000 * 60 * 60 * 24;
 const TAMANO_MAXIMO_IMAGEN = 5 * 1024 * 1024;
@@ -245,6 +251,20 @@ const DetalleDestino = () => {
                     </p>
                     <h1 className="detalle__titulo">{destino.nombre}</h1>
                     <p className="detalle__direccion">{destino.ubicacion}</p>
+                    <ul className="detalle__datos" aria-label="Datos del destino">
+                        <li>
+                            <IconoServicio id="precio" />
+                            Desde {formatearPrecio(destino.precioBase)}
+                        </li>
+                        <li>
+                            <IconoServicio id="dificultad" />
+                            Dificultad: {ETIQUETAS_DIFICULTAD[destino.dificultad] ?? 'No indicada'}
+                        </li>
+                        <li>
+                            <IconoServicio id="accesibilidad" />
+                            {destino.accesibilidad ? 'Accesible' : 'No accesible'}
+                        </li>
+                    </ul>
                 </div>
                 <div className="detalle__acciones">
                     <BotonIcono icono="compartir" etiqueta="Compartir este alojamiento" ayuda="Compartir" onClick={compartir} />

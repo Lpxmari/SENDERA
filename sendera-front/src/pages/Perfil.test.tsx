@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthProvider } from '../context/AuthContext';
 import { actualizarCuenta } from '../services/authService';
-import { listarMisReservas } from '../services/reservaService';
+import { cancelarReserva, listarMisReservas } from '../services/reservaService';
 import { Reserva } from '../types/reserva';
 import { reiniciarPerfilSimulado } from '../services/perfilService';
 import { guardarSesion, leerSesion } from '../services/sesion';
@@ -19,6 +19,7 @@ vi.mock('../services/reservaService', () => ({
     listarMisReservas: vi.fn(),
     crearReserva: vi.fn(),
     iniciarPago: vi.fn(),
+    cancelarReserva: vi.fn(),
 }));
 
 const reserva = (
@@ -69,6 +70,7 @@ describe('Perfil', () => {
         reiniciarPerfilSimulado();
         vi.mocked(actualizarCuenta).mockImplementation(async (cuerpo) => respuestaBackend(cuerpo));
         vi.mocked(listarMisReservas).mockResolvedValue(RESERVAS);
+        vi.mocked(cancelarReserva).mockReset();
     });
 
     it('muestra los datos de la persona y las opiniones', async () => {
@@ -300,5 +302,112 @@ describe('Perfil', () => {
 
         await waitFor(() => expect(screen.getByText('Ana Lucía')).toBeInTheDocument());
         expect(screen.queryByText('Ana María')).not.toBeInTheDocument();
+    });
+
+    describe('cancelar reserva (CP-009 / RNF-30)', () => {
+        const abrirHistorial = async () => {
+            renderizar();
+            fireEvent.click(await screen.findByRole('button', { name: 'Consultar Historial de Viajes' }));
+            return screen.findByRole('region', { name: 'Historial de viajes' });
+        };
+
+        const confirmar = () =>
+            fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Sí, cancelar reserva' }));
+
+        it('muestra «Cancelar reserva» solo en reservas pendientes o confirmadas', async () => {
+            const historial = await abrirHistorial();
+
+            const botones = within(historial).getAllByRole('button', { name: /^Cancelar la reserva/ });
+            expect(botones).toHaveLength(2);
+            expect(botones[0]).toHaveAccessibleName('Cancelar la reserva a Finca Hotel Los Arrayanes del 12 Ago 2026');
+            expect(botones[1]).toHaveAccessibleName('Cancelar la reserva a Hotel Boutique Casa Aurora del 3 May 2026');
+            expect(botones[0]).toHaveTextContent('Cancelar reserva');
+            expect(within(historial).queryByRole('button', { name: /Cabañas Playa Dorada/ })).not.toBeInTheDocument();
+        });
+
+        it('pide confirmación con el destino y la fecha antes de cancelar', async () => {
+            const historial = await abrirHistorial();
+
+            fireEvent.click(within(historial).getByRole('button', { name: /^Cancelar la reserva a Hotel Boutique/ }));
+
+            expect(screen.getByRole('alertdialog')).toHaveTextContent(
+                '¿Seguro que quieres cancelar tu reserva a Hotel Boutique Casa Aurora del 3 May 2026? Se liberará tu cupo.',
+            );
+            expect(cancelarReserva).not.toHaveBeenCalled();
+        });
+
+        it('al confirmar llama al servicio, pasa a CANCELADA sin recargar y avisa', async () => {
+            vi.mocked(cancelarReserva).mockResolvedValue({ ...RESERVAS[0], estadoReserva: 'CANCELADA' });
+            const historial = await abrirHistorial();
+
+            fireEvent.click(within(historial).getByRole('button', { name: /^Cancelar la reserva a Hotel Boutique/ }));
+            confirmar();
+
+            expect(await within(historial).findByText(/fue cancelada y se liberó tu cupo/)).toBeInTheDocument();
+            expect(cancelarReserva).toHaveBeenCalledWith(1);
+            expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+            const fila = within(historial).getByText('Hotel Boutique Casa Aurora').closest('li') as HTMLElement;
+            expect(within(fila).getByText(/Cancelada/)).toBeInTheDocument();
+            expect(within(fila).queryByRole('button', { name: /^Cancelar la reserva/ })).not.toBeInTheDocument();
+            // No se volvió a pedir el historial
+            expect(listarMisReservas).toHaveBeenCalledTimes(1);
+        });
+
+        it('si se cierra el diálogo no llama al servicio y devuelve el foco al botón', async () => {
+            const historial = await abrirHistorial();
+            const boton = within(historial).getByRole('button', { name: /^Cancelar la reserva a Hotel Boutique/ });
+
+            fireEvent.click(boton);
+            fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: 'Cancelar' }));
+
+            expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument();
+            expect(cancelarReserva).not.toHaveBeenCalled();
+            await waitFor(() => expect(boton).toHaveFocus());
+            expect(within(historial).getAllByRole('button', { name: /^Cancelar la reserva/ })).toHaveLength(2);
+        });
+
+        it('si el servidor rechaza, muestra su mensaje y la reserva no cambia', async () => {
+            vi.mocked(cancelarReserva).mockRejectedValue(
+                Object.assign(new Error('409'), {
+                    isAxiosError: true,
+                    response: { status: 409, data: { message: 'La reserva ya está cancelada.' } },
+                }),
+            );
+            const historial = await abrirHistorial();
+
+            fireEvent.click(within(historial).getByRole('button', { name: /^Cancelar la reserva a Hotel Boutique/ }));
+            confirmar();
+
+            expect(await within(historial).findByRole('alert')).toHaveTextContent('La reserva ya está cancelada.');
+            const fila = within(historial).getByText('Hotel Boutique Casa Aurora').closest('li') as HTMLElement;
+            expect(within(fila).getByText(/Confirmada/)).toBeInTheDocument();
+            expect(within(fila).getByRole('button', { name: /^Cancelar la reserva/ })).toBeInTheDocument();
+        });
+
+        it('con un error sin mensaje del servidor usa uno genérico', async () => {
+            vi.mocked(cancelarReserva).mockRejectedValue(new Error('x'));
+            const historial = await abrirHistorial();
+
+            fireEvent.click(within(historial).getByRole('button', { name: /^Cancelar la reserva a Hotel Boutique/ }));
+            confirmar();
+
+            expect(await within(historial).findByRole('alert')).toHaveTextContent('No pudimos cancelar tu reserva.');
+        });
+
+        it('mientras cancela bloquea el diálogo para evitar doble envío', async () => {
+            let terminar: (r: Reserva) => void = () => undefined;
+            vi.mocked(cancelarReserva).mockReturnValue(new Promise<Reserva>((resolver) => (terminar = resolver)));
+            const historial = await abrirHistorial();
+
+            fireEvent.click(within(historial).getByRole('button', { name: /^Cancelar la reserva a Hotel Boutique/ }));
+            const dialogo = within(screen.getByRole('alertdialog'));
+            fireEvent.click(dialogo.getByRole('button', { name: 'Sí, cancelar reserva' }));
+
+            expect(await dialogo.findByRole('button', { name: 'Guardando…' })).toBeDisabled();
+            expect(dialogo.getByRole('button', { name: 'Cancelar' })).toBeDisabled();
+            terminar({ ...RESERVAS[0], estadoReserva: 'CANCELADA' });
+            await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+            expect(cancelarReserva).toHaveBeenCalledTimes(1);
+        });
     });
 });
