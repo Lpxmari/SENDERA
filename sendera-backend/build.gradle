@@ -53,6 +53,8 @@ dependencies {
     // Base en memoria solo para pruebas (aprobada por el equipo); producción sigue usando MySQL
     testRuntimeOnly 'com.h2database:h2'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // Limitación de intentos de login (algoritmo token bucket, en memoria). Ver docs/06-seguridad-y-autorizacion.md
+    implementation 'com.bucket4j:bucket4j-core:8.10.1'
 }
 
 tasks.named('test') {

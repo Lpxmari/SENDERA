@@ -30,7 +30,7 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 | Método | Ruta | Acceso | Respuestas |
 |---|---|---|---|
 | POST | `/api/v1/auth/registro` | Público | 201, 400, 409 |
-| POST | `/api/v1/auth/login` | Público | 200, 400, 401 |
+| POST | `/api/v1/auth/login` | Público; limitado a 5 intentos por minuto por IP + correo y 20 por IP (429 con `Retry-After`) | 200, 400, 401, 429 |
 | POST | `/api/v1/auth/recuperar-contrasena` | Público | 204, 400 |
 | POST | `/api/v1/auth/cambiar-contrasena` | Público | 204, 400 |
 | GET | `/api/v1/auth/me` | Autenticado | 200, 401 |
@@ -64,6 +64,7 @@ El equipo decidió **mantener las rutas ya implementadas**. El prefijo `/api/v1`
 - **404 Not Found:** recurso inexistente o que no debe revelarse al usuario.
 - **409 Conflict:** conflicto con estado actual, duplicado o regla de concurrencia.
 - **422 Unprocessable Content:** opcional, solo si se adopta consistentemente para errores semánticos.
+- **429 Too Many Requests:** límite de intentos de inicio de sesión superado; incluye la cabecera `Retry-After` (segundos).
 - **500 Internal Server Error:** fallo inesperado; no incluir stack trace ni detalles internos.
 
 ## 7.5 Formato estándar de error
