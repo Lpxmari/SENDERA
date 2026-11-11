@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import DialogoConfirmacion from '../components/admin/DialogoConfirmacion';
 import BotonPagar from '../components/BotonPagar';
 import EstadoReserva from '../components/EstadoReserva';
 import DatoPerfil from '../components/perfil/DatoPerfil';
@@ -7,6 +8,7 @@ import TarjetaPerfil from '../components/perfil/TarjetaPerfil';
 import { useAuth } from '../context/AuthContext';
 import { actualizarPerfil, fetchHistorialViajes, fetchOpiniones, fetchPerfil } from '../services/perfilService';
 import { obtenerMensajeError } from '../services/apiClient';
+import { cancelarReserva } from '../services/reservaService';
 import { OpinionViajero, PerfilEditable, PerfilViajero, ViajeHistorial } from '../types/perfil';
 import { formatearPrecio } from '../utils/formatearPrecio';
 import { validarCorreo } from '../utils/validaciones';
@@ -80,6 +82,13 @@ const Perfil = () => {
     const [fotoVista, setFotoVista] = useState<string | null>(null);
     const [errorFoto, setErrorFoto] = useState<string | null>(null);
     const inputFoto = useRef<HTMLInputElement>(null);
+    const [porCancelar, setPorCancelar] = useState<ViajeHistorial | null>(null);
+    const [cancelando, setCancelando] = useState(false);
+    const [errorCancelacion, setErrorCancelacion] = useState<string | null>(null);
+    const [avisoCancelacion, setAvisoCancelacion] = useState<string | null>(null);
+    /** Botón que abrió el diálogo, para devolverle el foco al cerrarlo. */
+    const botonQueAbrio = useRef<HTMLButtonElement | null>(null);
+    const tituloHistorial = useRef<HTMLHeadingElement>(null);
 
     useEffect(() => {
         if (!usuario) return;
@@ -216,6 +225,43 @@ const Perfil = () => {
         }
     };
 
+    const cerrarDialogoCancelar = () => {
+        setPorCancelar(null);
+        // Tras cancelar, el botón de esa fila ya no existe: el foco pasa al título del historial.
+        const boton = botonQueAbrio.current;
+        requestAnimationFrame(() => (boton?.isConnected ? boton : tituloHistorial.current)?.focus());
+    };
+
+    const handleAbrirCancelar = (viaje: ViajeHistorial, boton: HTMLButtonElement) => {
+        botonQueAbrio.current = boton;
+        setErrorCancelacion(null);
+        setAvisoCancelacion(null);
+        setPorCancelar(viaje);
+    };
+
+    const handleConfirmarCancelar = async () => {
+        if (!porCancelar) return;
+        setCancelando(true);
+        try {
+            const actualizada = await cancelarReserva(porCancelar.id);
+            setHistorial((actual) =>
+                actual
+                    ? actual.map((v) =>
+                          v.id === porCancelar.id
+                              ? { ...v, estadoReserva: actualizada.estadoReserva, estadoPago: actualizada.estadoPago ?? null }
+                              : v,
+                      )
+                    : actual,
+            );
+            setAvisoCancelacion(`Tu reserva a ${porCancelar.destino} fue cancelada y se liberó tu cupo.`);
+        } catch (error) {
+            setErrorCancelacion(obtenerMensajeError(error, 'No pudimos cancelar tu reserva. Intenta de nuevo.'));
+        } finally {
+            setCancelando(false);
+            cerrarDialogoCancelar();
+        }
+    };
+
     const campo = (id: string, etiqueta: string, valor: string, clave: keyof PerfilEditable, extra: object = {}) => (
         <label className="perfil-campo" htmlFor={id}>
             <span>{etiqueta}</span>
@@ -295,7 +341,19 @@ const Perfil = () => {
 
             {verHistorial && historial && (
                 <section id="perfil-historial" className="perfil-historial" aria-labelledby="perfil-historial-titulo">
-                    <h2 id="perfil-historial-titulo">Historial de viajes</h2>
+                    <h2 id="perfil-historial-titulo" ref={tituloHistorial} tabIndex={-1}>
+                        Historial de viajes
+                    </h2>
+                    {avisoCancelacion && (
+                        <p className="perfil-aviso" role="status">
+                            {avisoCancelacion}
+                        </p>
+                    )}
+                    {errorCancelacion && (
+                        <p className="perfil-error" role="alert">
+                            {errorCancelacion}
+                        </p>
+                    )}
                     {historial.length === 0 ? (
                         <p>Aún no tienes viajes reservados.</p>
                     ) : (
@@ -323,11 +381,33 @@ const Perfil = () => {
                                             etiqueta={`Pagar la reserva de ${viaje.destino}`}
                                         />
                                     )}
+                                    {(viaje.estadoReserva === 'PENDIENTE' || viaje.estadoReserva === 'CONFIRMADA') && (
+                                        <button
+                                            type="button"
+                                            className="boton boton--peligro perfil-historial__cancelar"
+                                            onClick={(e) => handleAbrirCancelar(viaje, e.currentTarget)}
+                                            aria-label={`Cancelar la reserva a ${viaje.destino} del ${formatearFecha(viaje.fechaReserva)}`}
+                                        >
+                                            Cancelar reserva
+                                        </button>
+                                    )}
                                 </li>
                             ))}
                         </ul>
                     )}
                 </section>
+            )}
+
+            {porCancelar && (
+                <DialogoConfirmacion
+                    titulo="Cancelar reserva"
+                    mensaje={`¿Seguro que quieres cancelar tu reserva a ${porCancelar.destino} del ${formatearFecha(porCancelar.fechaReserva)}? Se liberará tu cupo.`}
+                    textoConfirmar="Sí, cancelar reserva"
+                    peligro
+                    procesando={cancelando}
+                    onConfirmar={handleConfirmarCancelar}
+                    onCancelar={cerrarDialogoCancelar}
+                />
             )}
 
             <div className="perfil-tarjetas">

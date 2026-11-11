@@ -199,6 +199,20 @@
 }
 .perfil-historial .pago__boton { grid-column: 6; }
 
+/* Cancelar reserva: botón con texto, de al menos 44 px de alto y con el rojo de peligro del diálogo */
+.perfil-historial { --admin-peligro: #a3231b; }
+.perfil-historial .boton--peligro { background: var(--admin-peligro); }
+.perfil-historial .boton--peligro:hover { background: #82190f; }
+.perfil-historial__cancelar {
+    grid-column: 1 / -1;
+    justify-self: start;
+    min-height: 44px;
+    padding: 12px 20px;
+    font-size: 15px;
+}
+.perfil-historial__cancelar:focus-visible,
+.perfil-historial h2:focus-visible { outline: 3px solid var(--verde); outline-offset: 2px; }
+
 .perfil-estado { font-weight: 600; font-size: 13px; }
 .perfil-estado--confirmada { color: var(--verde-oscuro); }
 .perfil-estado--pendiente { color: #8a4b00; }

@@ -468,6 +468,19 @@
   color: var(--verde);
 }
 .detalle__direccion { margin-top: 4px; font-size: 14px; color: var(--texto-suave); }
+.detalle__datos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--texto);
+}
+.detalle__datos li { display: inline-flex; align-items: center; gap: 8px; }
+.detalle__datos svg { color: var(--naranja-oscuro); }
 .detalle__acciones { display: flex; gap: 12px; }
 .detalle__aviso { min-height: 20px; margin-top: 4px; font-size: 13px; color: var(--verde); text-align: right; }
 
