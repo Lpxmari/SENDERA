@@ -13,6 +13,12 @@ export const crearReserva = async (reservaData: CrearReservaRequest): Promise<Re
     return data; // 201 Created
 };
 
+/** Cancela una reserva propia (PATCH /reservas/{id}/cancelar); el backend libera el cupo. 409 si ya estaba cancelada. */
+export const cancelarReserva = async (id: number): Promise<Reserva> => {
+    const { data } = await apiClient.patch<Reserva>(`/reservas/${id}/cancelar`);
+    return data;
+};
+
 /** Crea el pago de Mercado Pago de una reserva propia; el monto lo fija el backend. */
 export const iniciarPago = async (reservaId: number): Promise<PreferenciaPago> => {
     const { data } = await apiClient.post<PreferenciaPago>(`/reservas/${reservaId}/pago`);
