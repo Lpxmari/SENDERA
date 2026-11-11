@@ -6,7 +6,7 @@ import PaginacionAdmin from '../../components/admin/PaginacionAdmin';
 import { useConsultaAdmin } from '../../components/admin/useConsultaAdmin';
 import { eliminarResenaAdmin, listarResenasAdmin } from '../../services/adminService';
 import { obtenerMensajeError } from '../../services/apiClient';
-import { listarDestinos } from '../../services/destinoService';
+import { listarTodosLosDestinos } from '../../services/destinoService';
 import { FiltroResenasAdmin, ResenaAdmin } from '../../types/admin';
 import { iniciales } from '../../utils/iniciales';
 
@@ -38,7 +38,7 @@ const AdminResenas = () => {
         () => listarResenasAdmin({ ...aplicados, pagina, tamano: TAMANO_PAGINA }),
         MENSAJE_CARGA,
     );
-    const { datos: destinos } = useConsultaAdmin('destinos', () => listarDestinos(), MENSAJE_DESTINOS);
+    const { datos: destinos } = useConsultaAdmin('destinos', listarTodosLosDestinos, MENSAJE_DESTINOS);
 
     const handleBuscar = (evento: FormEvent<HTMLFormElement>) => {
         evento.preventDefault();

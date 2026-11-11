@@ -12,6 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -54,18 +57,61 @@ class DestinoServiceImplTest {
 
     @Test
     void listarDestinos_DeberiaRetornarListaDeDestinos() {
-        when(destinoRepository.findAll(any(Specification.class), any(Sort.class)))
-                .thenReturn(List.of(destinoEjemplo));
+        when(destinoRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(destinoEjemplo), PageRequest.of(0, 12), 1));
 
         FiltroDestinoDto filtro = new FiltroDestinoDto();
-        List<DestinoDto> resultado = destinoService.listarDestinos(filtro);
+        com.sendera.dto.PaginaResultadosDto<DestinoDto> pagina = destinoService.listarDestinos(filtro, 0, 12);
 
-        assertNotNull(resultado);
+        assertNotNull(pagina);
+        List<DestinoDto> resultado = pagina.getContenido();
         assertEquals(1, resultado.size());
         assertEquals("Valle de Cocora", resultado.get(0).getNombre());
         assertEquals("BAJA", resultado.get(0).getDificultad());
         assertTrue(resultado.get(0).getAccesibilidad());
-        verify(destinoRepository, times(1)).findAll(any(Specification.class), any(Sort.class));
+        verify(destinoRepository, times(1)).findAll(any(Specification.class), any(Pageable.class));
+    }
+
+    @Test
+    void listarDestinos_PideLaPaginaALaBaseOrdenadaPorIdYCalculaLosTotales() {
+        when(destinoRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(destinoEjemplo), PageRequest.of(1, 5), 11));
+
+        com.sendera.dto.PaginaResultadosDto<DestinoDto> pagina = destinoService.listarDestinos(new FiltroDestinoDto(), 1, 5);
+
+        org.mockito.ArgumentCaptor<Pageable> captor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(destinoRepository).findAll(any(Specification.class), captor.capture());
+        assertEquals(1, captor.getValue().getPageNumber());
+        assertEquals(5, captor.getValue().getPageSize());
+        assertEquals(Sort.by(Sort.Direction.ASC, "id"), captor.getValue().getSort());
+        assertEquals(1, pagina.getPagina());
+        assertEquals(5, pagina.getTamano());
+        assertEquals(11, pagina.getTotalElementos());
+        assertEquals(3, pagina.getTotalPaginas());
+    }
+
+    @Test
+    void listarDestinos_LimitaElTamanoA50() {
+        when(destinoRepository.findAll(any(Specification.class), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 50), 0));
+
+        com.sendera.dto.PaginaResultadosDto<DestinoDto> pagina = destinoService.listarDestinos(new FiltroDestinoDto(), 0, 500);
+
+        org.mockito.ArgumentCaptor<Pageable> captor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(destinoRepository).findAll(any(Specification.class), captor.capture());
+        assertEquals(50, captor.getValue().getPageSize());
+        assertEquals(50, pagina.getTamano());
+    }
+
+    @Test
+    void listarDestinos_RechazaTamanoMenorQue1YPaginaNegativaSinConsultarLaBase() {
+        com.sendera.exception.FiltroInvalidoException tamano = assertThrows(com.sendera.exception.FiltroInvalidoException.class,
+                () -> destinoService.listarDestinos(new FiltroDestinoDto(), 0, 0));
+        assertEquals("El tamaño de página debe ser al menos 1.", tamano.getMessage());
+        com.sendera.exception.FiltroInvalidoException pagina = assertThrows(com.sendera.exception.FiltroInvalidoException.class,
+                () -> destinoService.listarDestinos(new FiltroDestinoDto(), -1, 12));
+        assertEquals("El número de página debe ser 0 o mayor.", pagina.getMessage());
+        verifyNoInteractions(destinoRepository);
     }
 
     @Test

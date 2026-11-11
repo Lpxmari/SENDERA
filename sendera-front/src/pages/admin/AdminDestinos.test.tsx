@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { actualizarDestino, crearDestino, eliminarDestino, listarDestinos } from '../../services/destinoService';
-import { Destino } from '../../types/destino';
+import { Destino, PaginaDestinos } from '../../types/destino';
 import AdminDestinos from './AdminDestinos';
 
 vi.mock('../../services/destinoService');
@@ -17,12 +17,21 @@ const DESTINO: Destino = {
     fotosUrl: ['/imagenes/destinos/cocora-1.jpg', '/imagenes/destinos/cocora-2.jpg'],
 };
 
+const pagina = (contenido: Destino[], extras: Partial<PaginaDestinos> = {}): PaginaDestinos => ({
+    contenido,
+    pagina: 0,
+    tamano: 10,
+    totalElementos: contenido.length,
+    totalPaginas: contenido.length === 0 ? 0 : 1,
+    ...extras,
+});
+
 const escribir = (etiqueta: string, valor: string) =>
     fireEvent.change(screen.getByLabelText(etiqueta), { target: { value: valor } });
 
 describe('AdminDestinos', () => {
     beforeEach(() => {
-        vi.mocked(listarDestinos).mockResolvedValue([DESTINO]);
+        vi.mocked(listarDestinos).mockResolvedValue(pagina([DESTINO]));
     });
 
     it('lista los destinos con precio y dificultad legibles', async () => {
@@ -158,9 +167,66 @@ describe('AdminDestinos', () => {
     });
 
     it('indica cuando todavía no hay destinos', async () => {
-        vi.mocked(listarDestinos).mockResolvedValue([]);
+        vi.mocked(listarDestinos).mockResolvedValue(pagina([]));
         render(<AdminDestinos />);
 
         expect(await screen.findByText('Todavía no hay destinos. Crea el primero.')).toBeInTheDocument();
+    });
+
+    describe('paginación (OB-01)', () => {
+        const OTRO: Destino = { ...DESTINO, id: 6, nombre: 'Tayrona' };
+
+        it('pide la primera página de 10 y muestra «Página 1 de 2»', async () => {
+            vi.mocked(listarDestinos).mockResolvedValue(pagina([DESTINO], { totalElementos: 14, totalPaginas: 2 }));
+            render(<AdminDestinos />);
+
+            const paginacion = await screen.findByRole('navigation', { name: 'Paginación de destinos' });
+            expect(listarDestinos).toHaveBeenCalledWith({ page: 0, size: 10 });
+            expect(paginacion).toHaveTextContent('Página 1 de 2 · 14 destinos');
+            expect(within(paginacion).getByRole('button', { name: 'Anterior' })).toBeDisabled();
+        });
+
+        it('«Siguiente» pide la página 1 y muestra sus destinos', async () => {
+            vi.mocked(listarDestinos).mockImplementation(async (filtros) =>
+                filtros?.page === 1
+                    ? pagina([OTRO], { pagina: 1, totalElementos: 14, totalPaginas: 2 })
+                    : pagina([DESTINO], { totalElementos: 14, totalPaginas: 2 }),
+            );
+            render(<AdminDestinos />);
+            await screen.findByText('Valle de Cocora');
+
+            fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+
+            expect(await screen.findByText('Tayrona')).toBeInTheDocument();
+            expect(listarDestinos).toHaveBeenLastCalledWith({ page: 1, size: 10 });
+            expect(screen.getByRole('navigation', { name: 'Paginación de destinos' })).toHaveTextContent('Página 2 de 2');
+            expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled();
+        });
+
+        it('si se elimina el último destino de la última página, vuelve a la anterior', async () => {
+            vi.mocked(listarDestinos).mockImplementation(async (filtros) =>
+                filtros?.page === 1
+                    ? pagina([OTRO], { pagina: 1, totalElementos: 11, totalPaginas: 2 })
+                    : pagina([DESTINO], { totalElementos: 11, totalPaginas: 2 }),
+            );
+            vi.mocked(eliminarDestino).mockResolvedValue(undefined);
+            render(<AdminDestinos />);
+            await screen.findByText('Valle de Cocora');
+            fireEvent.click(screen.getByRole('button', { name: 'Siguiente' }));
+            await screen.findByText('Tayrona');
+
+            // Tras eliminar, la página 1 deja de existir: el servidor responde vacío para ella
+            vi.mocked(listarDestinos).mockImplementation(async (filtros) =>
+                filtros?.page === 1
+                    ? pagina([], { pagina: 1, totalElementos: 10, totalPaginas: 1 })
+                    : pagina([DESTINO], { totalElementos: 10, totalPaginas: 1 }),
+            );
+            fireEvent.click(screen.getByRole('button', { name: 'Eliminar Tayrona' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Sí, eliminar' }));
+
+            expect(await screen.findByText('Valle de Cocora')).toBeInTheDocument();
+            expect(eliminarDestino).toHaveBeenCalledWith(6);
+            expect(listarDestinos).toHaveBeenLastCalledWith({ page: 0, size: 10 });
+        });
     });
 });

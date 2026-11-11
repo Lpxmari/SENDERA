@@ -468,6 +468,21 @@
   color: var(--verde);
 }
 .detalle__direccion { margin-top: 4px; font-size: 14px; color: var(--texto-suave); }
+/* Paginación de resultados: botones grandes (mín. 44 px) con texto */
+.paginacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+.paginacion__boton { min-width: 128px; min-height: 48px; padding: 12px 24px; font-size: 16px; }
+.paginacion__boton:disabled { background: #9aa8a0; cursor: not-allowed; }
+.paginacion__boton:focus-visible { outline: 3px solid var(--naranja-oscuro); outline-offset: 2px; }
+.paginacion__estado { font-size: 16px; font-weight: 600; color: var(--texto); }
+.resultados__titulo:focus { outline: none; }
+
 .detalle__datos {
   display: flex;
   flex-wrap: wrap;

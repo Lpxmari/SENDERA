@@ -2,6 +2,8 @@ package com.sendera.repository;
 
 import com.sendera.dto.FiltroDestinoDto;
 import com.sendera.model.Destino;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -31,6 +33,8 @@ public final class DestinoSpecifications {
                         cb.like(cb.lower(root.<String>get("ubicacion")), patron, ESCAPE),
                         cb.like(cb.lower(root.<String>get("descripcion")), patron, ESCAPE)));
             }
+            condiciones.addAll(contiene(cb, root.<String>get("nombre"), filtro.getNombre()));
+            condiciones.addAll(contiene(cb, root.<String>get("ubicacion"), filtro.getUbicacion()));
             if (filtro.getPrecioMin() != null) {
                 condiciones.add(cb.greaterThanOrEqualTo(root.<BigDecimal>get("precioBase"), filtro.getPrecioMin()));
             }
@@ -48,6 +52,15 @@ public final class DestinoSpecifications {
 
             return cb.and(condiciones.toArray(new Predicate[0]));
         };
+    }
+
+    /** Condición "contiene" sin distinguir mayúsculas; vacía si no se envió texto. */
+    private static List<Predicate> contiene(CriteriaBuilder cb, Expression<String> campo, String texto) {
+        if (texto == null || texto.isBlank()) {
+            return List.of();
+        }
+        String patron = "%" + escaparLike(texto.trim().toLowerCase(Locale.ROOT)) + "%";
+        return List.of(cb.like(cb.lower(campo), patron, ESCAPE));
     }
 
     private static String escaparLike(String texto) {

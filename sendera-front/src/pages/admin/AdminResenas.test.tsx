@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { eliminarResenaAdmin, listarResenasAdmin } from '../../services/adminService';
-import { listarDestinos } from '../../services/destinoService';
+import { listarTodosLosDestinos } from '../../services/destinoService';
 import { ResenaAdmin } from '../../types/admin';
 import AdminResenas from './AdminResenas';
 
@@ -35,7 +35,7 @@ describe('AdminResenas', () => {
         listar.mockResolvedValue(
             pagina([resena(1, 'Ana Pérez', 5, true), resena(2, 'Luis Gómez', 1, false, 'Estaba sucio y mal atendido')]),
         );
-        vi.mocked(listarDestinos).mockResolvedValue([
+        vi.mocked(listarTodosLosDestinos).mockResolvedValue([
             {
                 id: 5,
                 nombre: 'Valle de Cocora',

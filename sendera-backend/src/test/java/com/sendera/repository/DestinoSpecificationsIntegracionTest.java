@@ -86,4 +86,16 @@ class DestinoSpecificationsIntegracionTest {
                 nombres(FiltroDestinoDto.builder().q("playa").dificultad("BAJA").accesibilidad(true)
                         .precioMax(new BigDecimal("160000")).build()));
     }
+
+    @Test
+    void nombreYUbicacionFiltranPorTextoContenidoSinImportarMayusculas() {
+        assertEquals(List.of("Playa Dorada"), nombres(FiltroDestinoDto.builder().nombre("DORADA").build()));
+        assertEquals(List.of("Valle de Cocora"), nombres(FiltroDestinoDto.builder().ubicacion("salen").build()));
+        // Se combinan con AND y con el resto de filtros
+        assertEquals(List.of(), nombres(FiltroDestinoDto.builder().nombre("playa").ubicacion("salento").build()));
+        assertEquals(List.of("Playa Dorada"), nombres(FiltroDestinoDto.builder().nombre("playa").ubicacion("santa").accesibilidad(true).build()));
+        // El texto en blanco se ignora y los comodines LIKE se tratan como literales
+        assertEquals(3, nombres(FiltroDestinoDto.builder().nombre("  ").ubicacion("").build()).size());
+        assertEquals(List.of(), nombres(FiltroDestinoDto.builder().nombre("%").build()));
+    }
 }
