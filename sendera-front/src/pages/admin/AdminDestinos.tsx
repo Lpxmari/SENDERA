@@ -2,10 +2,13 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import DialogoConfirmacion from '../../components/admin/DialogoConfirmacion';
 import BotonIcono from '../../components/BotonIcono';
 import IconoAdmin from '../../components/admin/IconoAdmin';
+import PaginacionAdmin from '../../components/admin/PaginacionAdmin';
 import { obtenerMensajeError } from '../../services/apiClient';
 import { actualizarDestino, crearDestino, eliminarDestino, listarDestinos } from '../../services/destinoService';
-import { CrearDestinoDto, DificultadEnum, Destino } from '../../types/destino';
+import { CrearDestinoDto, DificultadEnum, Destino, PaginaDestinos } from '../../types/destino';
 import { formatearPrecio } from '../../utils/formatearPrecio';
+
+const TAMANO_PAGINA = 10;
 
 interface BorradorDestino {
     nombre: string;
@@ -70,7 +73,9 @@ const aDto = (b: BorradorDestino): CrearDestinoDto => ({
 });
 
 const AdminDestinos = () => {
-    const [destinos, setDestinos] = useState<Destino[] | null>(null);
+    const [datos, setDatos] = useState<PaginaDestinos | null>(null);
+    const [pagina, setPagina] = useState(0);
+    const [claveCargada, setClaveCargada] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [aviso, setAviso] = useState<string | null>(null);
     const [editando, setEditando] = useState<Destino | 'nuevo' | null>(null);
@@ -81,21 +86,33 @@ const AdminDestinos = () => {
     const [eliminando, setEliminando] = useState(false);
     const [recarga, setRecarga] = useState(0);
 
+    const claveActual = `${pagina}-${recarga}`;
+    const destinos = datos ? datos.contenido : null;
+
     useEffect(() => {
         let activo = true;
-        listarDestinos()
-            .then((lista) => {
+        listarDestinos({ page: pagina, size: TAMANO_PAGINA })
+            .then((respuesta) => {
                 if (!activo) return;
-                setDestinos(lista);
+                // Si se eliminó el último destino de la última página, se retrocede a la anterior.
+                if (respuesta.contenido.length === 0 && pagina > 0) {
+                    setPagina(pagina - 1);
+                    return;
+                }
+                setDatos(respuesta);
+                setClaveCargada(`${pagina}-${recarga}`);
                 setError(null);
             })
             .catch((err: unknown) => {
-                if (activo) setError(obtenerMensajeError(err, 'No pudimos cargar los destinos. Intenta de nuevo.'));
+                if (activo) {
+                    setClaveCargada(`${pagina}-${recarga}`);
+                    setError(obtenerMensajeError(err, 'No pudimos cargar los destinos. Intenta de nuevo.'));
+                }
             });
         return () => {
             activo = false;
         };
-    }, [recarga]);
+    }, [pagina, recarga]);
 
     const abrirNuevo = () => {
         setBorrador(BORRADOR_VACIO);
@@ -342,6 +359,19 @@ const AdminDestinos = () => {
                         </tbody>
                     </table>
                 </div>
+            )}
+
+            {datos && (
+                <PaginacionAdmin
+                    etiqueta="Paginación de destinos"
+                    pagina={datos.pagina}
+                    tamano={datos.tamano}
+                    total={datos.totalElementos}
+                    cargando={claveCargada !== claveActual}
+                    singular="destino"
+                    plural="destinos"
+                    onCambiar={setPagina}
+                />
             )}
 
             {porEliminar && (

@@ -200,9 +200,9 @@
 .perfil-historial .pago__boton { grid-column: 6; }
 
 /* Cancelar reserva: botón con texto, de al menos 44 px de alto y con el rojo de peligro del diálogo */
-.perfil-historial { --admin-peligro: #a3231b; }
-.perfil-historial .boton--peligro { background: var(--admin-peligro); }
-.perfil-historial .boton--peligro:hover { background: #82190f; }
+.perfil { --admin-peligro: #a3231b; }
+.perfil .boton--peligro { background: var(--admin-peligro); }
+.perfil .boton--peligro:hover { background: #82190f; }
 .perfil-historial__cancelar {
     grid-column: 1 / -1;
     justify-self: start;

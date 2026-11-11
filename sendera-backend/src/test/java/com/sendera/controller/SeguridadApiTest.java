@@ -95,7 +95,7 @@ class SeguridadApiTest {
                 .andExpect(status().isOk());
         org.mockito.ArgumentCaptor<com.sendera.dto.FiltroDestinoDto> captor =
                 org.mockito.ArgumentCaptor.forClass(com.sendera.dto.FiltroDestinoDto.class);
-        verify(destinoService).listarDestinos(captor.capture());
+        verify(destinoService).listarDestinos(captor.capture(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
         org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getQ());
         org.junit.jupiter.api.Assertions.assertNull(captor.getValue().getPrecioMin());
     }
@@ -122,7 +122,7 @@ class SeguridadApiTest {
                 .andExpect(status().isOk());
         org.mockito.ArgumentCaptor<com.sendera.dto.FiltroDestinoDto> captor =
                 org.mockito.ArgumentCaptor.forClass(com.sendera.dto.FiltroDestinoDto.class);
-        verify(destinoService).listarDestinos(captor.capture());
+        verify(destinoService).listarDestinos(captor.capture(), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt());
         com.sendera.dto.FiltroDestinoDto filtro = captor.getValue();
         org.junit.jupiter.api.Assertions.assertEquals(0, filtro.getPrecioMin().compareTo(java.math.BigDecimal.ZERO));
         org.junit.jupiter.api.Assertions.assertEquals(0, filtro.getPrecioMax().compareTo(new java.math.BigDecimal("500000")));
@@ -133,10 +133,11 @@ class SeguridadApiTest {
     @Test
     void filtrosInvalidosDeDestinosDevuelven400ConMensajeClaro() throws Exception {
         // CP-005 / RNF-13: la excepción de filtro inválido se traduce en 400 con el formato uniforme de error.
-        when(destinoService.listarDestinos(org.mockito.ArgumentMatchers.argThat(f -> f != null && "EXTREMA".equals(f.getDificultad()))))
+        when(destinoService.listarDestinos(org.mockito.ArgumentMatchers.argThat(f -> f != null && "EXTREMA".equals(f.getDificultad())),
+                org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt()))
                 .thenThrow(new com.sendera.exception.FiltroInvalidoException("La dificultad debe ser BAJA, MODERADA o ALTA."));
         when(destinoService.listarDestinos(org.mockito.ArgumentMatchers.argThat(f -> f != null && f.getPrecioMin() != null
-                && f.getPrecioMin().signum() < 0)))
+                && f.getPrecioMin().signum() < 0), org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt()))
                 .thenThrow(new com.sendera.exception.FiltroInvalidoException("Los precios no pueden ser negativos."));
 
         mockMvc.perform(get("/destinos").param("dificultad", "EXTREMA"))
