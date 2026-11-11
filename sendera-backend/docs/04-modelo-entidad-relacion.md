@@ -150,3 +150,16 @@ Reglas de negocio (se validan en el servicio, no solo en la interfaz):
 Pendiente para la entrega de reservas (mockup 3, **PROPUESTA**, aún no implementada): `reservas.actividad_id` (FK), `reservas.numero_personas`, `reservas.hora_inicio`; monto = `precio_por_persona * numero_personas`, calculado por el servidor; código de reserva derivado del id (`SD-` + id con 6 dígitos), sin columna propia; se mantiene `estado_reserva` (PENDIENTE hasta que exista pasarela de pago); decidir si se descuentan cupos de actividades (hoy no existen) y cómo convive con las reservas de paquetes.
 
 Nota de consistencia: este documento (§4.6) menciona `src/main/resources/schema.sql`, pero ese archivo no existe; la referencia vigente es `docs/schema.sql`.
+
+### 4.9 Perfil del viajero (NC-01, 2026-11-11)
+Responde al hallazgo NC-01 de la auditoría (`docs/13-respuesta-auditoria.md`): el perfil solo simulaba guardar los datos personales.
+
+| Tabla | Columnas nuevas | Restricciones |
+|---|---|---|
+| `usuarios` | `numero_identificacion` VARCHAR(15) NULL, `fecha_nacimiento` DATE NULL, `pais_residencia` VARCHAR(80) NULL | Opcionales: las cuentas existentes no los tienen. Solo dígitos (5–15) y fecha no futura, validados en el servidor |
+| `usuario_destinos_favoritos` | usuario_id, orden, destino VARCHAR(80) | PK (usuario_id, orden); FK a `usuarios` (CASCADE). Texto libre, no FK a `destinos` |
+| `usuario_intereses` | usuario_id, orden, interes VARCHAR(60) | PK (usuario_id, orden); FK a `usuarios` (CASCADE) |
+
+- Las listas son tablas aparte (1FN) y conservan el orden elegido por la persona; el servicio quita espacios y repetidos y admite hasta 10 elementos.
+- El número de identificación no es único: el MER no lo exige y no se usa para iniciar sesión.
+- En una base existente se aplica `docs/actualizar-perfil-viajero.sql` (idempotente) antes de desplegar.

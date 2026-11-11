@@ -15,10 +15,11 @@ public interface AuthService {
 
     void cambiarContrasena(CambiarContrasenaDto dto);
 
-    UsuarioDto obtenerPerfil(String correo);
+    /** Cuenta y datos del perfil del viajero (NC-01). */
+    PerfilDto obtenerPerfil(String correo);
 
     /**
-     * Actualiza nombre, apellidos y correo del propio usuario. Devuelve una sesión nueva porque el correo
+     * Actualiza la cuenta y el perfil del propio usuario. Devuelve una sesión nueva porque el correo
      * es el sujeto (sub) del JWT: el token anterior deja de coincidir con la cuenta si el correo cambió.
      */
     AuthRespuestaDto actualizarPerfil(Long usuarioId, ActualizarPerfilDto dto);
