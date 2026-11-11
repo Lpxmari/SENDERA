@@ -25,7 +25,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -140,10 +143,10 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(readOnly = true)
-    public UsuarioDto obtenerPerfil(String correo) {
+    public PerfilDto obtenerPerfil(String correo) {
         Usuario usuario = usuarioRepository.findByCorreo(correo)
                 .orElseThrow(CredencialesInvalidasException::new);
-        return convertirADto(usuario);
+        return convertirAPerfil(usuario);
     }
 
     @Override
@@ -164,6 +167,7 @@ public class AuthServiceImpl implements AuthService {
         }
         usuario.setNombre(dto.getNombre().trim());
         usuario.setApellidos(dto.getApellidos().trim());
+        aplicarDatosDelViajero(usuario, dto);
         try {
             usuario = usuarioRepository.saveAndFlush(usuario);
         } catch (DataIntegrityViolationException e) {
@@ -209,6 +213,54 @@ public class AuthServiceImpl implements AuthService {
         return AuthRespuestaDto.builder()
                 .token(jwtService.generar(usuario))
                 .usuario(convertirADto(usuario))
+                .build();
+    }
+
+    /** Solo cambia lo que llega: un campo null conserva el valor guardado (clientes que aún no envían el perfil). */
+    private void aplicarDatosDelViajero(Usuario usuario, ActualizarPerfilDto dto) {
+        if (dto.getNumeroIdentificacion() != null) {
+            usuario.setNumeroIdentificacion(dto.getNumeroIdentificacion().trim());
+        }
+        if (dto.getFechaNacimiento() != null) {
+            usuario.setFechaNacimiento(dto.getFechaNacimiento());
+        }
+        if (dto.getPaisResidencia() != null) {
+            usuario.setPaisResidencia(dto.getPaisResidencia().trim());
+        }
+        if (dto.getDestinosFavoritos() != null) {
+            reemplazar(usuario.getDestinosFavoritos(), dto.getDestinosFavoritos());
+        }
+        if (dto.getIntereses() != null) {
+            reemplazar(usuario.getIntereses(), dto.getIntereses());
+        }
+    }
+
+    /**
+     * Reemplaza el contenido conservando la colección que administra Hibernate. Quita espacios y repetidos
+     * (sin distinguir mayúsculas) y mantiene el orden en que la persona los escribió.
+     */
+    private static void reemplazar(List<String> guardados, List<String> nuevos) {
+        Map<String, String> sinRepetir = new LinkedHashMap<>();
+        for (String valor : nuevos) {
+            String limpio = valor.trim();
+            sinRepetir.putIfAbsent(limpio.toLowerCase(Locale.ROOT), limpio);
+        }
+        guardados.clear();
+        guardados.addAll(sinRepetir.values());
+    }
+
+    private PerfilDto convertirAPerfil(Usuario usuario) {
+        return PerfilDto.builder()
+                .id(usuario.getId())
+                .nombre(usuario.getNombre())
+                .apellidos(usuario.getApellidos())
+                .correo(usuario.getCorreo())
+                .rol(usuario.getRol())
+                .numeroIdentificacion(usuario.getNumeroIdentificacion())
+                .fechaNacimiento(usuario.getFechaNacimiento())
+                .paisResidencia(usuario.getPaisResidencia())
+                .destinosFavoritos(List.copyOf(usuario.getDestinosFavoritos()))
+                .intereses(List.copyOf(usuario.getIntereses()))
                 .build();
     }
 

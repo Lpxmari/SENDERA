@@ -1223,26 +1223,32 @@ paths:
 
   /auth/me:
     get:
-      summary: Obtener el usuario de la sesión actual
+      summary: Obtener la cuenta y el perfil del viajero de la sesión actual
+      description: >
+        Devuelve los datos de la cuenta y del perfil (NC-01). Los campos del perfil son null o listas vacías mientras
+        la persona no los complete. A diferencia de `Usuario` (lo que se guarda como sesión), incluye datos personales.
       operationId: perfilUsuario
       tags:
         - Autenticación
       responses:
         '200':
-          description: Datos del usuario autenticado.
+          description: Cuenta y perfil del usuario autenticado.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Usuario'
+                $ref: '#/components/schemas/Perfil'
         '401':
           $ref: '#/components/responses/NoAutorizado'
     put:
-      summary: Actualizar nombre, apellidos y correo de la cuenta propia
+      summary: Actualizar la cuenta y el perfil del viajero propios
       description: >
         La identidad sale del JWT. El rol nunca se modifica desde aquí. Si el correo cambia, es obligatorio enviar
         `contrasenaActual` (400 si falta o es incorrecta) y el nuevo correo no puede pertenecer a otra cuenta (409).
+        Los campos del perfil (`numeroIdentificacion`, `fechaNacimiento`, `paisResidencia`, `destinosFavoritos`,
+        `intereses`) son opcionales: si no se envían se conservan; una lista vacía la borra. Las listas se guardan
+        sin espacios sobrantes ni repetidos y en el orden recibido.
         Devuelve una sesión nueva porque el correo es el sujeto (`sub`) del JWT: el cliente debe reemplazar el token
-        guardado por el recibido.
+        guardado por el recibido. El perfil actualizado se consulta con `GET /auth/me`.
       operationId: actualizarPerfilUsuario
       tags:
         - Autenticación
@@ -1900,6 +1906,85 @@ components:
           type: string
           maxLength: 64
           description: Obligatoria solo si el correo cambia.
+        numeroIdentificacion:
+          type: string
+          pattern: '^\d{5,15}$'
+          description: Solo dígitos, entre 5 y 15. Opcional; si no se envía se conserva.
+          example: "1094123456"
+        fechaNacimiento:
+          type: string
+          format: date
+          description: No puede ser futura. Opcional; si no se envía se conserva.
+          example: "1958-03-23"
+        paisResidencia:
+          type: string
+          minLength: 1
+          maxLength: 80
+          description: Opcional; si no se envía se conserva.
+          example: "Colombia"
+        destinosFavoritos:
+          type: array
+          maxItems: 10
+          description: Texto libre. Opcional; si no se envía se conserva y una lista vacía la borra.
+          items:
+            type: string
+            minLength: 1
+            maxLength: 80
+          example: ["Cartagena", "Salento"]
+        intereses:
+          type: array
+          maxItems: 10
+          description: Opcional; si no se envía se conserva y una lista vacía la borra.
+          items:
+            type: string
+            minLength: 1
+            maxLength: 60
+          example: ["Naturaleza", "Gastronomía"]
+
+    Perfil:
+      type: object
+      description: Cuenta y perfil del viajero (respuesta de GET /auth/me).
+      required: [id, nombre, apellidos, correo, rol, destinosFavoritos, intereses]
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        nombre:
+          type: string
+          example: "María"
+        apellidos:
+          type: string
+          example: "Gutiérrez"
+        correo:
+          type: string
+          format: email
+          example: "maria@correo.com"
+        rol:
+          $ref: '#/components/schemas/RolUsuario'
+        numeroIdentificacion:
+          type: string
+          nullable: true
+          example: "1094123456"
+        fechaNacimiento:
+          type: string
+          format: date
+          nullable: true
+          example: "1958-03-23"
+        paisResidencia:
+          type: string
+          nullable: true
+          example: "Colombia"
+        destinosFavoritos:
+          type: array
+          items:
+            type: string
+          example: ["Cartagena", "Salento"]
+        intereses:
+          type: array
+          items:
+            type: string
+          example: ["Naturaleza", "Gastronomía"]
 
     AuthRespuesta:
       type: object
